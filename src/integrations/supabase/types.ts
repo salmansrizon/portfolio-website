@@ -14,7 +14,150 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      blogs: {
+        Row: {
+          content: string
+          created_at: string
+          excerpt: string | null
+          featured_image: string | null
+          id: string
+          published: boolean
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          excerpt?: string | null
+          featured_image?: string | null
+          id?: string
+          published?: boolean
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          excerpt?: string | null
+          featured_image?: string | null
+          id?: string
+          published?: boolean
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      certifications: {
+        Row: {
+          created_at: string
+          credential_id: string | null
+          earned_date: string | null
+          id: string
+          image_url: string | null
+          issuer: string
+          title: string
+          verification_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          credential_id?: string | null
+          earned_date?: string | null
+          id?: string
+          image_url?: string | null
+          issuer: string
+          title: string
+          verification_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          credential_id?: string | null
+          earned_date?: string | null
+          id?: string
+          image_url?: string | null
+          issuer?: string
+          title?: string
+          verification_url?: string | null
+        }
+        Relationships: []
+      }
+      portfolio_sections: {
+        Row: {
+          content: Json
+          id: string
+          section_name: string
+          updated_at: string
+        }
+        Insert: {
+          content: Json
+          id?: string
+          section_name: string
+          updated_at?: string
+        }
+        Update: {
+          content?: Json
+          id?: string
+          section_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          created_at: string
+          description: string
+          features: string[]
+          icon: string | null
+          id: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          features?: string[]
+          icon?: string | null
+          id?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          features?: string[]
+          icon?: string | null
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      testimonials: {
+        Row: {
+          client_name: string
+          company: string | null
+          content: string
+          created_at: string
+          id: string
+          rating: number | null
+        }
+        Insert: {
+          client_name: string
+          company?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          rating?: number | null
+        }
+        Update: {
+          client_name?: string
+          company?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          rating?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -38,10 +38,10 @@ const Navbar = () => {
             </div>
           </div>
 
-          {/* Hire Me Button */}
+          {/* Admin Button */}
           <div className="hidden md:block">
-            <Button className="bg-primary hover:bg-primary-hover text-primary-foreground">
-              Hire Me
+            <Button className="bg-primary hover:bg-primary-hover text-primary-foreground" asChild>
+              <a href="/auth">Admin</a>
             </Button>
           </div>
 
