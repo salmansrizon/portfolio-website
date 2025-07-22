@@ -1,6 +1,26 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+impo                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <MapPin className="h-5 w-5 text-primary" />
+                      <span className="font-medium text-foreground">Dhaka, Bangladesh</span>
+                    </div>
+                    <Badge 
+                      className={isBusinessHours 
+                        ? "bg-green-100 text-green-800 border-green-200"
+                        : "bg-yellow-100 text-yellow-800 border-yellow-200"
+                      }
+                    >
+                      {isBusinessHours ? "Available" : "Away"}
+                    </Badge>
+                  </div>
+                  
+                  <div className="text-2xl font-bold text-primary">{currentTime}</div>
+                  <div className="text-muted-foreground">
+                    Current Local Time (GMT+6)
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Business Hours: 9:00 AM - 6:00 PM (Bangladesh Time)m "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,58 +37,10 @@ import {
   Zap
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
 
 const Contact = () => {
   const [currentTime, setCurrentTime] = useState('');
   const [isBusinessHours, setIsBusinessHours] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    service: '',
-    message: ''
-  });
-  const { toast } = useToast();
-
-  const handleSubmit = () => {
-    if (!formData.name || !formData.email || !formData.message) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const subject = `New Contact from ${formData.name}`;
-    const body = `
-Name: ${formData.name}
-Email: ${formData.email}
-Service: ${formData.service || 'Not specified'}
-
-Message:
-${formData.message}
-    `.trim();
-
-    const mailtoUrl = `mailto:salmansrizon2016@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    
-    window.location.href = mailtoUrl;
-
-    // Reset form after small delay to ensure mailto opens
-    setTimeout(() => {
-      setFormData({
-        name: '',
-        email: '',
-        service: '',
-        message: ''
-      });
-      
-      toast({
-        title: "Success",
-        description: "Email client opened with your message. Please send the email to complete.",
-      });
-    }, 1000);
-  };
 
   useEffect(() => {
     const updateTime = () => {
@@ -99,7 +71,6 @@ ${formData.message}
 
     return () => clearInterval(interval);
   }, []);
-
   return (
     <section id="contact" className="py-20 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -123,28 +94,17 @@ ${formData.message}
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Name *</Label>
-                  <Input 
-                    id="name" 
-                    placeholder="Your name" 
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  />
+                  <Input id="name" placeholder="Your name" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email *</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="your@email.com" 
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  />
+                  <Input id="email" type="email" placeholder="your@email.com" />
                 </div>
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="service">Service Needed</Label>
-                <Select value={formData.service} onValueChange={(value) => setFormData(prev => ({ ...prev, service: value }))}>
+                <Select>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a service" />
                   </SelectTrigger>
@@ -165,19 +125,11 @@ ${formData.message}
                   id="message" 
                   placeholder="Describe your project or requirements..."
                   className="min-h-[120px]"
-                  value={formData.message}
-                  onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
                 />
-                <div className="text-right text-sm text-muted-foreground">
-                  {formData.message.length}/2000
-                </div>
+                <div className="text-right text-sm text-muted-foreground">0/2000</div>
               </div>
 
-              <Button 
-                className="w-full bg-primary hover:bg-primary-hover text-primary-foreground"
-                onClick={handleSubmit}
-                disabled={!formData.name || !formData.email || !formData.message}
-              >
+              <Button className="w-full bg-primary hover:bg-primary-hover text-primary-foreground">
                 <Mail className="mr-2 h-4 w-4" />
                 Send Message
               </Button>
@@ -205,17 +157,12 @@ ${formData.message}
                     <MapPin className="h-5 w-5 text-primary" />
                     <span className="font-medium text-foreground">Dhaka, Bangladesh</span>
                   </div>
-                  <Badge 
-                    className={isBusinessHours 
-                      ? "bg-green-100 text-green-800 border-green-200"
-                      : "bg-yellow-100 text-yellow-800 border-yellow-200"
-                    }
-                  >
-                    {isBusinessHours ? "Available" : "Away"}
+                  <Badge className="bg-green-100 text-green-800 border-green-200">
+                    Available
                   </Badge>
                 </div>
                 
-                <div className="text-2xl font-bold text-primary">{currentTime}</div>
+                <div className="text-2xl font-bold text-primary">04:06 PM</div>
                 <div className="text-muted-foreground">
                   Current Local Time (GMT+6)
                 </div>

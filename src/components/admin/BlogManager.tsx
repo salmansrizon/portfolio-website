@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { RealtimeChannel } from '@supabase/supabase-js';
 import { Loader2, Plus, Edit, Trash2 } from 'lucide-react';
 
 interface Blog {
@@ -35,6 +36,33 @@ const BlogManager = () => {
 
   useEffect(() => {
     fetchBlogs();
+    
+    let blogsSubscription: RealtimeChannel;
+
+    const setupRealtimeSubscription = async () => {
+      blogsSubscription = supabase
+        .channel('blogs-admin-channel')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'blogs'
+          },
+          () => {
+            fetchBlogs();
+          }
+        )
+        .subscribe();
+    };
+
+    setupRealtimeSubscription();
+
+    return () => {
+      if (blogsSubscription) {
+        supabase.removeChannel(blogsSubscription);
+      }
+    };
   }, []);
 
   const fetchBlogs = async () => {
@@ -73,6 +101,7 @@ const BlogManager = () => {
         ...formData,
         slug,
         published: formData.published || false,
+        updated_at: new Date().toISOString()
       };
 
       if (editingBlog) {
@@ -98,6 +127,8 @@ const BlogManager = () => {
         });
       }
 
+      // Fetch updated blog posts
+      await fetchBlogs();
       setIsDialogOpen(false);
       setEditingBlog(null);
       reset();
@@ -138,7 +169,7 @@ const BlogManager = () => {
         title: "Success",
         description: "Blog deleted successfully!",
       });
-      fetchBlogs();
+      await fetchBlogs();  // Ensure we await the fetch
     } catch (error) {
       toast({
         title: "Error",

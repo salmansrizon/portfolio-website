@@ -1,0 +1,112 @@
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Loader2, ArrowLeft } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
+import Navbar from "@/components/Navbar";
+
+interface BlogPost {
+  id: string;
+  title: string;
+  content: string;
+  excerpt: string;
+  featured_image?: string;
+  published: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+const BlogPostPage = () => {
+  const { slug } = useParams();
+  const navigate = useNavigate();
+  const [blog, setBlog] = useState<BlogPost | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBlogPost = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('blogs')
+          .select('*')
+          .eq('slug', slug)
+          .eq('published', true)
+          .single();
+
+        if (error) throw error;
+        setBlog(data);
+      } catch (error) {
+        console.error('Error fetching blog post:', error);
+        navigate('/blog'); // Redirect to blog list if post not found
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBlogPost();
+  }, [slug, navigate]);
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen pt-16 bg-background">
+          <div className="flex justify-center items-center min-h-[400px]">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (!blog) {
+    return null;
+  }
+
+  return (
+    <>
+      <Navbar />
+      <article className="min-h-screen pt-16 bg-background">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <Button
+            variant="ghost"
+            className="mb-8 group"
+            onClick={() => navigate('/blog')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2 transition-transform group-hover:-translate-x-1" />
+            Back to Blog
+          </Button>
+
+          {blog.featured_image && (
+            <div className="aspect-video overflow-hidden rounded-lg mb-8">
+              <img
+                src={blog.featured_image}
+                alt={blog.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+
+          <div className="prose prose-lg dark:prose-invert max-w-none">
+            <h1 className="text-4xl font-bold text-foreground mb-4">{blog.title}</h1>
+            <div className="flex items-center text-muted-foreground mb-8">
+              <time dateTime={blog.created_at}>
+                {new Date(blog.created_at).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </time>
+            </div>
+
+            <div className="text-foreground leading-relaxed whitespace-pre-wrap">
+              {blog.content}
+            </div>
+          </div>
+        </div>
+      </article>
+    </>
+  );
+};
+
+export default BlogPostPage;

@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, Settings, FileText, Award, Briefcase, MessageSquare, User } from 'lucide-react';
+import { LogOut, Settings, FileText, Award, Briefcase, MessageSquare, User, FolderKanban } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import SectionEditor from '@/components/admin/SectionEditor';
@@ -11,6 +11,7 @@ import BlogManager from '@/components/admin/BlogManager';
 import ServicesManager from '@/components/admin/ServicesManager';
 import CertificationsManager from '@/components/admin/CertificationsManager';
 import TestimonialsManager from '@/components/admin/TestimonialsManager';
+import ProjectManager from '@/components/admin/ProjectManager';
 
 const Admin = () => {
   const { user, signOut } = useAuth();
@@ -54,7 +55,7 @@ const Admin = () => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="sections" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
               Sections
@@ -70,6 +71,10 @@ const Admin = () => {
             <TabsTrigger value="certifications" className="flex items-center gap-2">
               <Award className="h-4 w-4" />
               Certifications
+            </TabsTrigger>
+            <TabsTrigger value="projects" className="flex items-center gap-2">
+              <FolderKanban className="h-4 w-4" />
+              Projects
             </TabsTrigger>
             <TabsTrigger value="testimonials" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
@@ -140,13 +145,23 @@ const Admin = () => {
           <TabsContent value="testimonials" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Testimonials Management</CardTitle>
-                <CardDescription>
-                  Manage client testimonials and reviews
-                </CardDescription>
+                <CardTitle>Testimonials</CardTitle>
+                <CardDescription>Manage your client testimonials</CardDescription>
               </CardHeader>
               <CardContent>
                 <TestimonialsManager />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="projects" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Projects</CardTitle>
+                <CardDescription>Manage your portfolio projects</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ProjectManager />
               </CardContent>
             </Card>
           </TabsContent>

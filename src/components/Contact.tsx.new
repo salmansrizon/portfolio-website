@@ -17,58 +17,10 @@ import {
   Zap
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
 
 const Contact = () => {
   const [currentTime, setCurrentTime] = useState('');
   const [isBusinessHours, setIsBusinessHours] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    service: '',
-    message: ''
-  });
-  const { toast } = useToast();
-
-  const handleSubmit = () => {
-    if (!formData.name || !formData.email || !formData.message) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const subject = `New Contact from ${formData.name}`;
-    const body = `
-Name: ${formData.name}
-Email: ${formData.email}
-Service: ${formData.service || 'Not specified'}
-
-Message:
-${formData.message}
-    `.trim();
-
-    const mailtoUrl = `mailto:salmansrizon2016@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    
-    window.location.href = mailtoUrl;
-
-    // Reset form after small delay to ensure mailto opens
-    setTimeout(() => {
-      setFormData({
-        name: '',
-        email: '',
-        service: '',
-        message: ''
-      });
-      
-      toast({
-        title: "Success",
-        description: "Email client opened with your message. Please send the email to complete.",
-      });
-    }, 1000);
-  };
 
   useEffect(() => {
     const updateTime = () => {
@@ -123,28 +75,17 @@ ${formData.message}
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Name *</Label>
-                  <Input 
-                    id="name" 
-                    placeholder="Your name" 
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  />
+                  <Input id="name" placeholder="Your name" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email *</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="your@email.com" 
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  />
+                  <Input id="email" type="email" placeholder="your@email.com" />
                 </div>
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="service">Service Needed</Label>
-                <Select value={formData.service} onValueChange={(value) => setFormData(prev => ({ ...prev, service: value }))}>
+                <Select>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a service" />
                   </SelectTrigger>
@@ -165,19 +106,11 @@ ${formData.message}
                   id="message" 
                   placeholder="Describe your project or requirements..."
                   className="min-h-[120px]"
-                  value={formData.message}
-                  onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
                 />
-                <div className="text-right text-sm text-muted-foreground">
-                  {formData.message.length}/2000
-                </div>
+                <div className="text-right text-sm text-muted-foreground">0/2000</div>
               </div>
 
-              <Button 
-                className="w-full bg-primary hover:bg-primary-hover text-primary-foreground"
-                onClick={handleSubmit}
-                disabled={!formData.name || !formData.email || !formData.message}
-              >
+              <Button className="w-full bg-primary hover:bg-primary-hover text-primary-foreground">
                 <Mail className="mr-2 h-4 w-4" />
                 Send Message
               </Button>

@@ -97,6 +97,8 @@ const ServicesManager = () => {
         });
       }
 
+      // Fetch updated services after modification
+      await fetchServices();
       setIsDialogOpen(false);
       setEditingService(null);
       reset();

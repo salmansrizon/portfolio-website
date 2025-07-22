@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { MapPin, ExternalLink, Mail } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Hero = () => {
   return (
@@ -16,11 +17,11 @@ const Hero = () => {
             </h1>
             
             <p className="text-xl sm:text-2xl text-primary font-semibold">
-              Microsoft Certified Professional
+              Google Certified Data Analytics Professional
             </p>
             
             <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
-              Sulaiman Ahmed
+              Salman Sakib
             </h2>
           </div>
 
@@ -34,16 +35,23 @@ const Hero = () => {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button 
+              asChild
               size="lg" 
               className="bg-primary hover:bg-primary-hover text-primary-foreground px-8 py-3 text-lg font-semibold shadow-card hover:shadow-hover transition-all"
             >
-              <ExternalLink className="mr-2 h-5 w-5" />
-              View Portfolio
+              <Link to="/portfolio">
+                <ExternalLink className="mr-2 h-5 w-5" />
+                View Portfolio
+              </Link>
             </Button>
             <Button 
               variant="outline" 
               size="lg"
               className="border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3 text-lg font-semibold"
+              onClick={() => {
+                const contactSection = document.getElementById('contact');
+                contactSection?.scrollIntoView({ behavior: 'smooth' });
+              }}
             >
               <Mail className="mr-2 h-5 w-5" />
               Get in Touch

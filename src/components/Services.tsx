@@ -1,47 +1,80 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BarChart3, Database, GraduationCap, ArrowRight } from "lucide-react";
+import { BarChart3, Database, GraduationCap, ArrowRight, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { RealtimeChannel } from '@supabase/supabase-js';
+
+interface Service {
+  id: string;
+  title: string;
+  description: string;
+  features: string[];
+  icon?: string;
+  created_at: string;
+}
 
 const Services = () => {
-  const services = [
-    {
-      icon: BarChart3,
-      title: "Power BI Consulting",
-      description: "Transform your data into powerful visual insights with custom Power BI solutions that drive business decisions.",
-      features: [
-        "Dashboard Development",
-        "Report Optimization", 
-        "Custom Solutions",
-        "Performance Tuning",
-        "Data Modeling"
-      ]
-    },
-    {
-      icon: Database,
-      title: "Data Engineering",
-      description: "Build robust data infrastructure and pipelines that scale with your business needs using modern cloud technologies.",
-      features: [
-        "ETL Pipeline Development",
-        "Database Optimization",
-        "Microsoft Fabric Implementation", 
-        "Data Lake Architecture",
-        "Real-time Analytics"
-      ]
-    },
-    {
-      icon: GraduationCap,
-      title: "Training & Mentoring",
-      description: "Empower your team with data analytics skills through comprehensive training programs and personalized mentoring.",
-      features: [
-        "Corporate Training",
-        "One-on-one Mentoring",
-        "Workshop Facilitation",
-        "Certification Prep",
-        "Custom Curriculum"
-      ]
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchServices();
+
+    let servicesSubscription: RealtimeChannel;
+
+    const setupRealtimeSubscription = async () => {
+      // Subscribe to changes
+      servicesSubscription = supabase
+        .channel('services-channel')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'services'
+          },
+          () => {
+            fetchServices();
+          }
+        )
+        .subscribe();
+    };
+
+    setupRealtimeSubscription();
+
+    // Cleanup subscription on unmount
+    return () => {
+      if (servicesSubscription) {
+        supabase.removeChannel(servicesSubscription);
+      }
+    };
+  }, []);
+
+  const fetchServices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setServices(data || []);
+    } catch (error) {
+      console.error('Error fetching services:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <section id="services" className="py-20 bg-background">
@@ -54,13 +87,21 @@ const Services = () => {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8 mb-12">
+          {/* Map icon string to actual icon component */}
           {services.map((service, index) => {
-            const IconComponent = service.icon;
+            const iconMap: Record<string, React.ElementType> = {
+              BarChart3,
+              Database,
+              GraduationCap,
+            };
+            const IconComponent = service.icon ? iconMap[service.icon] : BarChart3;
             return (
               <Card key={index} className="shadow-card hover:shadow-hover transition-all duration-300 group">
                 <CardHeader className="text-center pb-4">
                   <div className="w-16 h-16 bg-gradient-hero rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                    <IconComponent className="h-8 w-8 text-white" />
+                    {IconComponent ? (
+                      <IconComponent className="h-8 w-8 text-white" />
+                    ) : null}
                   </div>
                   <CardTitle className="text-2xl font-bold text-foreground">
                     {service.title}

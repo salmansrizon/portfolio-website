@@ -1,8 +1,57 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Star, ExternalLink, Quote } from "lucide-react";
+import { Star, ExternalLink, Quote, ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import useEmblaCarousel from 'embla-carousel-react';
+
+interface Testimonial {
+  id: string;
+  client_name: string;
+  company: string | null;
+  content: string;
+  rating: number;
+  created_at: string;
+}
 
 const Testimonials = () => {
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
+
+  useEffect(() => {
+    const fetchTestimonials = async () => {
+      const { data, error } = await supabase
+        .from('testimonials')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setTestimonials(data);
+      }
+      setIsLoading(false);
+    };
+
+    fetchTestimonials();
+  }, []);
+
+  useEffect(() => {
+    if (!emblaApi || !testimonials.length) return;
+
+    const autoplay = () => {
+      if (emblaApi.canScrollNext()) {
+        emblaApi.scrollNext();
+      } else {
+        emblaApi.scrollTo(0);
+      }
+    };
+
+    const intervalId = setInterval(autoplay, 5000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [emblaApi, testimonials]);
   return (
     <section id="testimonials" className="py-20 bg-accent/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -14,33 +63,61 @@ const Testimonials = () => {
         </div>
 
         <div className="max-w-4xl mx-auto">
-          {/* Main Testimonial */}
-          <Card className="shadow-card mb-12">
-            <CardContent className="p-8">
-              <div className="flex items-start mb-6">
-                <Quote className="h-8 w-8 text-primary mr-4 flex-shrink-0 mt-1" />
-                <blockquote className="text-lg text-foreground leading-relaxed italic">
-                  "Ahmed Sulaiman truly impressed with his exceptional professionalism and keen 
-                  attention to detail in data visualization. His cooperative nature and quick 
-                  responsiveness made working with him a seamless experience. I look forward to 
-                  future collaborations as he consistently goes ABOVE AND BEYOND expectations! 🌟"
-                </blockquote>
+          <div className="relative">
+            <div ref={emblaRef} className="overflow-hidden mb-12">
+              <div className="flex">
+                {testimonials.map((testimonial) => (
+                  <div key={testimonial.id} className="flex-[0_0_100%] min-w-0">
+                    <Card className="shadow-card mx-4">
+                      <CardContent className="p-8">
+                        <div className="flex items-start mb-6">
+                          <Quote className="h-8 w-8 text-primary mr-4 flex-shrink-0 mt-1" />
+                          <blockquote className="text-lg text-foreground leading-relaxed italic">
+                            "{testimonial.content}"
+                          </blockquote>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-semibold text-foreground">{testimonial.client_name}</div>
+                            {testimonial.company && (
+                              <div className="text-muted-foreground">
+                                {testimonial.company}
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center space-x-1">
+                            {[...Array(testimonial.rating)].map((_, i) => (
+                              <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                            ))}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))}
               </div>
-              
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-semibold text-foreground">asainternet</div>
-                  <div className="text-muted-foreground">Client • United States</div>
-                </div>
-                
-                <div className="flex items-center space-x-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
+              <div className="absolute -left-12 -right-12 top-1/2 -translate-y-1/2 hidden md:block">
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  className="absolute left-0 -translate-x-1/2 bg-background hover:bg-accent"
+                  onClick={() => emblaApi?.scrollPrev()}
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  className="absolute right-0 translate-x-1/2 bg-background hover:bg-accent"
+                  onClick={() => emblaApi?.scrollNext()}
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Fiverr Stats */}
           <div className="grid md:grid-cols-2 gap-8 mb-12">
