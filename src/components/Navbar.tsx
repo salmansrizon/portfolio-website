@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
+import { ThemeToggle } from "./ThemeToggle";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -38,8 +39,9 @@ const Navbar = () => {
             </div>
           </div>
 
-          {/* Admin Button */}
-          <div className="hidden md:block">
+          {/* Actions */}
+          <div className="hidden md:flex items-center space-x-4">
+            <ThemeToggle />
             <Button className="bg-primary hover:bg-primary-hover text-primary-foreground" asChild>
               <a href="/#contact">Hire Me</a>
             </Button>
@@ -73,7 +75,10 @@ const Navbar = () => {
                 {item.name}
               </a>
             ))}
-            <div className="pt-2">
+            <div className="pt-2 space-y-2">
+              <div className="flex justify-center">
+                <ThemeToggle />
+              </div>
               <Button className="w-full bg-primary hover:bg-primary-hover text-primary-foreground">
                 Hire Me
               </Button>

@@ -100,7 +100,7 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '');
 
-      const blogData: Partial<BlogPost> = {
+      const blogData = {
         title,
         slug,
         excerpt,
@@ -121,7 +121,7 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
       } else {
         const { error } = await supabase
           .from('blogs')
-          .insert([blogData]);
+          .insert(blogData);
 
         if (error) throw error;
       }
