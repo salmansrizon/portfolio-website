@@ -27,9 +27,9 @@ const Hero = () => {
 
           {/* Description */}
           <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            4x Microsoft Certified Analytics Engineer with 5+ years of experience transforming 
-            complex data into actionable insights. Specializing in Power BI, Microsoft Fabric, 
-            and data engineering solutions that drive business growth.
+            Google Certified Analytics Engineer with 7+ years of experience transforming 
+            complex data into actionable insights. Specializing in data driven business growth with data analysis
+            and data engineering solutions.
           </p>
 
           {/* CTA Buttons */}

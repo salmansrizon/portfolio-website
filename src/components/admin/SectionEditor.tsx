@@ -10,10 +10,58 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 
+interface HeroContent {
+  title: {
+    main: string;
+    highlight: string;
+  };
+  subtitle: string;
+  name: string;
+  description: string;
+  cta: {
+    primary: {
+      text: string;
+      link: string;
+    };
+    secondary: {
+      text: string;
+      link: string;
+    };
+  };
+}
+
+interface AboutContent {
+  title: string;
+  subtitle: string;
+  professionalJourney: {
+    title: string;
+    description: string;
+  };
+  stats: Array<{
+    number: string;
+    label: string;
+  }>;
+  skills: Array<{
+    name: string;
+    percentage: number;
+  }>;
+  expertise: string[];
+}
+
+interface ContactContent {
+  title: string;
+  description: string;
+  email: string;
+  phone: string;
+  location: string;
+}
+
+type SectionContent = HeroContent | AboutContent | ContactContent;
+
 interface SectionData {
   id: string;
-  section_name: string;
-  content: any;
+  section_name: 'hero' | 'about' | 'contact';
+  content: SectionContent;
 }
 
 const SectionEditor = () => {
@@ -35,7 +83,31 @@ const SectionEditor = () => {
         .order('section_name');
 
       if (error) throw error;
-      setSections(data || []);
+      
+      // Type assertion for the data
+      const typedSections = (data || []).map(section => {
+        const sectionName = section.section_name as 'hero' | 'about' | 'contact';
+        let content: SectionContent;
+        
+        // First cast to unknown, then to the specific type
+        const rawContent = section.content as unknown;
+        if (sectionName === 'hero') {
+          content = rawContent as HeroContent;
+        } else if (sectionName === 'about') {
+          content = rawContent as AboutContent;
+        } else {
+          content = rawContent as ContactContent;
+        }
+
+        const typedSection: SectionData = {
+          id: section.id,
+          section_name: sectionName,
+          content
+        };
+        return typedSection;
+      });
+
+      setSections(typedSections);
     } catch (error) {
       toast({
         title: "Error",
@@ -53,7 +125,53 @@ const SectionEditor = () => {
       const section = sections.find(s => s.section_name === sectionName);
       if (!section) return;
 
-      const updatedContent = { ...section.content, ...formData };
+      let updatedContent;
+      const existingContent = section.content as any;
+
+      if (sectionName === 'hero') {
+        const heroContent: HeroContent = {
+          title: {
+            main: formData.title?.main || existingContent.title?.main || '',
+            highlight: formData.title?.highlight || existingContent.title?.highlight || ''
+          },
+          subtitle: formData.subtitle || existingContent.subtitle || '',
+          name: formData.name || existingContent.name || '',
+          description: formData.description || existingContent.description || '',
+          cta: {
+            primary: {
+              text: formData.cta?.primary?.text || existingContent.cta?.primary?.text || '',
+              link: formData.cta?.primary?.link || existingContent.cta?.primary?.link || ''
+            },
+            secondary: {
+              text: formData.cta?.secondary?.text || existingContent.cta?.secondary?.text || '',
+              link: formData.cta?.secondary?.link || existingContent.cta?.secondary?.link || ''
+            }
+          }
+        };
+        updatedContent = heroContent;
+      } else if (sectionName === 'about') {
+        const aboutContent: AboutContent = {
+          title: formData.title || existingContent.title || '',
+          subtitle: formData.subtitle || existingContent.subtitle || '',
+          professionalJourney: {
+            title: formData.professionalJourney?.title || existingContent.professionalJourney?.title || '',
+            description: formData.professionalJourney?.description || existingContent.professionalJourney?.description || ''
+          },
+          stats: formData.stats || existingContent.stats || [],
+          skills: formData.skills || existingContent.skills || [],
+          expertise: formData.expertise || existingContent.expertise || []
+        };
+        updatedContent = aboutContent;
+      } else if (sectionName === 'contact') {
+        const contactContent: ContactContent = {
+          title: formData.title || existingContent.title || '',
+          description: formData.description || existingContent.description || '',
+          email: formData.email || existingContent.email || '',
+          phone: formData.phone || existingContent.phone || '',
+          location: formData.location || existingContent.location || ''
+        };
+        updatedContent = contactContent;
+      }
 
       const { error } = await supabase
         .from('portfolio_sections')
@@ -87,9 +205,14 @@ const SectionEditor = () => {
     );
   }
 
-  const heroSection = sections.find(s => s.section_name === 'hero');
+    const heroSection = sections.find(s => s.section_name === 'hero');
+  const heroContent = heroSection?.content as HeroContent;
+  
   const aboutSection = sections.find(s => s.section_name === 'about');
+  const aboutContent = aboutSection?.content as AboutContent;
+  
   const contactSection = sections.find(s => s.section_name === 'contact');
+  const contactContent = contactSection?.content as ContactContent;
 
   return (
     <Tabs defaultValue="hero" className="space-y-6">
@@ -106,23 +229,47 @@ const SectionEditor = () => {
               <CardTitle>Hero Section</CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit((data) => onSubmit(data, 'hero'))} className="space-y-4">
-                <div>
-                  <Label htmlFor="title">Title</Label>
-                  <Input
-                    id="title"
-                    {...register('title')}
-                    defaultValue={heroSection.content.title}
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="subtitle">Subtitle</Label>
-                  <Input
-                    id="subtitle"
-                    {...register('subtitle')}
-                    defaultValue={heroSection.content.subtitle}
-                  />
+              <form onSubmit={handleSubmit((data) => onSubmit(data, 'hero'))} className="space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label>Main Title</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Input
+                          {...register('title.main')}
+                          defaultValue={heroContent?.title?.main}
+                          placeholder="Main title text"
+                        />
+                      </div>
+                      <div>
+                        <Input
+                          {...register('title.highlight')}
+                          defaultValue={heroContent?.title?.highlight}
+                          placeholder="Highlighted word"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="subtitle">Subtitle</Label>
+                    <Input
+                      id="subtitle"
+                      {...register('subtitle')}
+                      defaultValue={heroContent?.subtitle}
+                      placeholder="Your professional title or credential"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="name">Name</Label>
+                    <Input
+                      id="name"
+                      {...register('name')}
+                      defaultValue={heroContent?.name}
+                      placeholder="Your full name"
+                    />
+                  </div>
                 </div>
                 
                 <div>
@@ -130,28 +277,44 @@ const SectionEditor = () => {
                   <Textarea
                     id="description"
                     {...register('description')}
-                    defaultValue={heroSection.content.description}
+                    defaultValue={heroContent?.description}
                     rows={4}
+                    placeholder="Brief description of your expertise and experience"
                   />
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="cta_primary">Primary CTA</Label>
-                    <Input
-                      id="cta_primary"
-                      {...register('cta_primary')}
-                      defaultValue={heroSection.content.cta_primary}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="cta_secondary">Secondary CTA</Label>
-                    <Input
-                      id="cta_secondary"
-                      {...register('cta_secondary')}
-                      defaultValue={heroSection.content.cta_secondary}
-                    />
+                <div className="space-y-4">
+                  <Label>Call to Action Buttons</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="cta_primary_text">Primary Button Text</Label>
+                      <Input
+                        id="cta_primary_text"
+                        {...register('cta.primary.text')}
+                        defaultValue={heroContent?.cta?.primary?.text}
+                        placeholder="e.g., View Portfolio"
+                      />
+                      <Input
+                        {...register('cta.primary.link')}
+                        defaultValue={heroContent?.cta?.primary?.link}
+                        placeholder="e.g., /portfolio"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="cta_secondary_text">Secondary Button Text</Label>
+                      <Input
+                        id="cta_secondary_text"
+                        {...register('cta.secondary.text')}
+                        defaultValue={heroContent?.cta?.secondary?.text}
+                        placeholder="e.g., Contact Me"
+                      />
+                      <Input
+                        {...register('cta.secondary.link')}
+                        defaultValue={heroContent?.cta?.secondary?.link}
+                        placeholder="e.g., #contact"
+                      />
+                    </div>
                   </div>
                 </div>
                 
@@ -172,24 +335,110 @@ const SectionEditor = () => {
               <CardTitle>About Section</CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit((data) => onSubmit(data, 'about'))} className="space-y-4">
-                <div>
-                  <Label htmlFor="about_title">Title</Label>
-                  <Input
-                    id="about_title"
-                    {...register('title')}
-                    defaultValue={aboutSection.content.title}
-                  />
+              <form onSubmit={handleSubmit((data) => onSubmit(data, 'about'))} className="space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="about_title">Title</Label>
+                    <Input
+                      id="about_title"
+                      {...register('title')}
+                      defaultValue={aboutContent?.title}
+                      placeholder="About Me"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="about_subtitle">Subtitle</Label>
+                    <Input
+                      id="about_subtitle"
+                      {...register('subtitle')}
+                      defaultValue={aboutContent?.subtitle}
+                      placeholder="A brief tagline about your work"
+                    />
+                  </div>
                 </div>
-                
-                <div>
-                  <Label htmlFor="about_description">Description</Label>
-                  <Textarea
-                    id="about_description"
-                    {...register('description')}
-                    defaultValue={aboutSection.content.description}
-                    rows={6}
-                  />
+
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="journey_title">Professional Journey Title</Label>
+                    <Input
+                      id="journey_title"
+                      {...register('professionalJourney.title')}
+                      defaultValue={aboutContent?.professionalJourney?.title}
+                      placeholder="Professional Journey"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="journey_description">Professional Journey Description</Label>
+                    <Textarea
+                      id="journey_description"
+                      {...register('professionalJourney.description')}
+                      defaultValue={aboutContent?.professionalJourney?.description}
+                      rows={6}
+                      placeholder="Describe your professional journey and current role..."
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <Label>Stats</Label>
+                  {aboutContent?.stats?.map((stat, index) => (
+                    <div key={index} className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Input
+                          {...register(`stats.${index}.number`)}
+                          defaultValue={stat.number}
+                          placeholder="Number (e.g. 4+)"
+                        />
+                      </div>
+                      <div>
+                        <Input
+                          {...register(`stats.${index}.label`)}
+                          defaultValue={stat.label}
+                          placeholder="Label (e.g. Microsoft Certifications)"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-4">
+                  <Label>Skills</Label>
+                  {aboutContent?.skills?.map((skill, index) => (
+                    <div key={index} className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Input
+                          {...register(`skills.${index}.name`)}
+                          defaultValue={skill.name}
+                          placeholder="Skill name"
+                        />
+                      </div>
+                      <div>
+                        <Input
+                          type="number"
+                          {...register(`skills.${index}.percentage`)}
+                          defaultValue={skill.percentage}
+                          placeholder="Percentage"
+                          min={0}
+                          max={100}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-4">
+                  <Label>Expertise Areas</Label>
+                  {aboutContent?.expertise?.map((expertise, index) => (
+                    <div key={index}>
+                      <Input
+                        {...register(`expertise.${index}`)}
+                        defaultValue={expertise}
+                        placeholder={`Expertise ${index + 1}`}
+                      />
+                    </div>
+                  ))}
                 </div>
                 
                 <Button type="submit" disabled={saving}>
@@ -215,7 +464,7 @@ const SectionEditor = () => {
                   <Input
                     id="contact_title"
                     {...register('title')}
-                    defaultValue={contactSection.content.title}
+                    defaultValue={contactContent?.title}
                   />
                 </div>
                 
@@ -224,7 +473,7 @@ const SectionEditor = () => {
                   <Textarea
                     id="contact_description"
                     {...register('description')}
-                    defaultValue={contactSection.content.description}
+                    defaultValue={contactContent?.description}
                     rows={3}
                   />
                 </div>
@@ -236,7 +485,7 @@ const SectionEditor = () => {
                       id="email"
                       type="email"
                       {...register('email')}
-                      defaultValue={contactSection.content.email}
+                      defaultValue={contactContent?.email}
                     />
                   </div>
                   
@@ -245,7 +494,7 @@ const SectionEditor = () => {
                     <Input
                       id="phone"
                       {...register('phone')}
-                      defaultValue={contactSection.content.phone}
+                      defaultValue={contactContent?.phone}
                     />
                   </div>
                 </div>
@@ -255,7 +504,7 @@ const SectionEditor = () => {
                   <Input
                     id="location"
                     {...register('location')}
-                    defaultValue={contactSection.content.location}
+                    defaultValue={contactContent?.location}
                   />
                 </div>
                 

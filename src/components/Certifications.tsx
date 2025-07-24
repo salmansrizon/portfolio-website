@@ -41,10 +41,10 @@ const Certifications = () => {
         <div className="text-center mb-16">
           <div className="flex items-center justify-center mb-4">
             <Award className="h-8 w-8 text-primary mr-3" />
-            <h2 className="text-4xl font-bold text-foreground">Microsoft Certifications</h2>
+            <h2 className="text-4xl font-bold text-foreground">Certifications</h2>
           </div>
           <p className="text-xl text-muted-foreground">
-            Validated expertise in Microsoft's data and analytics platform
+            Validated expertise in data and analytics
           </p>
         </div>
 

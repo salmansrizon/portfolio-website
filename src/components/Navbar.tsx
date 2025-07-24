@@ -41,7 +41,7 @@ const Navbar = () => {
           {/* Admin Button */}
           <div className="hidden md:block">
             <Button className="bg-primary hover:bg-primary-hover text-primary-foreground" asChild>
-              <a href="/auth">Admin</a>
+              <a href="/#contact">Hire Me</a>
             </Button>
           </div>
 

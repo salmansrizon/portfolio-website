@@ -148,7 +148,7 @@ const Services = () => {
               size="lg"
               className="bg-white text-primary hover:bg-gray-100 font-semibold"
             >
-              Schedule a Consultation
+              <a href="/#contact">Schedule a Consultation</a>
             </Button>
           </CardContent>
         </Card>

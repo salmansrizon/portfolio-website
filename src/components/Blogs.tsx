@@ -3,25 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowRight } from "lucide-react";
+import { Loader2, ArrowRight, ExternalLink } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { RealtimeChannel } from '@supabase/supabase-js';
-
-interface Blog {
-  id: string;
-  title: string;
-  slug: string;
-  content: string;
-  excerpt: string;
-  featured_image?: string;
-  published: boolean;
-  created_at: string;
-  updated_at: string;
-}
+import { BlogPost } from '@/integrations/supabase/types';
 
 const Blogs = () => {
   const navigate = useNavigate();
-  const [blogs, setBlogs] = useState<Blog[]>([]);
+  const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -109,6 +98,11 @@ const Blogs = () => {
               <CardHeader>
                 <div className="flex justify-between items-start mb-2">
                   <CardTitle className="text-xl font-bold line-clamp-2">{blog.title}</CardTitle>
+                  {blog.source_type !== 'local' && (
+                    <Badge variant="outline" className="ml-2">
+                      {blog.source_type.charAt(0).toUpperCase() + blog.source_type.slice(1)}
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-sm text-muted-foreground">
                   {new Date(blog.created_at).toLocaleDateString('en-US', {
@@ -123,10 +117,25 @@ const Blogs = () => {
                 <Button 
                   variant="outline" 
                   className="w-full group"
-                  onClick={() => navigate(`/blog/${blog.slug}`)}
+                  onClick={() => {
+                    if (blog.source_type !== 'local' && blog.source_url) {
+                      window.open(blog.source_url, '_blank');
+                    } else {
+                      navigate(`/blog/${blog.slug}`);
+                    }
+                  }}
                 >
-                  Read More
-                  <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
+                  {blog.source_type !== 'local' ? (
+                    <>
+                      View on {blog.source_type.charAt(0).toUpperCase() + blog.source_type.slice(1)}
+                      <ExternalLink className="h-4 w-4 ml-2" />
+                    </>
+                  ) : (
+                    <>
+                      Read More
+                      <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
+                    </>
+                  )}
                 </Button>
               </CardContent>
             </Card>

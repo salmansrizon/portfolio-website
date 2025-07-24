@@ -3,13 +3,16 @@ import profileImage from "@/assets/sulaiman-profile.jpg";
 
 const About = () => {
   const stats = [
-    { number: "4+", label: "Microsoft Certifications" },
-    { number: "100+", label: "Satisfied Clients" },
+    { number: "4+", label: "Industry Catered" },
+    { number: "30+", label: "Successful Projects" },
+    { number: "10+", label: "Satisfied Clients" },
+    { number: "4™+", label: "Satisfied Clients" },
   ];
 
   const skills = [
     { name: "Power BI", percentage: 95 },
-    { name: "Microsoft Fabric", percentage: 90 },
+    { name: "Tableu", percentage: 80 },
+    { name: "Metabase", percentage: 90 },
     { name: "SQL", percentage: 90 },
     { name: "Python", percentage: 85 },
     { name: "Data Visualization", percentage: 95 },
@@ -31,9 +34,9 @@ const About = () => {
             <div>
               <h3 className="text-2xl font-bold text-foreground mb-4">Professional Journey</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Currently serving as an Analytics Engineer at Data Crafters, I specialize in 
-                transforming complex healthcare and business data into actionable insights. 
-                With over 5 years of experience across healthcare, consulting, and education 
+                Currently serving as an Data analytics Manager at Wagely Bangladesh, I specialize in 
+                transforming complex Finantial and business data into actionable insights. 
+                With over 7 years of experience across Fintech, consulting, and education 
                 sectors, I've helped organizations optimize their data strategies and make 
                 informed decisions.
               </p>
@@ -68,12 +71,12 @@ const About = () => {
           <CardContent className="p-8">
             <h3 className="text-2xl font-bold text-foreground mb-4">Teaching & Mentoring</h3>
             <p className="text-muted-foreground mb-6 leading-relaxed">
-              As an instructor at DataSolution-360, I'm passionate about sharing knowledge 
+              As an instructor at DScentral, I'm passionate about sharing knowledge 
               and helping the next generation of data professionals. I provide corporate 
               training, one-on-one mentoring, and workshop facilitation.
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {["Corporate Training", "Data Analytics", "Power BI", "Microsoft Fabric"].map((item, index) => (
+              {["Consultation","Corporate Training", "Data Analysis", "Growth Strategy"].map((item, index) => (
                 <div
                   key={index}
                   className="bg-accent text-accent-foreground px-4 py-2 rounded-lg text-center font-medium"

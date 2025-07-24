@@ -5,17 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from "@/components/Navbar";
-
-interface BlogPost {
-  id: string;
-  title: string;
-  content: string;
-  excerpt: string;
-  featured_image?: string;
-  published: boolean;
-  created_at: string;
-  updated_at: string;
-}
+import { BlogPost } from '@/integrations/supabase/types';
+import { CodeBlock, dracula } from 'react-code-blocks';
 
 const BlogPostPage = () => {
   const { slug } = useParams();
@@ -99,8 +90,50 @@ const BlogPostPage = () => {
               </time>
             </div>
 
-            <div className="text-foreground leading-relaxed whitespace-pre-wrap">
-              {blog.content}
+            <div className="text-foreground leading-relaxed">
+              {blog.content.map((item, index) => {
+                switch (item.type) {
+                  case 'text':
+                    return (
+                      <div key={index} className="mb-6 whitespace-pre-wrap">
+                        {item.content}
+                      </div>
+                    );
+                  case 'image':
+                    return (
+                      <figure key={index} className="my-8">
+                        <img
+                          src={item.url}
+                          alt={item.alt}
+                          className="rounded-lg w-full"
+                        />
+                        {item.caption && (
+                          <figcaption className="text-center text-muted-foreground mt-2">
+                            {item.caption}
+                          </figcaption>
+                        )}
+                      </figure>
+                    );
+                  case 'code':
+                    return (
+                      <div key={index} className="my-8">
+                        <CodeBlock
+                          text={item.code}
+                          language={item.language}
+                          theme={dracula}
+                          showLineNumbers
+                        />
+                        {item.caption && (
+                          <p className="text-center text-muted-foreground mt-2">
+                            {item.caption}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  default:
+                    return null;
+                }
+              })}
             </div>
           </div>
         </div>

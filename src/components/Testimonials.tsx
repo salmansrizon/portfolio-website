@@ -119,7 +119,7 @@ const Testimonials = () => {
             </div>
           </div>
 
-          {/* Fiverr Stats */}
+          {/* Fiverr Stats
           <div className="grid md:grid-cols-2 gap-8 mb-12">
             <Card className="shadow-card">
               <CardContent className="p-6 text-center">
@@ -145,24 +145,39 @@ const Testimonials = () => {
                 </p>
               </CardContent>
             </Card>
-          </div>
+          </div> */}
 
           {/* Fiverr CTA */}
-          <div className="text-center">
-            <Button 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto">
+            <Button
               size="lg"
               className="bg-primary hover:bg-primary-hover text-primary-foreground px-8 py-3"
               asChild
             >
-              <a 
-                href="https://www.fiverr.com/bi_with_ahmed" 
-                target="_blank" 
+              <a
+                href="https://upwork.com/freelancers/salmansakib"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <ExternalLink className="mr-2 h-5 w-5" />
+                Find me on Upwork
+              </a>
+            </Button>
+            <Button
+              size="lg"
+              className="bg-primary hover:bg-primary-hover text-primary-foreground px-8 py-3"
+              asChild
+            >
+              <a
+                href="https://www.fiverr.com/salmansrizon"
+                target="_blank"
                 rel="noopener noreferrer"
               >
                 <ExternalLink className="mr-2 h-5 w-5" />
                 View Fiverr Profile
               </a>
             </Button>
+            {/* You can add a second button here if needed */}
           </div>
         </div>
       </div>
