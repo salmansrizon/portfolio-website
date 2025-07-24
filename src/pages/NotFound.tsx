@@ -11,7 +11,7 @@ const NotFound = () => {
     setIsVisible(true)
   }, [location.pathname])
 
-  const handleGoBack = () => {
+  const handleGoBack = () => { 
     window.history.back()
   }
 
