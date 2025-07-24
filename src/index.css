@@ -3,34 +3,25 @@
 @tailwind utilities;
 
 /* Professional Analytics Portfolio Design System - Microsoft Blue Theme */
-
 @layer base {
   :root {
     --background: 0 0% 100%;
     --foreground: 213 27% 20%;
-
     --card: 0 0% 100%;
     --card-foreground: 213 27% 20%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 213 27% 20%;
-
     --primary: 213 93% 61%;
     --primary-foreground: 0 0% 100%;
     --primary-hover: 213 93% 55%;
-
     --secondary: 210 40% 96%;
     --secondary-foreground: 213 27% 20%;
-
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
-
     --accent: 213 93% 97%;
     --accent-foreground: 213 93% 61%;
-
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-
     --border: 214 32% 91%;
     --input: 214 32% 91%;
     --ring: 213 93% 61%;
@@ -38,64 +29,46 @@
     /* Professional gradients */
     --gradient-hero: linear-gradient(135deg, hsl(235, 93%, 61%), hsl(235, 93%, 61%));
     --gradient-card: linear-gradient(145deg, hsl(0, 0%, 100%), hsl(210, 40%, 98%));
-    
+
     /* Skill bar colors */
     --skill-bg: 210 40% 96%;
     --skill-fill: 213 93% 61%;
-    
+
     /* Professional shadows */
     --shadow-card: 0 4px 6px -1px hsl(213 93% 61% / 0.1), 0 2px 4px -1px hsl(213 93% 61% / 0.06);
     --shadow-hover: 0 10px 15px -3px hsl(213 93% 61% / 0.1), 0 4px 6px -2px hsl(213 93% 61% / 0.05);
-
     --radius: 0.5rem;
-
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
     --background: 213 27% 8%;
     --foreground: 0 0% 95%;
-
     --card: 213 27% 10%;
     --card-foreground: 0 0% 95%;
-
     --popover: 213 27% 10%;
     --popover-foreground: 0 0% 95%;
-
     --primary: 213 93% 61%;
     --primary-foreground: 0 0% 100%;
     --primary-hover: 213 93% 65%;
-
     --secondary: 213 27% 16%;
     --secondary-foreground: 0 0% 95%;
-
     --muted: 213 27% 16%;
     --muted-foreground: 215 16% 65%;
-
     --accent: 213 27% 16%;
     --accent-foreground: 213 93% 61%;
-
     --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 95%;
-
     --border: 213 27% 16%;
     --input: 213 27% 16%;
     --ring: 213 93% 61%;
-    
     --gradient-hero: linear-gradient(135deg, hsl(235, 93%, 61%), hsl(235, 93%, 61%));
     --gradient-card: linear-gradient(145deg, hsl(213, 27%, 10%), hsl(213, 27%, 12%));
     --sidebar-background: 240 5.9% 10%;
@@ -113,8 +86,142 @@
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Moving gradient animation */
+  @keyframes gradient-move {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  .animate-gradient-move {
+    animation: gradient-move 4s ease-in-out infinite;
+  }
+
+  /* Floating animations */
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-20px) rotate(5deg);
+    }
+  }
+
+  @keyframes float-delayed {
+    0%,
+    100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-30px) rotate(-5deg);
+    }
+  }
+
+  @keyframes bounce-slow {
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-15px);
+    }
+  }
+
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-float-delayed {
+    animation: float-delayed 8s ease-in-out infinite;
+  }
+
+  .animate-bounce-slow {
+    animation: bounce-slow 4s ease-in-out infinite;
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.8s ease-out forwards;
+    opacity: 0;
+  }
+
+  /* Blur utilities */
+  .blur-3xl {
+    filter: blur(64px);
+  }
+
+  /* Delay classes */
+  .delay-300 {
+    animation-delay: 0.3s;
+  }
+
+  .delay-500 {
+    animation-delay: 0.5s;
+  }
+
+  .delay-700 {
+    animation-delay: 0.7s;
+  }
+
+  .delay-1000 {
+    animation-delay: 1s;
+  }
+
+  .delay-1200 {
+    animation-delay: 1.2s;
+  }
+
+  .delay-2000 {
+    animation-delay: 2s;
+  }
+
+  /* Professional gradient utilities using your design system */
+  .bg-gradient-hero {
+    background: var(--gradient-hero);
+  }
+
+  .bg-gradient-card {
+    background: var(--gradient-card);
+  }
+
+  /* Shadow utilities using your design system */
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .shadow-hover {
+    box-shadow: var(--shadow-hover);
+  }
+
+  /* Skill bar utilities */
+  .skill-bg {
+    background-color: hsl(var(--skill-bg));
+  }
+
+  .skill-fill {
+    background-color: hsl(var(--skill-fill));
   }
 }
