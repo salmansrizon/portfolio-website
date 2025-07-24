@@ -60,7 +60,7 @@ const PortfolioPage = () => {
       <section className="min-h-screen pt-16 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center mb-12">
-            <h1 className="text-5xl font-bold text-foreground mb-4">Portfolio</h1>
+            <h1 className="text-5xl font-bold text-foreground mb-4 text-primary">Portfolio</h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               A showcase of my projects and technical implementations
             </p>
@@ -79,7 +79,7 @@ const PortfolioPage = () => {
                   </div>
                 )}
                 <CardHeader>
-                  <CardTitle className="text-xl font-bold mb-2">{project.title}</CardTitle>
+                  <CardTitle className="text-xl font-bold mb-2 text-primary">{project.title}</CardTitle>
                   <div className="flex flex-wrap gap-2 mb-3">
                     {project.technologies.map((tech, index) => (
                       <Badge key={index} variant="secondary">

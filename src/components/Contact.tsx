@@ -238,21 +238,21 @@ ${formData.message}
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <Button variant="outline" className="justify-start" asChild>
-                    <a href="https://www.linkedin.com/in/sulaimanahmed/" target="_blank" rel="noopener noreferrer">
+                    <a href="https://www.linkedin.com/in/salman-srizon-252b79125/" target="_blank" rel="noopener noreferrer">
                       <Linkedin className="mr-2 h-4 w-4" />
                       LinkedIn
                     </a>
                   </Button>
                   
                   <Button variant="outline" className="justify-start" asChild>
-                    <a href="https://github.com/sulaiman013" target="_blank" rel="noopener noreferrer">
+                    <a href="https://github.com/salmansrizon" target="_blank" rel="noopener noreferrer">
                       <Github className="mr-2 h-4 w-4" />
                       GitHub
                     </a>
                   </Button>
                   
                   <Button variant="outline" className="justify-start" asChild>
-                    <a href="https://www.fiverr.com/bi_with_ahmed" target="_blank" rel="noopener noreferrer">
+                    <a href="https://www.fiverr.com/sellers/salmansrizon/" target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="mr-2 h-4 w-4" />
                       Fiverr
                     </a>

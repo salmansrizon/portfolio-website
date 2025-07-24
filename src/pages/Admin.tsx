@@ -48,7 +48,7 @@ const Admin = () => {
               View Site
             </Button>
             <Button variant="outline" onClick={handleSignOut}>
-              <LogOut className="h-4 w-4 mr-2" />
+              <LogOut className="h-4 w-4 mr-2 text-primary" />
               Sign Out
             </Button>
           </div>

@@ -174,7 +174,7 @@ const Testimonials = () => {
                 rel="noopener noreferrer"
               >
                 <ExternalLink className="mr-2 h-5 w-5" />
-                View Fiverr Profile
+                Find me on Fiverr
               </a>
             </Button>
             {/* You can add a second button here if needed */}

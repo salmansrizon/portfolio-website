@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BarChart3, Database, GraduationCap, ArrowRight, Loader2 } from "lucide-react";
+import { BarChart3, Database, Brain, ArrowRight, Loader2 ,ChartArea} from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { RealtimeChannel } from '@supabase/supabase-js';
@@ -91,8 +91,8 @@ const Services = () => {
           {services.map((service, index) => {
             const iconMap: Record<string, React.ElementType> = {
               BarChart3,
-              Database,
-              GraduationCap,
+              Brain,
+              ChartArea
             };
             const IconComponent = service.icon ? iconMap[service.icon] : BarChart3;
             return (
@@ -127,7 +127,7 @@ const Services = () => {
                   <Button 
                     className="w-full bg-primary hover:bg-primary-hover text-primary-foreground group-hover:shadow-hover transition-all"
                   >
-                    Get Started
+                    <a href="/#contact">Get Started</a>
                     <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </CardContent>

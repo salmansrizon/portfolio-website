@@ -77,8 +77,8 @@ const Blogs = () => {
     <section className="py-12 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-foreground mb-4">Blog</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <h1 className="text-5xl font-bold text-foreground mb-4 text-primary ">Blog</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto " >
             Insights and thoughts on data analytics, engineering, and the latest trends in technology
           </p>
         </div>
@@ -97,7 +97,7 @@ const Blogs = () => {
               )}
               <CardHeader>
                 <div className="flex justify-between items-start mb-2">
-                  <CardTitle className="text-xl font-bold line-clamp-2">{blog.title}</CardTitle>
+                  <CardTitle className="text-xl font-bold line-clamp-2 text-primary">{blog.title}</CardTitle>
                   {blog.source_type !== 'local' && (
                     <Badge variant="outline" className="ml-2">
                       {blog.source_type.charAt(0).toUpperCase() + blog.source_type.slice(1)}
@@ -116,7 +116,7 @@ const Blogs = () => {
                 <p className="text-muted-foreground line-clamp-3 mb-4">{blog.excerpt}</p>
                 <Button 
                   variant="outline" 
-                  className="w-full group"
+                  className="w-full group text-primary hover:text-primary-hover"
                   onClick={() => {
                     if (blog.source_type !== 'local' && blog.source_url) {
                       window.open(blog.source_url, '_blank');
@@ -128,7 +128,7 @@ const Blogs = () => {
                   {blog.source_type !== 'local' ? (
                     <>
                       View on {blog.source_type.charAt(0).toUpperCase() + blog.source_type.slice(1)}
-                      <ExternalLink className="h-4 w-4 ml-2" />
+                      <ExternalLink className="h-4 w-4 ml-2 text-primary transition-transform group-hover:translate-x-1" />
                     </>
                   ) : (
                     <>

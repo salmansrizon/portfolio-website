@@ -9,11 +9,8 @@ const Hero = () => {
         <div className="space-y-8">
           {/* Main Heading */}
           <div className="space-y-4">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-primary leading-tight">
-              Transforming Data into Strategic{" "}
-              <span className="bg-gradient-hero bg-clip-text text-transparent">
-                Insights
-              </span>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-hero bg-clip-text text-transparent leading-tight">
+              Transforming Data into Strategic Insights
             </h1>
             
             <p className="text-xl sm:text-2xl text-primary font-semibold">

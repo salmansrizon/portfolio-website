@@ -1,12 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
-import profileImage from "@/assets/sulaiman-profile.jpg";
+import profileImage from "@/assets/formal.jpeg";
 
 const About = () => {
   const stats = [
     { number: "4+", label: "Industry Catered" },
     { number: "30+", label: "Successful Projects" },
     { number: "10+", label: "Satisfied Clients" },
-    { number: "4™+", label: "Satisfied Clients" },
+    { number: "4+", label: "Satisfied Clients" },
   ];
 
   const skills = [
@@ -55,10 +55,10 @@ const About = () => {
 
           {/* Right Content - Image */}
           <div className="flex justify-center">
-            <div className="relative">
+            <div className="relative w-80 h-100 rounded-2xl shadow-card">
               <img
                 src={profileImage}
-                alt="Sulaiman Ahmed - Data Analytics Engineer"
+                alt="Salman Sakib - Data Analyst"
                 className="w-80 h-80 object-cover rounded-2xl shadow-card"
               />
               <div className="absolute inset-0 rounded-2xl bg-gradient-hero opacity-10"></div>
@@ -79,7 +79,7 @@ const About = () => {
               {["Consultation","Corporate Training", "Data Analysis", "Growth Strategy"].map((item, index) => (
                 <div
                   key={index}
-                  className="bg-accent text-accent-foreground px-4 py-2 rounded-lg text-center font-medium"
+                  className="bg-accent text-accent-foreground px-4 py-2 rounded-lg text-center text-primary  font-medium"
                 >
                   {item}
                 </div>
