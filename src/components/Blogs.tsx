@@ -77,8 +77,8 @@ const Blogs = () => {
     <section className="py-12 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-foreground mb-4 text-primary ">Blog</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto " >
+          <h1 className="text-5xl font-bold text-foreground mb-4 ">Blog</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-primary font-semibold" >
             Insights and thoughts on data analytics, engineering, and the latest trends in technology
           </p>
         </div>

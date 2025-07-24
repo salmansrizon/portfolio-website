@@ -105,7 +105,7 @@ ${formData.message}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-foreground mb-4">Let's Work Together</h2>
-          <p className="text-xl text-muted-foreground">
+          <p className="text-xl text-muted-foreground text-primary font-semibold">
             Ready to transform your data into strategic insights?
           </p>
         </div>

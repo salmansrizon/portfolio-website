@@ -27,7 +27,7 @@
     --ring: 213 93% 61%;
 
     /* Professional gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(235, 93%, 61%), hsl(235, 93%, 61%));
+    --gradient-hero: linear-gradient(135deg, hsl(262.1,83.3%,57.8%), hsl(262.1,83.3%,57.8%));
     --gradient-card: linear-gradient(145deg, hsl(0, 0%, 100%), hsl(210, 40%, 98%));
 
     /* Skill bar colors */
@@ -69,7 +69,7 @@
     --border: 213 27% 16%;
     --input: 213 27% 16%;
     --ring: 213 93% 61%;
-    --gradient-hero: linear-gradient(135deg, hsl(235, 93%, 61%), hsl(235, 93%, 61%));
+    --gradient-hero: linear-gradient(135deg, hsl(262.1,83.3%,57.8%), hsl(262.1,83.3%,57.8%));
     --gradient-card: linear-gradient(145deg, hsl(213, 27%, 10%), hsl(213, 27%, 12%));
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
