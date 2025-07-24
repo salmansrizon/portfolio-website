@@ -56,11 +56,35 @@ interface ContactContent {
   location: string;
 }
 
-type SectionContent = HeroContent | AboutContent | ContactContent;
+interface ServicesContent {
+  title: string;
+  subtitle: string;
+  description: string;
+}
+
+interface PortfolioContent {
+  title: string;
+  subtitle: string;
+  description: string;
+}
+
+interface TestimonialsContent {
+  title: string;
+  subtitle: string;
+  description: string;
+}
+
+interface CertificationsContent {
+  title: string;
+  subtitle: string;
+  description: string;
+}
+
+type SectionContent = HeroContent | AboutContent | ContactContent | ServicesContent | PortfolioContent | TestimonialsContent | CertificationsContent;
 
 interface SectionData {
   id: string;
-  section_name: 'hero' | 'about' | 'contact';
+  section_name: 'hero' | 'about' | 'contact' | 'services' | 'portfolio' | 'testimonials' | 'certifications';
   content: SectionContent;
 }
 
@@ -86,7 +110,7 @@ const SectionEditor = () => {
       
       // Type assertion for the data
       const typedSections = (data || []).map(section => {
-        const sectionName = section.section_name as 'hero' | 'about' | 'contact';
+        const sectionName = section.section_name as 'hero' | 'about' | 'contact' | 'services' | 'portfolio' | 'testimonials' | 'certifications';
         let content: SectionContent;
         
         // First cast to unknown, then to the specific type
@@ -95,8 +119,10 @@ const SectionEditor = () => {
           content = rawContent as HeroContent;
         } else if (sectionName === 'about') {
           content = rawContent as AboutContent;
-        } else {
+        } else if (sectionName === 'contact') {
           content = rawContent as ContactContent;
+        } else {
+          content = rawContent as ServicesContent | PortfolioContent | TestimonialsContent | CertificationsContent;
         }
 
         const typedSection: SectionData = {
@@ -171,6 +197,13 @@ const SectionEditor = () => {
           location: formData.location || existingContent.location || ''
         };
         updatedContent = contactContent;
+      } else {
+        // Handle other section types with generic structure
+        updatedContent = {
+          title: formData.title || existingContent.title || '',
+          subtitle: formData.subtitle || existingContent.subtitle || '',
+          description: formData.description || existingContent.description || ''
+        };
       }
 
       const { error } = await supabase
@@ -216,10 +249,14 @@ const SectionEditor = () => {
 
   return (
     <Tabs defaultValue="hero" className="space-y-6">
-      <TabsList>
-        <TabsTrigger value="hero">Hero Section</TabsTrigger>
-        <TabsTrigger value="about">About Section</TabsTrigger>
-        <TabsTrigger value="contact">Contact Section</TabsTrigger>
+      <TabsList className="grid w-full grid-cols-7">
+        <TabsTrigger value="hero">Hero</TabsTrigger>
+        <TabsTrigger value="about">About</TabsTrigger>
+        <TabsTrigger value="contact">Contact</TabsTrigger>
+        <TabsTrigger value="services">Services</TabsTrigger>
+        <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
+        <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
+        <TabsTrigger value="certifications">Certifications</TabsTrigger>
       </TabsList>
 
       <TabsContent value="hero">
@@ -505,6 +542,206 @@ const SectionEditor = () => {
                     id="location"
                     {...register('location')}
                     defaultValue={contactContent?.location}
+                  />
+                </div>
+                
+                <Button type="submit" disabled={saving}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  Save Changes
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+      </TabsContent>
+
+      {/* Services Section */}
+      <TabsContent value="services">
+        {sections.find(s => s.section_name === 'services') && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Services Section</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit((data) => onSubmit(data, 'services'))} className="space-y-4">
+                <div>
+                  <Label htmlFor="services_title">Title</Label>
+                  <Input
+                    id="services_title"
+                    {...register('title')}
+                    defaultValue={(sections.find(s => s.section_name === 'services')?.content as any)?.title || ''}
+                    placeholder="Services section title"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="services_subtitle">Subtitle</Label>
+                  <Input
+                    id="services_subtitle"
+                    {...register('subtitle')}
+                    defaultValue={(sections.find(s => s.section_name === 'services')?.content as any)?.subtitle || ''}
+                    placeholder="Services section subtitle"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="services_description">Description</Label>
+                  <Textarea
+                    id="services_description"
+                    {...register('description')}
+                    defaultValue={(sections.find(s => s.section_name === 'services')?.content as any)?.description || ''}
+                    rows={3}
+                    placeholder="Services section description"
+                  />
+                </div>
+                
+                <Button type="submit" disabled={saving}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  Save Changes
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+      </TabsContent>
+
+      {/* Portfolio Section */}
+      <TabsContent value="portfolio">
+        {sections.find(s => s.section_name === 'portfolio') && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Portfolio Section</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit((data) => onSubmit(data, 'portfolio'))} className="space-y-4">
+                <div>
+                  <Label htmlFor="portfolio_title">Title</Label>
+                  <Input
+                    id="portfolio_title"
+                    {...register('title')}
+                    defaultValue={(sections.find(s => s.section_name === 'portfolio')?.content as any)?.title || ''}
+                    placeholder="Portfolio section title"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="portfolio_subtitle">Subtitle</Label>
+                  <Input
+                    id="portfolio_subtitle"
+                    {...register('subtitle')}
+                    defaultValue={(sections.find(s => s.section_name === 'portfolio')?.content as any)?.subtitle || ''}
+                    placeholder="Portfolio section subtitle"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="portfolio_description">Description</Label>
+                  <Textarea
+                    id="portfolio_description"
+                    {...register('description')}
+                    defaultValue={(sections.find(s => s.section_name === 'portfolio')?.content as any)?.description || ''}
+                    rows={3}
+                    placeholder="Portfolio section description"
+                  />
+                </div>
+                
+                <Button type="submit" disabled={saving}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  Save Changes
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+      </TabsContent>
+
+      {/* Testimonials Section */}
+      <TabsContent value="testimonials">
+        {sections.find(s => s.section_name === 'testimonials') && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Testimonials Section</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit((data) => onSubmit(data, 'testimonials'))} className="space-y-4">
+                <div>
+                  <Label htmlFor="testimonials_title">Title</Label>
+                  <Input
+                    id="testimonials_title"
+                    {...register('title')}
+                    defaultValue={(sections.find(s => s.section_name === 'testimonials')?.content as any)?.title || ''}
+                    placeholder="Testimonials section title"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="testimonials_subtitle">Subtitle</Label>
+                  <Input
+                    id="testimonials_subtitle"
+                    {...register('subtitle')}
+                    defaultValue={(sections.find(s => s.section_name === 'testimonials')?.content as any)?.subtitle || ''}
+                    placeholder="Testimonials section subtitle"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="testimonials_description">Description</Label>
+                  <Textarea
+                    id="testimonials_description"
+                    {...register('description')}
+                    defaultValue={(sections.find(s => s.section_name === 'testimonials')?.content as any)?.description || ''}
+                    rows={3}
+                    placeholder="Testimonials section description"
+                  />
+                </div>
+                
+                <Button type="submit" disabled={saving}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  Save Changes
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+      </TabsContent>
+
+      {/* Certifications Section */}
+      <TabsContent value="certifications">
+        {sections.find(s => s.section_name === 'certifications') && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Certifications Section</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit((data) => onSubmit(data, 'certifications'))} className="space-y-4">
+                <div>
+                  <Label htmlFor="certifications_title">Title</Label>
+                  <Input
+                    id="certifications_title"
+                    {...register('title')}
+                    defaultValue={(sections.find(s => s.section_name === 'certifications')?.content as any)?.title || ''}
+                    placeholder="Certifications section title"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="certifications_subtitle">Subtitle</Label>
+                  <Input
+                    id="certifications_subtitle"
+                    {...register('subtitle')}
+                    defaultValue={(sections.find(s => s.section_name === 'certifications')?.content as any)?.subtitle || ''}
+                    placeholder="Certifications section subtitle"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="certifications_description">Description</Label>
+                  <Textarea
+                    id="certifications_description"
+                    {...register('description')}
+                    defaultValue={(sections.find(s => s.section_name === 'certifications')?.content as any)?.description || ''}
+                    rows={3}
+                    placeholder="Certifications section description"
                   />
                 </div>
                 

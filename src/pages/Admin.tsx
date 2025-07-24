@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { LogOut, Settings, FileText, Award, Briefcase, MessageSquare, User, FolderKanban } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import SectionEditor from '@/components/admin/SectionEditor';
 import BlogManager from '@/components/admin/BlogManager';
 import ServicesManager from '@/components/admin/ServicesManager';
@@ -42,6 +43,7 @@ const Admin = () => {
             <p className="text-muted-foreground">Welcome back, {user.email}</p>
           </div>
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <Button variant="outline" onClick={() => navigate('/')}>
               View Site
             </Button>

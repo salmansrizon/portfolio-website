@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from "@/components/Navbar";
-import { BlogPost } from '@/integrations/supabase/types';
+import { BlogPost } from '@/types/blog';
 import { CodeBlock, dracula } from 'react-code-blocks';
 
 const BlogPostPage = () => {
@@ -25,7 +25,7 @@ const BlogPostPage = () => {
           .single();
 
         if (error) throw error;
-        setBlog(data);
+        setBlog(data as BlogPost);
       } catch (error) {
         console.error('Error fetching blog post:', error);
         navigate('/blog'); // Redirect to blog list if post not found

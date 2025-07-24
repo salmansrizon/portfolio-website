@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { Loader2, Plus, Edit, Trash2, ExternalLink } from 'lucide-react';
-import { BlogPost } from '@/integrations/supabase/types';
+import { BlogPost } from '@/types/blog';
 import BlogEditor from './BlogEditor';
 
 const BlogManager = () => {
@@ -57,7 +57,7 @@ const BlogManager = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setBlogs(data || []);
+      setBlogs((data || []) as BlogPost[]);
     } catch (error) {
       toast({
         title: "Error",
@@ -120,7 +120,7 @@ const BlogManager = () => {
       if (editingBlog?.id) {
         const { error } = await supabase
           .from('blogs')
-          .update(blogData)
+          .update(blogData as any)
           .eq('id', editingBlog.id);
 
         if (error) throw error;
@@ -132,7 +132,7 @@ const BlogManager = () => {
       } else {
         const { error } = await supabase
           .from('blogs')
-          .insert([blogData]);
+          .insert([blogData as any]);
 
         if (error) throw error;
 

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ArrowRight, ExternalLink } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { RealtimeChannel } from '@supabase/supabase-js';
-import { BlogPost } from '@/integrations/supabase/types';
+import { BlogPost } from '@/types/blog';
 
 const Blogs = () => {
   const navigate = useNavigate();
@@ -26,7 +26,7 @@ const Blogs = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setBlogs(data || []);
+      setBlogs((data || []) as BlogPost[]);
     } catch (error) {
       console.error('Error fetching blogs:', error);
     } finally {

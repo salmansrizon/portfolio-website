@@ -16,7 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { supabase } from '@/integrations/supabase/client';
 import { Image, Code, Link, Type, Plus, Trash2 } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
-import { BlogContent, BlogPost } from '@/integrations/supabase/types';
+import { BlogContent, BlogPost } from '@/types/blog';
 import CodeEditor from '@/components/ui/code-editor';
 
 interface BlogEditorProps {
@@ -114,14 +114,14 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
       if (initialData?.id) {
         const { error } = await supabase
           .from('blogs')
-          .update(blogData)
+          .update(blogData as any)
           .eq('id', initialData.id);
 
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('blogs')
-          .insert(blogData);
+          .insert(blogData as any);
 
         if (error) throw error;
       }
