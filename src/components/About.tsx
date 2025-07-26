@@ -55,13 +55,14 @@ const About = () => {
 
           {/* Right Content - Image */}
           <div className="flex justify-center">
-            <div className="relative w-80 h-100 rounded-2xl shadow-card">
+            <div className="relative w-80 h-100 rounded-2xl shadow-card pt-8">
               <img
                 src={profileImage}
                 alt="Salman Sakib - Data Analyst"
-                className="w-80 h-80 object-cover rounded-2xl shadow-card"
+                className="w-80 h-80 object-cover rounded-2xl shadow-card object-top"
+                style={{ objectPosition: 'center 20%' }}
               />
-              <div className="absolute inset-0 rounded-2xl bg-gradient-hero opacity-10"></div>
+              <div className="absolute inset-0 rounded-2xl bg-gradient-hero opacity-10 mt-8"></div>
             </div>
           </div>
         </div>
