@@ -200,6 +200,33 @@ export type Database = {
         }
         Relationships: []
       }
+      unavailable_slots: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          reason: string | null
+          time_slot: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          reason?: string | null
+          time_slot?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          reason?: string | null
+          time_slot?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

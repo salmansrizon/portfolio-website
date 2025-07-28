@@ -24,6 +24,7 @@ import {
 import { format } from "date-fns";
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Contact = () => {
   const [currentTime, setCurrentTime] = useState('');
@@ -43,6 +44,8 @@ const Contact = () => {
     duration: '30',
     message: ''
   });
+  
+  const [unavailableSlots, setUnavailableSlots] = useState<any[]>([]);
   
   const { toast } = useToast();
 
@@ -151,6 +154,50 @@ Thank you!
         description: "Booking request sent! I'll send you a meeting link confirmation.",
       });
     }, 1000);
+  };
+
+  // Fetch unavailable slots
+  useEffect(() => {
+    const fetchUnavailableSlots = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('unavailable_slots')
+          .select('*');
+        
+        if (error) throw error;
+        setUnavailableSlots(data || []);
+      } catch (error) {
+        console.error('Error fetching unavailable slots:', error);
+      }
+    };
+
+    fetchUnavailableSlots();
+  }, []);
+
+  // Check if a date is unavailable (full day)
+  const isDateUnavailable = (date: Date) => {
+    const dateString = format(date, 'yyyy-MM-dd');
+    return unavailableSlots.some(slot => 
+      slot.date === dateString && slot.time_slot === null
+    );
+  };
+
+  // Check if a time slot is unavailable for a specific date
+  const isTimeSlotUnavailable = (timeSlot: string, date: Date) => {
+    if (!date) return false;
+    const dateString = format(date, 'yyyy-MM-dd');
+    return unavailableSlots.some(slot => 
+      slot.date === dateString && slot.time_slot === timeSlot
+    );
+  };
+
+  // Get available time slots for a specific date
+  const getAvailableTimeSlots = (date: Date | undefined) => {
+    if (!date) return timeSlots;
+    
+    return timeSlots.filter(timeSlot => 
+      !isTimeSlotUnavailable(timeSlot, date)
+    );
   };
 
   useEffect(() => {
@@ -319,8 +366,15 @@ Thank you!
                         <Calendar
                           mode="single"
                           selected={bookingData.date}
-                          onSelect={(date) => setBookingData(prev => ({ ...prev, date }))}
-                          disabled={(date) => date < new Date() || date.getDay() === 0 || date.getDay() === 6}
+                          onSelect={(date) => {
+                            setBookingData(prev => ({ ...prev, date, time: '' })); // Reset time when date changes
+                          }}
+                          disabled={(date) => 
+                            date < new Date() || 
+                            date.getDay() === 0 || 
+                            date.getDay() === 6 ||
+                            isDateUnavailable(date)
+                          }
                           initialFocus
                           className="pointer-events-auto"
                         />
@@ -339,11 +393,16 @@ Thank you!
                           <SelectValue placeholder="Select time" />
                         </SelectTrigger>
                         <SelectContent>
-                          {timeSlots.map((time) => (
+                          {getAvailableTimeSlots(bookingData.date).map((time) => (
                             <SelectItem key={time} value={time}>
                               {time} (GMT+6)
                             </SelectItem>
                           ))}
+                          {getAvailableTimeSlots(bookingData.date).length === 0 && (
+                            <SelectItem value="" disabled>
+                              No available time slots for this date
+                            </SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
