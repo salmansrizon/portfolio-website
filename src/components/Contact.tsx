@@ -259,7 +259,7 @@ ${formData.message}
                   </Button>
                   
                   <Button variant="outline" className="justify-start" asChild>
-                    <a href="https://docs.google.com/document/d/1lz3Qg-D93YhwzuOiWphFjvIs744osRia/edit" target="_blank" rel="noopener noreferrer">
+                    <a href="https://drive.google.com/file/d/1hvHqSX_aD5y06Rq1emKtlWiFuqrnNIjE/view?usp=sharing" target="_blank" rel="noopener noreferrer">
                       <Download className="mr-2 h-4 w-4" />
                       Resume
                     </a>
