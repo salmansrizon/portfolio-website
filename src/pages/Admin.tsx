@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, Settings, FileText, Award, Briefcase, MessageSquare, User, FolderKanban, CalendarX } from 'lucide-react';
+import { LogOut, Settings, FileText, Award, Briefcase, MessageSquare, User, FolderKanban, CalendarX, GraduationCap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -14,6 +14,7 @@ import CertificationsManager from '@/components/admin/CertificationsManager';
 import TestimonialsManager from '@/components/admin/TestimonialsManager';
 import ProjectManager from '@/components/admin/ProjectManager';
 import UnavailableSlotsManager from '@/components/admin/UnavailableSlotsManager';
+import CourseManager from '@/components/admin/CourseManager';
 
 const Admin = () => {
   const { user, signOut } = useAuth();
@@ -58,7 +59,7 @@ const Admin = () => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid w-full grid-cols-8">
+          <TabsList className="grid w-full grid-cols-9">
             <TabsTrigger value="sections" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
               Sections
@@ -86,6 +87,10 @@ const Admin = () => {
             <TabsTrigger value="unavailable" className="flex items-center gap-2">
               <CalendarX className="h-4 w-4" />
               Booking Slots
+            </TabsTrigger>
+            <TabsTrigger value="courses" className="flex items-center gap-2">
+              <GraduationCap className="h-4 w-4" />
+              Courses
             </TabsTrigger>
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
@@ -183,6 +188,20 @@ const Admin = () => {
               </CardHeader>
               <CardContent>
                 <UnavailableSlotsManager />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="courses" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Course Management</CardTitle>
+                <CardDescription>
+                  Create and manage your online courses and content
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CourseManager />
               </CardContent>
             </Card>
           </TabsContent>

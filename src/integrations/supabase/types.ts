@@ -89,6 +89,145 @@ export type Database = {
         }
         Relationships: []
       }
+      course_content: {
+        Row: {
+          content_data: Json
+          content_type: string
+          course_id: string
+          created_at: string
+          description: string | null
+          duration_minutes: number | null
+          id: string
+          is_free: boolean
+          order_index: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content_data: Json
+          content_type: string
+          course_id: string
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          is_free?: boolean
+          order_index?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content_data?: Json
+          content_type?: string
+          course_id?: string
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          is_free?: boolean
+          order_index?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_content_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_enrollments: {
+        Row: {
+          course_id: string
+          created_at: string
+          enrolled_at: string
+          id: string
+          progress: Json | null
+          status: string
+          updated_at: string
+          user_email: string
+          user_name: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          enrolled_at?: string
+          id?: string
+          progress?: Json | null
+          status?: string
+          updated_at?: string
+          user_email: string
+          user_name: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          enrolled_at?: string
+          id?: string
+          progress?: Json | null
+          status?: string
+          updated_at?: string
+          user_email?: string
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_enrollments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses: {
+        Row: {
+          banner_image: string | null
+          created_at: string
+          description: string
+          difficulty_level: string | null
+          duration_hours: number | null
+          id: string
+          is_free: boolean
+          price: number | null
+          status: string
+          technologies: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          banner_image?: string | null
+          created_at?: string
+          description: string
+          difficulty_level?: string | null
+          duration_hours?: number | null
+          id?: string
+          is_free?: boolean
+          price?: number | null
+          status?: string
+          technologies?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          banner_image?: string | null
+          created_at?: string
+          description?: string
+          difficulty_level?: string | null
+          duration_hours?: number | null
+          id?: string
+          is_free?: boolean
+          price?: number | null
+          status?: string
+          technologies?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       portfolio_sections: {
         Row: {
           content: Json
