@@ -6,9 +6,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Lock, Play, Clock, BookOpen, Users, Star } from "lucide-react";
+import { Lock, Play, Clock, BookOpen, Users, Star, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface Course {
   id: string;
@@ -33,6 +34,7 @@ interface CourseContent {
 }
 
 export default function Courses() {
+  const navigate = useNavigate();
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [courseContent, setCourseContent] = useState<CourseContent[]>([]);
@@ -216,12 +218,21 @@ export default function Courses() {
                     </div>
                   </div>
 
-                  <Button 
-                    className="w-full" 
-                    onClick={() => handleCourseSelect(course)}
-                  >
-                    View Course
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1" 
+                      onClick={() => navigate(`/course/${course.id}`)}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      View Details
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={() => handleCourseSelect(course)}
+                    >
+                      Quick View
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

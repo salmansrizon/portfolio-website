@@ -183,6 +183,42 @@ export type Database = {
           },
         ]
       }
+      course_sections: {
+        Row: {
+          content: Json
+          course_id: string
+          created_at: string
+          id: string
+          is_visible: boolean
+          order_index: number
+          section_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: Json
+          course_id: string
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          order_index?: number
+          section_type: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: Json
+          course_id?: string
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          order_index?: number
+          section_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       courses: {
         Row: {
           banner_image: string | null

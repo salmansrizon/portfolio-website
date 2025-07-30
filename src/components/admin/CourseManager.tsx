@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Edit, Trash2, Play, FileText, HelpCircle, Lock, Unlock, Youtube } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import CourseSectionsManager from "./CourseSectionsManager";
 
 interface Course {
   id: string;
@@ -284,8 +285,16 @@ export default function CourseManager() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Course Management</h2>
+      <h2 className="text-2xl font-bold">Course Management</h2>
+      
+      <Tabs defaultValue="courses" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="courses">Courses & Content</TabsTrigger>
+          <TabsTrigger value="sections">Course Sections</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="courses" className="space-y-6">
+          <div className="flex items-center justify-between">
         <Dialog open={isEditingCourse} onOpenChange={setIsEditingCourse}>
           <DialogTrigger asChild>
             <Button onClick={() => { resetCourseForm(); setSelectedCourse(null); }}>
@@ -656,6 +665,12 @@ export default function CourseManager() {
           </Card>
         )}
       </div>
+        </TabsContent>
+        
+        <TabsContent value="sections">
+          <CourseSectionsManager />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
