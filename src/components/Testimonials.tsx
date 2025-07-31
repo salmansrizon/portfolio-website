@@ -14,10 +14,33 @@ interface Testimonial {
   created_at: string;
 }
 
+interface ExpandedTestimonials {
+  [key: string]: boolean;
+}
+
 const Testimonials = () => {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
+  const [expanded, setExpanded] = useState<ExpandedTestimonials>({});
+
+  const toggleExpand = (id: string) => {
+    setExpanded(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  const isContentOverflowing = (content: string) => {
+    // Rough estimate of content height (average 50 characters per line, 5 lines max)
+    return content.length > 250;
+  };
+  const [emblaRef, emblaApi] = useEmblaCarousel({ 
+    loop: true,
+    align: 'start',
+    containScroll: 'trimSnaps',
+    dragFree: true,
+    slidesToScroll: 1
+  });
 
   useEffect(() => {
     const fetchTestimonials = async () => {
@@ -53,7 +76,7 @@ const Testimonials = () => {
     };
   }, [emblaApi, testimonials]);
   return (
-    <section id="testimonials" className="py-20 bg-accent/30">
+    <section id="testimonials" className="py-12 md:py-20 bg-accent/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-foreground mb-4">Client Testimonials</h2>
@@ -62,35 +85,59 @@ const Testimonials = () => {
           </p>
         </div>
 
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="relative">
-            <div ref={emblaRef} className="overflow-hidden mb-12">
-              <div className="flex">
+            <div ref={emblaRef} className="overflow-hidden pb-12 px-4">
+              <div className="flex space-x-4">
                 {testimonials.map((testimonial) => (
-                  <div key={testimonial.id} className="flex-[0_0_100%] min-w-0">
-                    <Card className="shadow-card mx-4">
-                      <CardContent className="p-8">
-                        <div className="flex items-start mb-6">
-                          <Quote className="h-8 w-8 text-primary mr-4 flex-shrink-0 mt-1" />
-                          <blockquote className="text-lg text-foreground leading-relaxed italic">
-                            "{testimonial.content}"
-                          </blockquote>
+                  <div key={testimonial.id} className="flex-[0_0_calc(100%-2rem)] sm:flex-[0_0_calc(80%-1rem)] lg:flex-[0_0_calc(45%-1.5rem)] px-2 h-full">
+                    <Card className="shadow-card h-full flex flex-col w-full max-w-2xl mx-auto">
+                      <CardContent className="p-6 flex-1 flex flex-col">
+                        <div className="flex-1">
+                          <div className="flex items-start mb-4">
+                            <Quote className="h-6 w-6 text-primary mr-4 flex-shrink-0 mt-1" />
+                            <div className="relative flex-1">
+                              <blockquote 
+                                className={`text-base text-foreground leading-relaxed italic ${
+                                  expanded[testimonial.id] ? '' : 'line-clamp-5'
+                                }`}
+                              >
+                                "{testimonial.content}"
+                              </blockquote>
+                              {isContentOverflowing(testimonial.content) && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleExpand(testimonial.id);
+                                  }}
+                                  className="text-sm text-primary hover:underline mt-2 focus:outline-none"
+                                >
+                                  {expanded[testimonial.id] ? 'Show less' : 'Read more'}
+                                </button>
+                              )}
+                            </div>
+                          </div>
                         </div>
                         
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-semibold text-foreground">{testimonial.client_name}</div>
-                            {testimonial.company && (
-                              <div className="text-muted-foreground">
-                                {testimonial.company}
-                              </div>
-                            )}
-                          </div>
-                          
-                          <div className="flex items-center space-x-1">
-                            {[...Array(testimonial.rating)].map((_, i) => (
-                              <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                            ))}
+                        <div className="mt-6 pt-4 border-t border-border">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-semibold text-foreground">{testimonial.client_name}</div>
+                              {testimonial.company && (
+                                <div className="text-sm text-muted-foreground line-clamp-1">
+                                  {testimonial.company}
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center space-x-0.5">
+                              {[...Array(5)].map((_, i) => (
+                                <Star 
+                                  key={i} 
+                                  className={`h-4 w-4 ${i < testimonial.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/20'}`} 
+                                />
+                              ))}
+                            </div>
                           </div>
                         </div>
                       </CardContent>
@@ -98,11 +145,12 @@ const Testimonials = () => {
                   </div>
                 ))}
               </div>
-              <div className="absolute -left-12 -right-12 top-1/2 -translate-y-1/2 hidden md:block">
+              {/* Navigation Buttons - Desktop */}
+              <div className="absolute -left-12 -right-12 top-1/2 -translate-y-1/2 hidden md:flex justify-between">
                 <Button 
                   variant="outline" 
                   size="icon"
-                  className="absolute left-0 -translate-x-1/2 bg-background hover:bg-accent"
+                  className="bg-background/80 backdrop-blur-sm hover:bg-accent shadow-lg"
                   onClick={() => emblaApi?.scrollPrev()}
                 >
                   <ChevronLeft className="h-6 w-6" />
@@ -110,11 +158,27 @@ const Testimonials = () => {
                 <Button 
                   variant="outline" 
                   size="icon"
-                  className="absolute right-0 translate-x-1/2 bg-background hover:bg-accent"
+                  className="bg-background/80 backdrop-blur-sm hover:bg-accent shadow-lg"
                   onClick={() => emblaApi?.scrollNext()}
                 >
                   <ChevronRight className="h-6 w-6" />
                 </Button>
+              </div>
+
+              {/* Navigation Dots - Mobile */}
+              <div className="flex justify-center gap-2 mt-6 md:hidden">
+                {testimonials.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => emblaApi?.scrollTo(index)}
+                    className={`w-2.5 h-2.5 rounded-full transition-all ${
+                      index === (emblaApi?.selectedScrollSnap() || 0)
+                        ? 'bg-primary w-6'
+                        : 'bg-muted-foreground/20'
+                    }`}
+                    aria-label={`Go to testimonial ${index + 1}`}
+                  />
+                ))}
               </div>
             </div>
           </div>

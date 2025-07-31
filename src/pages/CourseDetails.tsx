@@ -83,6 +83,20 @@ export default function CourseDetails() {
     }
   }, [courseId]);
 
+  // Update openSections when sections change to include the overview section by default
+  useEffect(() => {
+    if (sections.length > 0) {
+      const overviewSection = sections.find(s => 
+        ['what_you_learn', 'who_is_for', 'prerequisites', 'benefits', 'objectives']
+          .includes(s.section_type)
+      );
+      
+      if (overviewSection && !openSections.includes(overviewSection.id)) {
+        setOpenSections(prev => [...prev, overviewSection.id]);
+      }
+    }
+  }, [sections]);
+
   const fetchCourseDetails = async () => {
     try {
       // Fetch course
@@ -474,7 +488,7 @@ export default function CourseDetails() {
                             id="name"
                             value={enrollmentData.user_name}
                             onChange={(e) => setEnrollmentData(prev => ({ ...prev, user_name: e.target.value }))}
-                            placeholder="e.g., John Doe"
+                            placeholder="e.g., Salman Sakib"
                             required
                           />
                         </div>

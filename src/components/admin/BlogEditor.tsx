@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,11 +14,22 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, ChevronsUpDown, Image as ImageIcon, Code, Link as LinkIcon, Type, Plus, Trash2 } from 'lucide-react';
+import { cn } from "@/lib/utils";
 import { supabase } from '@/integrations/supabase/client';
-import { Image, Code, Link, Type, Plus, Trash2 } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 import { BlogContent, BlogPost } from '@/types/blog';
 import CodeEditor from '@/components/ui/code-editor';
+
+const BLOG_CATEGORIES = [
+  'data-analytics',
+  'data-engineering',
+  'machine-learning',
+  'tutorials',
+  'updates',
+];
 
 interface BlogEditorProps {
   onSave?: (blog: BlogPost) => void;
@@ -34,6 +46,8 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
   const [sourceType, setSourceType] = useState<BlogPost['source_type']>(initialData?.source_type || 'local');
   const [sourceUrl, setSourceUrl] = useState(initialData?.source_url || '');
   const [content, setContent] = useState<BlogContent[]>(initialData?.content || []);
+  const [categories, setCategories] = useState<string[]>(initialData?.categories || []);
+  const [openCategoryDropdown, setOpenCategoryDropdown] = useState(false);
 
   const handleAddContent = (type: BlogContent['type']) => {
     let newContent: BlogContent;
@@ -109,6 +123,7 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
         content,
         source_type: sourceType,
         source_url: sourceUrl,
+        categories,
       };
 
       if (initialData?.id) {
@@ -196,6 +211,84 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
                     placeholder="Enter a brief excerpt"
                     rows={3}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Categories</Label>
+                  <Popover open={openCategoryDropdown} onOpenChange={setOpenCategoryDropdown}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={openCategoryDropdown}
+                        className="w-full justify-between"
+                      >
+                        {categories.length > 0 
+                          ? `${categories.length} categories selected`
+                          : "Select categories..."
+                        }
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search categories..." />
+                        <CommandList>
+                          <CommandEmpty>No category found.</CommandEmpty>
+                          <CommandGroup className="max-h-[200px] overflow-y-auto">
+                          {BLOG_CATEGORIES.map((category) => (
+                            <CommandItem
+                              key={category}
+                              value={category}
+                              onSelect={() => {
+                                setCategories(prev => 
+                                  prev.includes(category)
+                                    ? prev.filter(c => c !== category)
+                                    : [...prev, category]
+                                );
+                                // Don't close the dropdown when selecting an item
+                                return false;
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  categories.includes(category) ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {category}
+                            </CommandItem>
+                          ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {categories.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {categories.map((category) => (
+                        <div
+                          key={category}
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary"
+                        >
+                          {category}
+                          <button
+                            type="button"
+                            className="ml-1.5 inline-flex items-center justify-center h-4 w-4 rounded-full bg-primary/20 text-primary hover:bg-primary/30"
+                            onClick={() => {
+                              setCategories(prev => prev.filter(c => c !== category));
+                            }}
+                          >
+                            <span className="sr-only">Remove category</span>
+                            <svg className="h-2 w-2" fill="currentColor" viewBox="0 0 8 8">
+                              <path d="M8 0.8L7.2 0 4 3.2 0.8 0 0 0.8 3.2 4 0 7.2 0.8 8 4 4.8 7.2 8 8 7.2 4.8 4 8 0.8z" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -296,22 +389,25 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
                 <Button
                   variant="outline"
                   onClick={() => handleAddContent('text')}
+                  className="flex items-center gap-2"
                 >
-                  <Type className="h-4 w-4 mr-2" />
+                  <Type className="h-4 w-4" />
                   Add Text
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => handleAddContent('image')}
+                  className="flex items-center gap-2"
                 >
-                  <Image className="h-4 w-4 mr-2" />
+                  <ImageIcon className="h-4 w-4" />
                   Add Image
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => handleAddContent('code')}
+                  className="flex items-center gap-2"
                 >
-                  <Code className="h-4 w-4 mr-2" />
+                  <Code className="h-4 w-4" />
                   Add Code
                 </Button>
               </div>
@@ -410,7 +506,7 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
                           }
                         }}
                       >
-                        <Link className="h-4 w-4 mr-2" />
+                        <LinkIcon className="h-4 w-4 mr-2" />
                         Fetch Metadata
                       </Button>
                     </div>

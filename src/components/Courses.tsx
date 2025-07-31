@@ -22,6 +22,8 @@ interface Course {
   is_free: boolean;
   duration_hours?: number;
   difficulty_level?: string;
+  rating?: number;
+  student_count?: number;
 }
 
 interface CourseContent {
@@ -222,7 +224,7 @@ export default function Courses() {
                     )}
                     <div className="flex items-center gap-1">
                       <Star className="w-4 h-4 fill-current text-yellow-500" />
-                      4.8
+                      {course.rating}/5
                     </div>
                   </div>
 
@@ -283,12 +285,12 @@ export default function Courses() {
                     <div className="text-center p-4 bg-muted rounded-lg">
                       <Users className="w-6 h-6 mx-auto mb-2 text-primary" />
                       <p className="text-sm text-muted-foreground">Students</p>
-                      <p className="font-semibold">10</p>
+                      <p className="font-semibold">{selectedCourse.student_count}</p>
                     </div>
                     <div className="text-center p-4 bg-muted rounded-lg">
                       <Star className="w-6 h-6 mx-auto mb-2 text-primary fill-current text-yellow-500" />
                       <p className="text-sm text-muted-foreground">Rating</p>
-                      <p className="font-semibold">4.8/5</p>
+                      <p className="font-semibold">{selectedCourse.rating}/5</p>
                     </div>
                   </div>
 
@@ -379,7 +381,7 @@ export default function Courses() {
                           id="userName"
                           value={enrollmentData.user_name}
                           onChange={(e) => setEnrollmentData({ ...enrollmentData, user_name: e.target.value })}
-                          placeholder="e.g., John Doe"
+                          placeholder="e.g., Salman Sakib"
                           required
                         />
                       </div>

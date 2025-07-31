@@ -21,4 +21,5 @@ export interface BlogPost {
   source_url?: string;
   created_at?: string;
   updated_at?: string;
+  categories?: string[];
 }
