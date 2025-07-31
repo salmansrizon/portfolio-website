@@ -231,11 +231,31 @@ export default function CourseSectionsManager() {
           modules: [
             {
               title: "Module 1: Introduction",
+              description: "Get started with the basics",
               lessons: [
                 {
-                  title: "Lesson 1",
+                  title: "Lesson 1: Overview",
+                  description: "Introduction to the course and what you'll learn",
                   is_free: true,
                   duration: "10 min"
+                },
+                {
+                  title: "Lesson 2: Setup",
+                  description: "Setting up your development environment",
+                  is_free: false,
+                  duration: "15 min"
+                }
+              ]
+            },
+            {
+              title: "Module 2: Advanced Topics",
+              description: "Dive deeper into advanced concepts",
+              lessons: [
+                {
+                  title: "Lesson 3: Advanced Concepts",
+                  description: "Learn advanced techniques and best practices",
+                  is_free: false,
+                  duration: "20 min"
                 }
               ]
             }

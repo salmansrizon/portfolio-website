@@ -145,33 +145,42 @@ export type Database = {
           created_at: string
           enrolled_at: string
           id: string
+          institute_name: string | null
+          profession: string | null
           progress: Json | null
           status: string
           updated_at: string
           user_email: string
           user_name: string
+          whatsapp_number: string | null
         }
         Insert: {
           course_id: string
           created_at?: string
           enrolled_at?: string
           id?: string
+          institute_name?: string | null
+          profession?: string | null
           progress?: Json | null
           status?: string
           updated_at?: string
           user_email: string
           user_name: string
+          whatsapp_number?: string | null
         }
         Update: {
           course_id?: string
           created_at?: string
           enrolled_at?: string
           id?: string
+          institute_name?: string | null
+          profession?: string | null
           progress?: Json | null
           status?: string
           updated_at?: string
           user_email?: string
           user_name?: string
+          whatsapp_number?: string | null
         }
         Relationships: [
           {
@@ -229,7 +238,9 @@ export type Database = {
           id: string
           is_free: boolean
           price: number | null
+          rating: number | null
           status: string
+          student_count: number | null
           technologies: string[]
           title: string
           updated_at: string
@@ -243,7 +254,9 @@ export type Database = {
           id?: string
           is_free?: boolean
           price?: number | null
+          rating?: number | null
           status?: string
+          student_count?: number | null
           technologies?: string[]
           title: string
           updated_at?: string
@@ -257,7 +270,9 @@ export type Database = {
           id?: string
           is_free?: boolean
           price?: number | null
+          rating?: number | null
           status?: string
+          student_count?: number | null
           technologies?: string[]
           title?: string
           updated_at?: string

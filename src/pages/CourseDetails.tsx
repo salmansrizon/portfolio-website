@@ -36,6 +36,8 @@ interface Course {
   difficulty_level?: string;
   duration_hours?: number;
   technologies: string[];
+  rating?: number;
+  student_count?: number;
 }
 
 interface CourseSection {
@@ -50,6 +52,7 @@ interface CourseSection {
 interface CourseContent {
   id: string;
   title: string;
+  description?: string;
   content_type: string;
   content_data: any;
   is_free: boolean;
@@ -67,7 +70,10 @@ export default function CourseDetails() {
   const [loading, setLoading] = useState(true);
   const [enrollmentData, setEnrollmentData] = useState({
     user_name: "",
-    user_email: ""
+    user_email: "",
+    whatsapp_number: "",
+    profession: "",
+    institute_name: ""
   });
   const [openSections, setOpenSections] = useState<string[]>([]);
 
@@ -123,7 +129,7 @@ export default function CourseDetails() {
   };
 
   const handleEnrollment = async () => {
-    if (!enrollmentData.user_name || !enrollmentData.user_email) {
+    if (!enrollmentData.user_name || !enrollmentData.user_email || !enrollmentData.whatsapp_number) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -139,6 +145,9 @@ export default function CourseDetails() {
           course_id: courseId,
           user_name: enrollmentData.user_name,
           user_email: enrollmentData.user_email,
+          whatsapp_number: enrollmentData.whatsapp_number,
+          profession: enrollmentData.profession,
+          institute_name: enrollmentData.institute_name,
         });
 
       if (error) throw error;
@@ -148,7 +157,13 @@ export default function CourseDetails() {
         description: "Successfully enrolled in the course!",
       });
 
-      setEnrollmentData({ user_name: "", user_email: "" });
+      setEnrollmentData({ 
+        user_name: "", 
+        user_email: "", 
+        whatsapp_number: "", 
+        profession: "", 
+        institute_name: "" 
+      });
     } catch (error) {
       console.error("Error enrolling in course:", error);
       toast({
@@ -231,22 +246,42 @@ export default function CourseDetails() {
                     <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold">
                       {index + 1}
                     </div>
-                    <span className="font-medium">{module.title}</span>
+                    <div className="text-left">
+                      <span className="font-medium">{module.title}</span>
+                      {module.description && (
+                        <p className="text-sm text-muted-foreground mt-1">{module.description}</p>
+                      )}
+                    </div>
                   </div>
-                  <ChevronDown className="w-4 h-4" />
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">
+                      {module.lessons?.length || 0} lessons
+                    </span>
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="mt-2 ml-11 space-y-2">
                   {module.lessons?.map((lesson: any, lessonIndex: number) => (
-                    <div key={lessonIndex} className="flex items-center gap-2 p-2 text-sm">
-                      {lesson.is_free ? (
-                        <Play className="w-4 h-4 text-green-500" />
-                      ) : (
-                        <Lock className="w-4 h-4 text-muted-foreground" />
-                      )}
-                      <span>{lesson.title}</span>
-                      {lesson.duration && (
-                        <span className="ml-auto text-muted-foreground">{lesson.duration}</span>
-                      )}
+                    <div key={lessonIndex} className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/20">
+                      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs font-medium">
+                        {lessonIndex + 1}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          {lesson.is_free ? (
+                            <Play className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <Lock className="w-4 h-4 text-muted-foreground" />
+                          )}
+                          <span className="font-medium">{lesson.title}</span>
+                          {lesson.duration && (
+                            <span className="ml-auto text-sm text-muted-foreground">{lesson.duration}</span>
+                          )}
+                        </div>
+                        {lesson.description && (
+                          <p className="text-sm text-muted-foreground mt-1 ml-6">{lesson.description}</p>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </CollapsibleContent>
@@ -393,8 +428,14 @@ export default function CourseDetails() {
                 )}
                 <div className="flex items-center gap-1">
                   <Users className="w-4 h-4" />
-                  <span>All levels</span>
+                  <span>{course.student_count || 0} students</span>
                 </div>
+                {course.rating && course.rating > 0 && (
+                  <div className="flex items-center gap-1">
+                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                    <span>{course.rating}/5</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -428,20 +469,51 @@ export default function CourseDetails() {
                       </DialogHeader>
                       <div className="space-y-4">
                         <div>
-                          <Label htmlFor="name">Full Name</Label>
+                          <Label htmlFor="name">Full Name *</Label>
                           <Input
                             id="name"
                             value={enrollmentData.user_name}
                             onChange={(e) => setEnrollmentData(prev => ({ ...prev, user_name: e.target.value }))}
+                            required
                           />
                         </div>
                         <div>
-                          <Label htmlFor="email">Email</Label>
+                          <Label htmlFor="email">Email *</Label>
                           <Input
                             id="email"
                             type="email"
                             value={enrollmentData.user_email}
                             onChange={(e) => setEnrollmentData(prev => ({ ...prev, user_email: e.target.value }))}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="whatsapp">WhatsApp Number *</Label>
+                          <Input
+                            id="whatsapp"
+                            type="tel"
+                            value={enrollmentData.whatsapp_number}
+                            onChange={(e) => setEnrollmentData(prev => ({ ...prev, whatsapp_number: e.target.value }))}
+                            placeholder="+1234567890"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="profession">Profession</Label>
+                          <Input
+                            id="profession"
+                            value={enrollmentData.profession}
+                            onChange={(e) => setEnrollmentData(prev => ({ ...prev, profession: e.target.value }))}
+                            placeholder="e.g., Software Developer, Student, etc."
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="institute">Institute/Company Name</Label>
+                          <Input
+                            id="institute"
+                            value={enrollmentData.institute_name}
+                            onChange={(e) => setEnrollmentData(prev => ({ ...prev, institute_name: e.target.value }))}
+                            placeholder="e.g., University, Company, etc."
                           />
                         </div>
                         <Button onClick={handleEnrollment} className="w-full">
@@ -496,36 +568,65 @@ export default function CourseDetails() {
               </TabsContent>
               
               <TabsContent value="curriculum">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Course Curriculum</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {content.map((item, index) => (
-                        <div key={item.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                          <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold">
-                            {index + 1}
+                {sections.find(s => s.section_type === 'curriculum') ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Course Curriculum</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {renderSectionContent(sections.find(s => s.section_type === 'curriculum')!)}
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Course Content</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {content.map((item, index) => (
+                          <div key={item.id} className="flex items-start gap-4 p-4 border rounded-lg hover:bg-muted/20">
+                            <div className="flex items-center justify-center min-w-[2rem] h-8 bg-primary text-primary-foreground rounded-full text-sm font-semibold">
+                              {(index + 1).toString().padStart(2, '0')}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium mb-1">{item.title}</h4>
+                              {item.description && (
+                                <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
+                              )}
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-xs">
+                                  {item.content_type}
+                                </Badge>
+                                {item.duration_minutes && (
+                                  <span className="text-xs text-muted-foreground">{item.duration_minutes} min</span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              {item.is_free ? (
+                                <div className="flex items-center gap-1 text-green-600">
+                                  <Play className="w-4 h-4" />
+                                  <span className="text-xs font-medium">Free</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1 text-muted-foreground">
+                                  <Lock className="w-4 h-4" />
+                                  <span className="text-xs font-medium">Premium</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex-1">
-                            <h4 className="font-medium">{item.title}</h4>
-                            <p className="text-sm text-muted-foreground">{item.content_type}</p>
+                        ))}
+                        {content.length === 0 && (
+                          <div className="text-center py-8 text-muted-foreground">
+                            No content available for this course
                           </div>
-                          <div className="flex items-center gap-2">
-                            {item.duration_minutes && (
-                              <span className="text-sm text-muted-foreground">{item.duration_minutes} min</span>
-                            )}
-                            {item.is_free ? (
-                              <Play className="w-5 h-5 text-green-500" />
-                            ) : (
-                              <Lock className="w-5 h-5 text-muted-foreground" />
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
               
               <TabsContent value="projects">

@@ -25,6 +25,8 @@ interface Course {
   status: string;
   duration_hours?: number;
   difficulty_level?: string;
+  rating?: number;
+  student_count?: number;
 }
 
 interface CourseContent {
@@ -57,6 +59,8 @@ export default function CourseManager() {
     status: "draft",
     duration_hours: "",
     difficulty_level: "beginner",
+    rating: "",
+    student_count: "",
   });
 
   const [contentForm, setContentForm] = useState({
@@ -111,6 +115,8 @@ export default function CourseManager() {
         technologies: courseForm.technologies.split(",").map(t => t.trim()).filter(Boolean),
         price: courseForm.price ? parseFloat(courseForm.price) : null,
         duration_hours: courseForm.duration_hours ? parseInt(courseForm.duration_hours) : null,
+        rating: courseForm.rating ? parseFloat(courseForm.rating) : null,
+        student_count: courseForm.student_count ? parseInt(courseForm.student_count) : null,
       };
 
       let result;
@@ -229,6 +235,8 @@ export default function CourseManager() {
       status: "draft",
       duration_hours: "",
       difficulty_level: "beginner",
+      rating: "",
+      student_count: "",
     });
   };
 
@@ -256,6 +264,8 @@ export default function CourseManager() {
       status: course.status,
       duration_hours: course.duration_hours?.toString() || "",
       difficulty_level: course.difficulty_level || "beginner",
+      rating: course.rating?.toString() || "",
+      student_count: course.student_count?.toString() || "",
     });
     setIsEditingCourse(true);
   };
@@ -420,6 +430,34 @@ export default function CourseManager() {
                     <SelectItem value="archived">Archived</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="rating">Course Rating (0-5)</Label>
+                  <Input
+                    id="rating"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="5"
+                    value={courseForm.rating}
+                    onChange={(e) => setCourseForm({ ...courseForm, rating: e.target.value })}
+                    placeholder="4.5"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="student_count">Student Count</Label>
+                  <Input
+                    id="student_count"
+                    type="number"
+                    min="0"
+                    value={courseForm.student_count}
+                    onChange={(e) => setCourseForm({ ...courseForm, student_count: e.target.value })}
+                    placeholder="150"
+                  />
+                </div>
               </div>
 
               <div className="flex justify-end space-x-2">
