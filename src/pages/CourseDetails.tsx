@@ -447,7 +447,7 @@ export default function CourseDetails() {
                     <img 
                       src={course.banner_image} 
                       alt={course.title} 
-                      className="w-full h-40 object-cover rounded-lg mb-4"
+                      className="w-full h-40 object-cover rounded-lg mb-6"
                     />
                   )}
                   
@@ -474,6 +474,7 @@ export default function CourseDetails() {
                             id="name"
                             value={enrollmentData.user_name}
                             onChange={(e) => setEnrollmentData(prev => ({ ...prev, user_name: e.target.value }))}
+                            placeholder="e.g., John Doe"
                             required
                           />
                         </div>
@@ -484,6 +485,7 @@ export default function CourseDetails() {
                             type="email"
                             value={enrollmentData.user_email}
                             onChange={(e) => setEnrollmentData(prev => ({ ...prev, user_email: e.target.value }))}
+                            placeholder="e.g., your.email@example.com"
                             required
                           />
                         </div>
@@ -494,7 +496,7 @@ export default function CourseDetails() {
                             type="tel"
                             value={enrollmentData.whatsapp_number}
                             onChange={(e) => setEnrollmentData(prev => ({ ...prev, whatsapp_number: e.target.value }))}
-                            placeholder="+1234567890"
+                            placeholder="+8801734567890"
                             required
                           />
                         </div>
@@ -504,6 +506,7 @@ export default function CourseDetails() {
                             id="profession"
                             value={enrollmentData.profession}
                             onChange={(e) => setEnrollmentData(prev => ({ ...prev, profession: e.target.value }))}
+                            required
                             placeholder="e.g., Software Developer, Student, etc."
                           />
                         </div>
@@ -513,6 +516,7 @@ export default function CourseDetails() {
                             id="institute"
                             value={enrollmentData.institute_name}
                             onChange={(e) => setEnrollmentData(prev => ({ ...prev, institute_name: e.target.value }))}
+                            required
                             placeholder="e.g., University, Company, etc."
                           />
                         </div>

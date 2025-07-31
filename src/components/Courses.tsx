@@ -6,7 +6,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Lock, Play, Clock, BookOpen, Users, Star, ExternalLink } from "lucide-react";
+import { Lock, Play, Clock, BookOpen, Users, Star, ExternalLink, ChevronDown } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -39,9 +40,13 @@ export default function Courses() {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [courseContent, setCourseContent] = useState<CourseContent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
   const [enrollmentData, setEnrollmentData] = useState({
-    userName: "",
-    userEmail: "",
+    user_name: "",
+    user_email: "",
+    whatsapp_number: "",
+    profession: "",
+    institute_name: ""
   });
 
   useEffect(() => {
@@ -88,7 +93,7 @@ export default function Courses() {
   };
 
   const handleEnrollment = async () => {
-    if (!selectedCourse || !enrollmentData.userName || !enrollmentData.userEmail) {
+    if (!selectedCourse || !enrollmentData.user_name || !enrollmentData.user_email || !enrollmentData.whatsapp_number || !enrollmentData.profession || !enrollmentData.institute_name) {
       toast.error("Please fill in all fields");
       return;
     }
@@ -98,14 +103,17 @@ export default function Courses() {
         .from("course_enrollments")
         .insert({
           course_id: selectedCourse.id,
-          user_name: enrollmentData.userName,
-          user_email: enrollmentData.userEmail,
+          user_name: enrollmentData.user_name,
+          user_email: enrollmentData.user_email,
+          whatsapp_number: enrollmentData.whatsapp_number,
+          profession: enrollmentData.profession,
+          institute_name: enrollmentData.institute_name,
         });
 
       if (error) throw error;
       
       toast.success("Successfully enrolled in the course!");
-      setEnrollmentData({ userName: "", userEmail: "" });
+      setEnrollmentData({ user_name: "", user_email: "", whatsapp_number: "", profession: "", institute_name: "" });
     } catch (error) {
       console.error("Error enrolling in course:", error);
       toast.error("Failed to enroll in course");
@@ -142,7 +150,7 @@ export default function Courses() {
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             Professional Courses
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-primary font-semibold">
             Master the latest technologies with our comprehensive courses designed for real-world success
           </p>
         </div>
@@ -151,7 +159,7 @@ export default function Courses() {
           {courses.map((course) => (
             <Card key={course.id} className="group hover:shadow-lg transition-all duration-300 cursor-pointer">
               <div 
-                className="relative overflow-hidden rounded-t-lg bg-gradient-to-br from-primary/10 to-primary/5 h-48"
+                className="relative justify-center overflow-hidden rounded-t-lg bg-gradient-to-br from-primary/10 to-primary/5 h-48"
                 onClick={() => handleCourseSelect(course)}
               >
                 {course.banner_image ? (
@@ -275,7 +283,7 @@ export default function Courses() {
                     <div className="text-center p-4 bg-muted rounded-lg">
                       <Users className="w-6 h-6 mx-auto mb-2 text-primary" />
                       <p className="text-sm text-muted-foreground">Students</p>
-                      <p className="font-semibold">2.5k+</p>
+                      <p className="font-semibold">10</p>
                     </div>
                     <div className="text-center p-4 bg-muted rounded-lg">
                       <Star className="w-6 h-6 mx-auto mb-2 text-primary fill-current text-yellow-500" />
@@ -297,46 +305,68 @@ export default function Courses() {
                   </div>
 
                   {/* Course Content */}
-                  <div>
-                    <h3 className="text-lg font-semibold mb-3">Course Content</h3>
-                    <div className="space-y-2">
-                      {courseContent.map((content, index) => (
-                        <div
-                          key={content.id}
-                          className={`flex items-center justify-between p-3 border rounded-lg ${
-                            content.is_free 
-                              ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800" 
-                              : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium">
-                              {index + 1}
-                            </span>
-                            <div>
-                              <p className="font-medium">{content.title}</p>
-                              {content.description && (
-                                <p className="text-sm text-muted-foreground">{content.description}</p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {content.duration_minutes && (
-                              <span className="text-xs text-muted-foreground">
-                                {content.duration_minutes}min
-                              </span>
-                            )}
-                            {content.content_type === "video" && <Play className="w-4 h-4" />}
-                            {!content.is_free && <Lock className="w-4 h-4 text-amber-500" />}
-                            {content.is_free && (
-                              <Badge variant="outline" className="text-xs bg-green-100 text-green-800">
-                                Free
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold">Course Content</h3>
+                      <span className="text-sm text-muted-foreground">
+                        {courseContent.length} {courseContent.length === 1 ? 'module' : 'modules'}
+                      </span>
                     </div>
+                    
+                    <Accordion type="multiple" className="w-full">
+                      {courseContent.map((content, index) => (
+                        <AccordionItem key={content.id} value={content.id} className="border-b">
+                          <AccordionTrigger className="hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                            <div className="flex items-center gap-3 flex-1 text-left">
+                              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium">
+                                {index + 1}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium text-foreground">{content.title}</p>
+                                  {content.content_type === "video" && (
+                                    <Play className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3 mt-1">
+                                  <Badge variant="outline" className="text-xs font-normal h-5">
+                                    {content.content_type || 'Lesson'}
+                                  </Badge>
+                                  {content.duration_minutes && (
+                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                      <Clock className="w-3 h-3" />
+                                      {content.duration_minutes} min
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex-shrink-0 ml-2">
+                                {!content.is_free ? (
+                                  <Lock className="w-4 h-4 text-amber-500" />
+                                ) : (
+                                  <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:border-green-800/50 dark:text-green-400">
+                                    Free
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-2 pb-4 pl-4 pr-2">
+                            {content.description && (
+                              <div className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-md">
+                                {content.description}
+                              </div>
+                            )}
+                            {!content.is_free && (
+                              <div className="mt-3 text-sm text-amber-600 dark:text-amber-400">
+                                <Lock className="w-4 h-4 inline-block mr-1" />
+                                This content is part of the premium course
+                              </div>
+                            )}
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
                   </div>
 
                   {/* Enrollment Form */}
@@ -347,9 +377,10 @@ export default function Courses() {
                         <Label htmlFor="userName">Full Name</Label>
                         <Input
                           id="userName"
-                          value={enrollmentData.userName}
-                          onChange={(e) => setEnrollmentData({ ...enrollmentData, userName: e.target.value })}
-                          placeholder="Enter your full name"
+                          value={enrollmentData.user_name}
+                          onChange={(e) => setEnrollmentData({ ...enrollmentData, user_name: e.target.value })}
+                          placeholder="e.g., John Doe"
+                          required
                         />
                       </div>
                       <div>
@@ -357,9 +388,43 @@ export default function Courses() {
                         <Input
                           id="userEmail"
                           type="email"
-                          value={enrollmentData.userEmail}
-                          onChange={(e) => setEnrollmentData({ ...enrollmentData, userEmail: e.target.value })}
-                          placeholder="Enter your email"
+                          value={enrollmentData.user_email}
+                          onChange={(e) => setEnrollmentData({ ...enrollmentData, user_email: e.target.value })}
+                          placeholder="e.g., your.email@example.com"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="whatsapp_number">Your Whatsapp Number</Label>
+                        <Input
+                          id="whatsapp_number"
+                          type="phone"
+                          value={enrollmentData.whatsapp_number}
+                          onChange={(e) => setEnrollmentData({ ...enrollmentData, whatsapp_number: e.target.value })}
+                          required
+                          placeholder="+8801734567890"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="profession">Profession</Label>
+                        <Input
+                          id="profession"
+                          type="text"
+                          value={enrollmentData.profession}
+                          onChange={(e) => setEnrollmentData({ ...enrollmentData, profession: e.target.value })}
+                          placeholder="e.g., Software Developer, Student, etc."
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="institute_name">Institute Name</Label>
+                        <Input
+                          id="institute_name"
+                          type="text"
+                          value={enrollmentData.institute_name}
+                          onChange={(e) => setEnrollmentData({ ...enrollmentData, institute_name: e.target.value })}
+                          placeholder="e.g., University, Company, etc."
+                          required
                         />
                       </div>
                     </div>

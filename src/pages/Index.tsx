@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
@@ -9,6 +11,20 @@ import Contact from "@/components/Contact";
 import Courses from "@/components/Courses";
 
 const Index = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    // Handle hash-based navigation on initial page load
+    if (location.hash) {
+      const element = document.getElementById(location.hash.substring(1));
+      if (element) {
+        // Small timeout to ensure all elements are rendered
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    }
+  }, [location]);
   return (
     <div className="min-h-screen">
       <Navbar />
