@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import CurriculumSection from "@/components/CurriculumSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -251,58 +252,7 @@ export default function CourseDetails() {
         );
 
       case "curriculum":
-        return (
-          <div className="space-y-4">
-            {content.modules?.map((module: any, index: number) => (
-              <Collapsible key={index}>
-                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 border rounded-lg hover:bg-muted/50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold">
-                      {index + 1}
-                    </div>
-                    <div className="text-left">
-                      <span className="font-medium">{module.title}</span>
-                      {module.description && (
-                        <p className="text-sm text-muted-foreground mt-1">{module.description}</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">
-                      {module.lessons?.length || 0} lessons
-                    </span>
-                    <ChevronDown className="w-4 h-4" />
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-2 ml-11 space-y-2">
-                  {module.lessons?.map((lesson: any, lessonIndex: number) => (
-                    <div key={lessonIndex} className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/20">
-                      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs font-medium">
-                        {lessonIndex + 1}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          {lesson.is_free ? (
-                            <Play className="w-4 h-4 text-green-500" />
-                          ) : (
-                            <Lock className="w-4 h-4 text-muted-foreground" />
-                          )}
-                          <span className="font-medium">{lesson.title}</span>
-                          {lesson.duration && (
-                            <span className="ml-auto text-sm text-muted-foreground">{lesson.duration}</span>
-                          )}
-                        </div>
-                        {lesson.description && (
-                          <p className="text-sm text-muted-foreground mt-1 ml-6">{lesson.description}</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </CollapsibleContent>
-              </Collapsible>
-            ))}
-          </div>
-        );
+        return <CurriculumSection courseId={course.id} />;
 
       case "projects":
         return (

@@ -13,6 +13,7 @@ import { Plus, Edit, Trash2, Play, FileText, HelpCircle, Lock, Unlock, Youtube }
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import CourseSectionsManager from "./CourseSectionsManager";
+import CourseContentManager from "./CourseContentManager";
 
 interface Course {
   id: string;
@@ -298,9 +299,10 @@ export default function CourseManager() {
       <h2 className="text-2xl font-bold">Course Management</h2>
       
       <Tabs defaultValue="courses" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="courses">Courses & Content</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="courses">Courses</TabsTrigger>
           <TabsTrigger value="sections">Course Sections</TabsTrigger>
+          <TabsTrigger value="content">Course Content</TabsTrigger>
         </TabsList>
         
         <TabsContent value="courses" className="space-y-6">
@@ -707,6 +709,9 @@ export default function CourseManager() {
         
         <TabsContent value="sections">
           <CourseSectionsManager />
+        </TabsContent>
+        <TabsContent value="content">
+          <CourseContentManager />
         </TabsContent>
       </Tabs>
     </div>

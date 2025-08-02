@@ -94,6 +94,9 @@ export type Database = {
       }
       course_content: {
         Row: {
+          content_category:
+            | Database["public"]["Enums"]["content_type_enum"]
+            | null
           content_data: Json
           content_type: string
           course_id: string
@@ -102,11 +105,16 @@ export type Database = {
           duration_minutes: number | null
           id: string
           is_free: boolean
+          module_id: string | null
           order_index: number
+          submodule_id: string | null
           title: string
           updated_at: string
         }
         Insert: {
+          content_category?:
+            | Database["public"]["Enums"]["content_type_enum"]
+            | null
           content_data: Json
           content_type: string
           course_id: string
@@ -115,11 +123,16 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           is_free?: boolean
+          module_id?: string | null
           order_index?: number
+          submodule_id?: string | null
           title: string
           updated_at?: string
         }
         Update: {
+          content_category?:
+            | Database["public"]["Enums"]["content_type_enum"]
+            | null
           content_data?: Json
           content_type?: string
           course_id?: string
@@ -128,7 +141,9 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           is_free?: boolean
+          module_id?: string | null
           order_index?: number
+          submodule_id?: string | null
           title?: string
           updated_at?: string
         }
@@ -138,6 +153,20 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_course_content_module"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "course_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_course_content_submodule"
+            columns: ["submodule_id"]
+            isOneToOne: false
+            referencedRelation: "course_submodules"
             referencedColumns: ["id"]
           },
         ]
@@ -306,6 +335,13 @@ export type Database = {
             referencedRelation: "courses"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_course_modules_course"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
         ]
       }
       course_sections: {
@@ -384,6 +420,13 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "course_submodules_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "course_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_course_submodules_module"
             columns: ["module_id"]
             isOneToOne: false
             referencedRelation: "course_modules"
@@ -684,7 +727,13 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      content_type_enum:
+        | "lesson"
+        | "quiz"
+        | "project"
+        | "assignment"
+        | "text"
+        | "video"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -811,6 +860,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      content_type_enum: [
+        "lesson",
+        "quiz",
+        "project",
+        "assignment",
+        "text",
+        "video",
+      ],
+    },
   },
 } as const
