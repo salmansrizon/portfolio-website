@@ -536,65 +536,14 @@ export default function CourseDetails() {
               </TabsContent>
               
               <TabsContent value="curriculum">
-                {sections.find(s => s.section_type === 'curriculum') ? (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Course Curriculum</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {renderSectionContent(sections.find(s => s.section_type === 'curriculum')!)}
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Course Content</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {content.map((item, index) => (
-                          <div key={item.id} className="flex items-start gap-4 p-4 border rounded-lg hover:bg-muted/20">
-                            <div className="flex items-center justify-center min-w-[2rem] h-8 bg-primary text-primary-foreground rounded-full text-sm font-semibold">
-                              {(index + 1).toString().padStart(2, '0')}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium mb-1">{item.title}</h4>
-                              {item.description && (
-                                <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
-                              )}
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="text-xs">
-                                  {item.content_type}
-                                </Badge>
-                                {item.duration_minutes && (
-                                  <span className="text-xs text-muted-foreground">{item.duration_minutes} min</span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              {item.is_free ? (
-                                <div className="flex items-center gap-1 text-green-600">
-                                  <Play className="w-4 h-4" />
-                                  <span className="text-xs font-medium">Free</span>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1 text-muted-foreground">
-                                  <Lock className="w-4 h-4" />
-                                  <span className="text-xs font-medium">Premium</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                        {content.length === 0 && (
-                          <div className="text-center py-8 text-muted-foreground">
-                            No content available for this course
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Course Curriculum</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <CurriculumSection courseId={course.id} />
+                  </CardContent>
+                </Card>
               </TabsContent>
               
               <TabsContent value="projects">
