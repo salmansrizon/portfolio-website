@@ -97,11 +97,8 @@ export default function CurriculumSection({ courseId }: CurriculumSectionProps) 
       // Fetch all contents for this course
       const { data: contentsData, error: contentsError } = await supabase
         .from("course_content")
-        .select(`
-          *,
-          course_modules!course_content_module_id_fkey!inner(course_id)
-        `)
-        .eq("course_modules.course_id", courseId)
+        .select("*")
+        .eq("course_id", courseId)
         .order("order_index");
 
       if (contentsError) throw contentsError;
