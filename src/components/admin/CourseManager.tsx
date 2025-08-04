@@ -1,78 +1,57 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Edit, Trash2, Play, FileText, HelpCircle, Lock, Unlock, Youtube } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import CourseSectionsManager from "./CourseSectionsManager";
-import CourseContentManager from "./CourseContentManager";
+import { useToast } from "@/hooks/use-toast";
+import { Plus, Edit, Trash2, X } from "lucide-react";
 
 interface Course {
   id: string;
   title: string;
   description: string;
-  banner_image?: string;
-  technologies: string[];
   price?: number;
+  discounted_price?: number;
+  discount_percentage?: number;
   is_free: boolean;
   status: string;
-  duration_hours?: number;
   difficulty_level?: string;
-  rating?: number;
+  duration_hours?: number;
+  banner_image?: string;
+  technologies: string[];
   student_count?: number;
+  rating?: number;
 }
 
-interface CourseContent {
-  id: string;
-  course_id: string;
-  title: string;
-  description?: string;
-  content_type: string;
-  content_data: any;
-  is_free: boolean;
-  order_index: number;
-  duration_minutes?: number;
-}
+const formData = {
+  title: "",
+  description: "",
+  price: null,
+  discounted_price: null,
+  discount_percentage: null,
+  is_free: false,
+  status: "draft",
+  difficulty_level: "",
+  duration_hours: null,
+  banner_image: "",
+  technologies: [],
+  student_count: 0,
+  rating: 0,
+};
 
 export default function CourseManager() {
+  const { toast } = useToast();
   const [courses, setCourses] = useState<Course[]>([]);
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [courseContent, setCourseContent] = useState<CourseContent[]>([]);
-  const [isEditingCourse, setIsEditingCourse] = useState(false);
-  const [isEditingContent, setIsEditingContent] = useState(false);
-  const [selectedContent, setSelectedContent] = useState<CourseContent | null>(null);
-
-  const [courseForm, setCourseForm] = useState({
-    title: "",
-    description: "",
-    banner_image: "",
-    technologies: "",
-    price: "",
-    is_free: true,
-    status: "draft",
-    duration_hours: "",
-    difficulty_level: "beginner",
-    rating: "",
-    student_count: "",
-  });
-
-  const [contentForm, setContentForm] = useState({
-    title: "",
-    description: "",
-    content_type: "video",
-    youtube_url: "",
-    text_content: "",
-    is_free: true,
-    duration_minutes: "",
-  });
+  const [showDialog, setShowDialog] = useState(false);
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [currentFormData, setFormData] = useState(formData);
+  const [newTechnology, setNewTechnology] = useState("");
 
   useEffect(() => {
     fetchCourses();
@@ -89,301 +68,179 @@ export default function CourseManager() {
       setCourses(data || []);
     } catch (error) {
       console.error("Error fetching courses:", error);
-      toast.error("Failed to load courses");
+      toast({
+        title: "Error",
+        description: "Failed to load courses",
+        variant: "destructive",
+      });
     }
   };
 
-  const fetchCourseContent = async (courseId: string) => {
+  const handleSubmit = async () => {
     try {
-      const { data, error } = await supabase
-        .from("course_content")
-        .select("*")
-        .eq("course_id", courseId)
-        .order("order_index", { ascending: true });
-
-      if (error) throw error;
-      setCourseContent(data || []);
-    } catch (error) {
-      console.error("Error fetching course content:", error);
-      toast.error("Failed to load course content");
-    }
-  };
-
-  const handleCourseSubmit = async () => {
-    try {
-      const courseData = {
-        ...courseForm,
-        technologies: courseForm.technologies.split(",").map(t => t.trim()).filter(Boolean),
-        price: courseForm.price ? parseFloat(courseForm.price) : null,
-        duration_hours: courseForm.duration_hours ? parseInt(courseForm.duration_hours) : null,
-        rating: courseForm.rating ? parseFloat(courseForm.rating) : null,
-        student_count: courseForm.student_count ? parseInt(courseForm.student_count) : null,
-      };
-
-      let result;
-      if (selectedCourse) {
-        result = await supabase
+      if (editingCourse) {
+        const { error } = await supabase
           .from("courses")
-          .update(courseData)
-          .eq("id", selectedCourse.id);
+          .update(currentFormData)
+          .eq("id", editingCourse.id);
+
+        if (error) throw error;
+        toast({ title: "Success", description: "Course updated successfully" });
       } else {
-        result = await supabase
+        const { error } = await supabase
           .from("courses")
-          .insert([courseData]);
+          .insert(currentFormData);
+
+        if (error) throw error;
+        toast({ title: "Success", description: "Course created successfully" });
       }
 
-      if (result.error) throw result.error;
-
-      toast.success(selectedCourse ? "Course updated successfully!" : "Course created successfully!");
-      setIsEditingCourse(false);
-      setSelectedCourse(null);
-      resetCourseForm();
+      resetForm();
       fetchCourses();
+      setShowDialog(false);
     } catch (error) {
       console.error("Error saving course:", error);
-      toast.error("Failed to save course");
+      toast({
+        title: "Error",
+        description: "Failed to save course",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleContentSubmit = async () => {
-    if (!selectedCourse) return;
-
-    try {
-      let contentData: any = {
-        title: contentForm.title,
-        description: contentForm.description,
-        content_type: contentForm.content_type,
-        is_free: contentForm.is_free,
-        duration_minutes: contentForm.duration_minutes ? parseInt(contentForm.duration_minutes) : null,
-      };
-
-      // Prepare content_data based on type
-      if (contentForm.content_type === "video") {
-        contentData.content_data = { youtube_url: contentForm.youtube_url };
-      } else if (contentForm.content_type === "text") {
-        contentData.content_data = { text_content: contentForm.text_content };
-      }
-
-      if (selectedContent) {
-        const { error } = await supabase
-          .from("course_content")
-          .update(contentData)
-          .eq("id", selectedContent.id);
-        if (error) throw error;
-      } else {
-        // Get the next order index
-        const maxOrder = Math.max(...courseContent.map(c => c.order_index), -1);
-        contentData.course_id = selectedCourse.id;
-        contentData.order_index = maxOrder + 1;
-
-        const { error } = await supabase
-          .from("course_content")
-          .insert([contentData]);
-        if (error) throw error;
-      }
-
-      toast.success(selectedContent ? "Content updated successfully!" : "Content added successfully!");
-      setIsEditingContent(false);
-      setSelectedContent(null);
-      resetContentForm();
-      fetchCourseContent(selectedCourse.id);
-    } catch (error) {
-      console.error("Error saving content:", error);
-      toast.error("Failed to save content");
-    }
-  };
-
-  const deleteCourse = async (courseId: string) => {
+  const deleteCourse = async (id: string) => {
     try {
       const { error } = await supabase
         .from("courses")
         .delete()
-        .eq("id", courseId);
+        .eq("id", id);
 
       if (error) throw error;
-      toast.success("Course deleted successfully!");
+      
+      toast({ title: "Success", description: "Course deleted successfully" });
       fetchCourses();
     } catch (error) {
       console.error("Error deleting course:", error);
-      toast.error("Failed to delete course");
+      toast({
+        title: "Error",
+        description: "Failed to delete course",
+        variant: "destructive",
+      });
     }
   };
 
-  const deleteContent = async (contentId: string) => {
-    try {
-      const { error } = await supabase
-        .from("course_content")
-        .delete()
-        .eq("id", contentId);
+  const resetForm = () => {
+    setEditingCourse(null);
+    setFormData(formData);
+  };
 
-      if (error) throw error;
-      toast.success("Content deleted successfully!");
-      if (selectedCourse) fetchCourseContent(selectedCourse.id);
-    } catch (error) {
-      console.error("Error deleting content:", error);
-      toast.error("Failed to delete content");
+  const addTechnology = () => {
+    if (newTechnology.trim() && !currentFormData.technologies.includes(newTechnology.trim())) {
+      setFormData({
+        ...currentFormData,
+        technologies: [...currentFormData.technologies, newTechnology.trim()]
+      });
+      setNewTechnology("");
     }
   };
 
-  const resetCourseForm = () => {
-    setCourseForm({
-      title: "",
-      description: "",
-      banner_image: "",
-      technologies: "",
-      price: "",
-      is_free: true,
-      status: "draft",
-      duration_hours: "",
-      difficulty_level: "beginner",
-      rating: "",
-      student_count: "",
+  const removeTechnology = (tech: string) => {
+    setFormData({
+      ...currentFormData,
+      technologies: currentFormData.technologies.filter(t => t !== tech)
     });
-  };
-
-  const resetContentForm = () => {
-    setContentForm({
-      title: "",
-      description: "",
-      content_type: "video",
-      youtube_url: "",
-      text_content: "",
-      is_free: true,
-      duration_minutes: "",
-    });
-  };
-
-  const editCourse = (course: Course) => {
-    setSelectedCourse(course);
-    setCourseForm({
-      title: course.title,
-      description: course.description,
-      banner_image: course.banner_image || "",
-      technologies: course.technologies.join(", "),
-      price: course.price?.toString() || "",
-      is_free: course.is_free,
-      status: course.status,
-      duration_hours: course.duration_hours?.toString() || "",
-      difficulty_level: course.difficulty_level || "beginner",
-      rating: course.rating?.toString() || "",
-      student_count: course.student_count?.toString() || "",
-    });
-    setIsEditingCourse(true);
-  };
-
-  const editContent = (content: CourseContent) => {
-    setSelectedContent(content);
-    setContentForm({
-      title: content.title,
-      description: content.description || "",
-      content_type: content.content_type,
-      youtube_url: content.content_data?.youtube_url || "",
-      text_content: content.content_data?.text_content || "",
-      is_free: content.is_free,
-      duration_minutes: content.duration_minutes?.toString() || "",
-    });
-    setIsEditingContent(true);
-  };
-
-  const getContentIcon = (type: string) => {
-    switch (type) {
-      case "video": return <Play className="w-4 h-4" />;
-      case "text": return <FileText className="w-4 h-4" />;
-      case "quiz": return <HelpCircle className="w-4 h-4" />;
-      default: return <FileText className="w-4 h-4" />;
-    }
   };
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Course Management</h2>
-      
-      <Tabs defaultValue="courses" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="courses">Courses</TabsTrigger>
-          <TabsTrigger value="sections">Course Sections</TabsTrigger>
-          <TabsTrigger value="content">Course Content</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="courses" className="space-y-6">
-          <div className="flex items-center justify-between">
-        <Dialog open={isEditingCourse} onOpenChange={setIsEditingCourse}>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Course Manager</h2>
+        <Dialog open={showDialog} onOpenChange={setShowDialog}>
           <DialogTrigger asChild>
-            <Button onClick={() => { resetCourseForm(); setSelectedCourse(null); }}>
+            <Button onClick={resetForm}>
               <Plus className="w-4 h-4 mr-2" />
               Add Course
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{selectedCourse ? "Edit Course" : "Create New Course"}</DialogTitle>
-              <DialogDescription>
-                {selectedCourse ? "Update course details" : "Add a new course to your portfolio"}
-              </DialogDescription>
+              <DialogTitle>{editingCourse ? "Edit Course" : "Add New Course"}</DialogTitle>
             </DialogHeader>
-
             <div className="space-y-4">
               <div>
-                <Label htmlFor="title">Course Title</Label>
+                <Label htmlFor="title">Title</Label>
                 <Input
                   id="title"
-                  value={courseForm.title}
-                  onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })}
-                  placeholder="Enter course title"
+                  value={currentFormData.title}
+                  onChange={(e) => setFormData({ ...currentFormData, title: e.target.value })}
                 />
               </div>
-
+              
               <div>
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
-                  value={courseForm.description}
-                  onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
-                  placeholder="Enter course description"
-                  rows={3}
+                  value={currentFormData.description}
+                  onChange={(e) => setFormData({ ...currentFormData, description: e.target.value })}
                 />
               </div>
 
-              <div>
-                <Label htmlFor="banner">Banner Image URL</Label>
-                <Input
-                  id="banner"
-                  value={courseForm.banner_image}
-                  onChange={(e) => setCourseForm({ ...courseForm, banner_image: e.target.value })}
-                  placeholder="Enter banner image URL"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="technologies">Technologies (comma-separated)</Label>
-                <Input
-                  id="technologies"
-                  value={courseForm.technologies}
-                  onChange={(e) => setCourseForm({ ...courseForm, technologies: e.target.value })}
-                  placeholder="React, Node.js, MongoDB, etc."
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="duration">Duration (hours)</Label>
+                  <Label htmlFor="price">Price (৳)</Label>
                   <Input
-                    id="duration"
+                    id="price"
                     type="number"
-                    value={courseForm.duration_hours}
-                    onChange={(e) => setCourseForm({ ...courseForm, duration_hours: e.target.value })}
-                    placeholder="10"
+                    step="0.01"
+                    value={currentFormData.price || ''}
+                    onChange={(e) => setFormData({ ...currentFormData, price: parseFloat(e.target.value) || null })}
+                    placeholder="Course price"
                   />
                 </div>
-
                 <div>
-                  <Label htmlFor="difficulty">Difficulty Level</Label>
-                  <Select
-                    value={courseForm.difficulty_level}
-                    onValueChange={(value) => setCourseForm({ ...courseForm, difficulty_level: value })}
+                  <Label htmlFor="discounted_price">Discounted Price (৳)</Label>
+                  <Input
+                    id="discounted_price"
+                    type="number"
+                    step="0.01"
+                    value={currentFormData.discounted_price || ''}
+                    onChange={(e) => setFormData({ ...currentFormData, discounted_price: parseFloat(e.target.value) || null })}
+                    placeholder="Discounted price"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="discount_percentage">Discount %</Label>
+                  <Input
+                    id="discount_percentage"
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={currentFormData.discount_percentage || ''}
+                    onChange={(e) => setFormData({ ...currentFormData, discount_percentage: parseInt(e.target.value) || null })}
+                    placeholder="Discount percentage"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="banner_image">Banner Image URL</Label>
+                <Input
+                  id="banner_image"
+                  value={currentFormData.banner_image}
+                  onChange={(e) => setFormData({ ...currentFormData, banner_image: e.target.value })}
+                  placeholder="Image URL"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="difficulty_level">Difficulty Level</Label>
+                  <Select 
+                    value={currentFormData.difficulty_level} 
+                    onValueChange={(value) => setFormData({ ...currentFormData, difficulty_level: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select difficulty" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="beginner">Beginner</SelectItem>
@@ -392,36 +249,54 @@ export default function CourseManager() {
                     </SelectContent>
                   </Select>
                 </div>
+                
+                <div>
+                  <Label htmlFor="duration_hours">Duration (hours)</Label>
+                  <Input
+                    id="duration_hours"
+                    type="number"
+                    value={currentFormData.duration_hours || ''}
+                    onChange={(e) => setFormData({ ...currentFormData, duration_hours: parseInt(e.target.value) || null })}
+                    placeholder="Course duration"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label>Technologies</Label>
+                <div className="flex gap-2 mb-2">
+                  <Input
+                    value={newTechnology}
+                    onChange={(e) => setNewTechnology(e.target.value)}
+                    placeholder="Add technology"
+                    onKeyPress={(e) => e.key === 'Enter' && addTechnology()}
+                  />
+                  <Button type="button" onClick={addTechnology}>Add</Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {currentFormData.technologies.map((tech, index) => (
+                    <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                      {tech}
+                      <X className="w-3 h-3 cursor-pointer" onClick={() => removeTechnology(tech)} />
+                    </Badge>
+                  ))}
+                </div>
               </div>
 
               <div className="flex items-center space-x-2">
                 <Switch
                   id="is_free"
-                  checked={courseForm.is_free}
-                  onCheckedChange={(checked) => setCourseForm({ ...courseForm, is_free: checked })}
+                  checked={currentFormData.is_free}
+                  onCheckedChange={(checked) => setFormData({ ...currentFormData, is_free: checked })}
                 />
                 <Label htmlFor="is_free">Free Course</Label>
               </div>
 
-              {!courseForm.is_free && (
-                <div>
-                  <Label htmlFor="price">Price ($)</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    value={courseForm.price}
-                    onChange={(e) => setCourseForm({ ...courseForm, price: e.target.value })}
-                    placeholder="49.99"
-                  />
-                </div>
-              )}
-
               <div>
                 <Label htmlFor="status">Status</Label>
-                <Select
-                  value={courseForm.status}
-                  onValueChange={(value) => setCourseForm({ ...courseForm, status: value })}
+                <Select 
+                  value={currentFormData.status} 
+                  onValueChange={(value) => setFormData({ ...currentFormData, status: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -429,291 +304,99 @@ export default function CourseManager() {
                   <SelectContent>
                     <SelectItem value="draft">Draft</SelectItem>
                     <SelectItem value="published">Published</SelectItem>
-                    <SelectItem value="archived">Archived</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="rating">Course Rating (0-5)</Label>
-                  <Input
-                    id="rating"
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="5"
-                    value={courseForm.rating}
-                    onChange={(e) => setCourseForm({ ...courseForm, rating: e.target.value })}
-                    placeholder="4.5"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="student_count">Student Count</Label>
-                  <Input
-                    id="student_count"
-                    type="number"
-                    min="0"
-                    value={courseForm.student_count}
-                    onChange={(e) => setCourseForm({ ...courseForm, student_count: e.target.value })}
-                    placeholder="150"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsEditingCourse(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleCourseSubmit}>
-                  {selectedCourse ? "Update" : "Create"} Course
-                </Button>
-              </div>
+              <Button onClick={handleSubmit} className="w-full">
+                {editingCourse ? "Update Course" : "Create Course"}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Courses List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Courses</CardTitle>
-            <CardDescription>Manage your course catalog</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {courses.map((course) => (
-                <Card key={course.id} className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-medium">{course.title}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {course.description}
-                      </p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge variant={course.status === "published" ? "default" : "secondary"}>
-                          {course.status}
-                        </Badge>
-                        <Badge variant={course.is_free ? "outline" : "secondary"}>
-                          {course.is_free ? "Free" : `$${course.price}`}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedCourse(course);
-                          fetchCourseContent(course.id);
-                        }}
-                      >
-                        Content
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => editCourse(course)}>
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => deleteCourse(course.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Course Content */}
-        {selectedCourse && (
-          <Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {courses.map((course) => (
+          <Card key={course.id}>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between">
                 <div>
-                  <CardTitle>{selectedCourse.title} - Content</CardTitle>
-                  <CardDescription>Manage course content and lessons</CardDescription>
+                  <CardTitle className="text-lg">{course.title}</CardTitle>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant={course.status === 'published' ? 'default' : 'secondary'}>
+                      {course.status}
+                    </Badge>
+                    {course.is_free && <Badge variant="outline">Free</Badge>}
+                  </div>
                 </div>
-                <Dialog open={isEditingContent} onOpenChange={setIsEditingContent}>
-                  <DialogTrigger asChild>
-                    <Button size="sm" onClick={() => { resetContentForm(); setSelectedContent(null); }}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Content
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>{selectedContent ? "Edit Content" : "Add New Content"}</DialogTitle>
-                      <DialogDescription>
-                        {selectedContent ? "Update content details" : "Add new lesson content"}
-                      </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="content-title">Title</Label>
-                        <Input
-                          id="content-title"
-                          value={contentForm.title}
-                          onChange={(e) => setContentForm({ ...contentForm, title: e.target.value })}
-                          placeholder="Enter content title"
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="content-description">Description</Label>
-                        <Textarea
-                          id="content-description"
-                          value={contentForm.description}
-                          onChange={(e) => setContentForm({ ...contentForm, description: e.target.value })}
-                          placeholder="Enter content description"
-                          rows={2}
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="content-type">Content Type</Label>
-                          <Select
-                            value={contentForm.content_type}
-                            onValueChange={(value) => setContentForm({ ...contentForm, content_type: value })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="video">Video</SelectItem>
-                              <SelectItem value="text">Text</SelectItem>
-                              <SelectItem value="quiz">Quiz</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div>
-                          <Label htmlFor="duration">Duration (minutes)</Label>
-                          <Input
-                            id="duration"
-                            type="number"
-                            value={contentForm.duration_minutes}
-                            onChange={(e) => setContentForm({ ...contentForm, duration_minutes: e.target.value })}
-                            placeholder="15"
-                          />
-                        </div>
-                      </div>
-
-                      {contentForm.content_type === "video" && (
-                        <div>
-                          <Label htmlFor="youtube-url">
-                            <Youtube className="w-4 h-4 inline mr-2" />
-                            YouTube URL
-                          </Label>
-                          <Input
-                            id="youtube-url"
-                            value={contentForm.youtube_url}
-                            onChange={(e) => setContentForm({ ...contentForm, youtube_url: e.target.value })}
-                            placeholder="https://www.youtube.com/watch?v=..."
-                          />
-                        </div>
-                      )}
-
-                      {contentForm.content_type === "text" && (
-                        <div>
-                          <Label htmlFor="text-content">Text Content</Label>
-                          <Textarea
-                            id="text-content"
-                            value={contentForm.text_content}
-                            onChange={(e) => setContentForm({ ...contentForm, text_content: e.target.value })}
-                            placeholder="Enter your lesson content here..."
-                            rows={6}
-                          />
-                        </div>
-                      )}
-
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          id="content-free"
-                          checked={contentForm.is_free}
-                          onCheckedChange={(checked) => setContentForm({ ...contentForm, is_free: checked })}
-                        />
-                        <Label htmlFor="content-free">Free Content</Label>
-                      </div>
-
-                      <div className="flex justify-end space-x-2">
-                        <Button variant="outline" onClick={() => setIsEditingContent(false)}>
-                          Cancel
-                        </Button>
-                        <Button onClick={handleContentSubmit}>
-                          {selectedContent ? "Update" : "Add"} Content
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                <div className="flex gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditingCourse(course);
+                      setFormData({
+                        title: course.title,
+                        description: course.description,
+                        price: course.price || null,
+                        discounted_price: course.discounted_price || null,
+                        discount_percentage: course.discount_percentage || null,
+                        is_free: course.is_free,
+                        status: course.status,
+                        difficulty_level: course.difficulty_level || "",
+                        duration_hours: course.duration_hours || null,
+                        banner_image: course.banner_image || "",
+                        technologies: course.technologies || [],
+                        student_count: course.student_count || 0,
+                        rating: course.rating || 0,
+                      });
+                      setShowDialog(true);
+                    }}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => deleteCourse(course.id)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                {courseContent.map((content, index) => (
-                  <Card key={content.id} className="p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium">
-                          {index + 1}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          {getContentIcon(content.content_type)}
-                          <div>
-                            <p className="font-medium text-sm">{content.title}</p>
-                            {content.duration_minutes && (
-                              <p className="text-xs text-muted-foreground">{content.duration_minutes}min</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {content.is_free ? (
-                          <Unlock className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <Lock className="w-4 h-4 text-amber-600" />
-                        )}
-                        <Button size="sm" variant="outline" onClick={() => editContent(content)}>
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => deleteContent(content.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-                {courseContent.length === 0 && (
-                  <p className="text-center text-muted-foreground py-8">
-                    No content added yet. Click "Add Content" to get started.
-                  </p>
+              <p className="text-sm text-muted-foreground mb-3 line-clamp-3">
+                {course.description}
+              </p>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>Price:</span>
+                  <span>
+                    {course.is_free ? 'Free' : course.discounted_price ? (
+                      <span>
+                        ৳{course.discounted_price} 
+                        <span className="line-through text-muted-foreground ml-1">৳{course.price}</span>
+                      </span>
+                    ) : `৳${course.price}`}
+                  </span>
+                </div>
+                {course.duration_hours && (
+                  <div className="flex justify-between">
+                    <span>Duration:</span>
+                    <span>{course.duration_hours}h</span>
+                  </div>
                 )}
+                <div className="flex justify-between">
+                  <span>Students:</span>
+                  <span>{course.student_count || 0}</span>
+                </div>
               </div>
             </CardContent>
           </Card>
-        )}
+        ))}
       </div>
-        </TabsContent>
-        
-        <TabsContent value="sections">
-          <CourseSectionsManager />
-        </TabsContent>
-        <TabsContent value="content">
-          <CourseContentManager />
-        </TabsContent>
-      </Tabs>
     </div>
   );
 }
