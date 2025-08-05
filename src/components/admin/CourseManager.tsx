@@ -210,57 +210,10 @@ export default function CourseManager() {
           })
           .eq('id', editingCourse.id);
         if (courseError) throw courseError;
-
-        // Update/create sections
-        for (const section of formData.sections) {
-          const sectionData = {
-            id: section.id?.startsWith('section-') ? undefined : section.id, // Only include id if it's a real UUID
-            course_id: editingCourse.id,
-            title: section.title,
-            description: section.description || '',
-            order_index: section.order_index,
-            section_type: section.section_type || 'default',
-            is_visible: section.is_visible !== false,
-            content: {}
-          };
-
-          const { data: sectionResult, error: sectionError } = await supabase
-            .from('course_sections')
-            .upsert(sectionData, { onConflict: 'id' })
-            .select('id')
-            .single();
-
-          if (sectionError) throw sectionError;
-          
-          const sectionId = sectionResult.id;
-
-          // Update/create content for this section
-          for (const content of section.contents) {
-            const contentData = {
-              id: content.id?.startsWith('content-') ? undefined : content.id, // Only include id if it's a real UUID
-              course_id: editingCourse.id,
-              section_id: sectionId,
-              title: content.title,
-              description: content.description || '',
-              content_type: content.content_type,
-              content_data: content.content_data || {},
-              is_free: content.is_free,
-              order_index: content.order_index,
-              duration_minutes: content.duration_minutes || null
-            };
-
-            const { error: contentError } = await supabase
-              .from('course_content')
-              .upsert(contentData, { onConflict: 'id' });
-
-            if (contentError) throw contentError;
-          }
-        }
-
         showSuccess("Course updated successfully!");
       } else {
         // Create new course
-        const { data: newCourse, error: courseError } = await supabase
+        const { error: courseError } = await supabase
           .from('courses')
           .insert({
             title: formData.title,
@@ -274,55 +227,8 @@ export default function CourseManager() {
             duration_hours: formData.duration_hours,
             banner_image: formData.banner_image,
             technologies: formData.technologies,
-          })
-          .select('id')
-          .single();
+          });
         if (courseError) throw courseError;
-
-        // Create sections for new course
-        for (const section of formData.sections) {
-          const sectionData = {
-            course_id: newCourse.id,
-            title: section.title,
-            description: section.description || '',
-            order_index: section.order_index,
-            section_type: section.section_type || 'default',
-            is_visible: section.is_visible !== false,
-            content: {}
-          };
-
-          const { data: sectionResult, error: sectionError } = await supabase
-            .from('course_sections')
-            .insert(sectionData)
-            .select('id')
-            .single();
-
-          if (sectionError) throw sectionError;
-          
-          const sectionId = sectionResult.id;
-
-          // Create content for this section
-          for (const content of section.contents) {
-            const contentData = {
-              course_id: newCourse.id,
-              section_id: sectionId,
-              title: content.title,
-              description: content.description || '',
-              content_type: content.content_type,
-              content_data: content.content_data || {},
-              is_free: content.is_free,
-              order_index: content.order_index,
-              duration_minutes: content.duration_minutes || null
-            };
-
-            const { error: contentError } = await supabase
-              .from('course_content')
-              .insert(contentData);
-
-            if (contentError) throw contentError;
-          }
-        }
-
         showSuccess("Course created successfully!");
       }
       
