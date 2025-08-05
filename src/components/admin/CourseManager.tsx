@@ -86,7 +86,7 @@ interface Course {
   updated_at?: string;
 }
 
-type ContentType = 'video' | 'text' | 'quiz' | 'lesson' | 'assignment';
+type ContentType = 'video' | 'text' | 'quiz' | 'lesson' | 'assignment' | 'lecture';
 
 // Type for database course content
 interface DBCourseContent {
@@ -123,7 +123,7 @@ interface CourseContent {
 
 // Helper function to safely convert string to ContentType
 function toContentType(type: string): ContentType {
-  return (['video', 'text', 'quiz', 'lesson', 'assignment'] as const)
+  return (['video', 'text', 'quiz', 'lesson', 'assignment', 'lecture'] as const)
     .includes(type as any)
     ? type as ContentType
     : 'lesson';
@@ -190,60 +190,54 @@ export default function CourseManager() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingCourse) return;
     try {
-      // Update course data
-      const { error: courseError } = await supabase
-        .from('courses')
-        .update({
-          title: formData.title,
-          description: formData.description,
-          price: formData.price,
-          discounted_price: formData.discounted_price,
-          discount_percentage: formData.discount_percentage,
-          is_free: formData.is_free,
-          status: formData.status,
-          difficulty_level: formData.difficulty_level,
-          duration_hours: formData.duration_hours,
-          banner_image: formData.banner_image,
-          technologies: formData.technologies,
-        })
-        .eq('id', editingCourse.id);
-      if (courseError) throw courseError;
-      // Update sections
-      const { error: sectionsError } = await supabase
-        .from('course_sections')
-        .upsert(
-          formData.sections.map(section => ({
-            id: section.id,
-            course_id: editingCourse.id,
-            title: section.title,
-            description: section.description,
-            order_index: section.order_index,
-            section_type: section.section_type || 'default', // Default section type
-            is_visible: true, // Default value
-          } as DBCourseSection)),
-          { onConflict: 'id' }
-        );
-      if (sectionsError) throw sectionsError;
-      // Update contents
-      const { error: contentsError } = await supabase
-        .from('course_content')
-        .upsert(
-          formData.sections.flatMap(section => section.contents.map(content => ({
-            ...content,
-            course_id: editingCourse.id,
-          }))),
-          { onConflict: 'id' }
-        );
-      if (contentsError) throw contentsError;
-      showSuccess("Course updated successfully!");
+      if (editingCourse) {
+        // Update existing course
+        const { error: courseError } = await supabase
+          .from('courses')
+          .update({
+            title: formData.title,
+            description: formData.description,
+            price: formData.price,
+            discounted_price: formData.discounted_price,
+            discount_percentage: formData.discount_percentage,
+            is_free: formData.is_free,
+            status: formData.status,
+            difficulty_level: formData.difficulty_level,
+            duration_hours: formData.duration_hours,
+            banner_image: formData.banner_image,
+            technologies: formData.technologies,
+          })
+          .eq('id', editingCourse.id);
+        if (courseError) throw courseError;
+        showSuccess("Course updated successfully!");
+      } else {
+        // Create new course
+        const { error: courseError } = await supabase
+          .from('courses')
+          .insert({
+            title: formData.title,
+            description: formData.description,
+            price: formData.price,
+            discounted_price: formData.discounted_price,
+            discount_percentage: formData.discount_percentage,
+            is_free: formData.is_free,
+            status: formData.status,
+            difficulty_level: formData.difficulty_level,
+            duration_hours: formData.duration_hours,
+            banner_image: formData.banner_image,
+            technologies: formData.technologies,
+          });
+        if (courseError) throw courseError;
+        showSuccess("Course created successfully!");
+      }
+      
       fetchCourses();
       setShowDialog(false);
       resetForm();
     } catch (error) {
-      console.error("Error updating course:", error);
-      showError("Failed to update course");
+      console.error("Error saving course:", error);
+      showError("Failed to save course");
     }
   };
 
@@ -286,13 +280,13 @@ export default function CourseManager() {
           let contentsData: DBCourseContent[] | null = [];
           let contentsError: PostgrestError | null = null;
           if (sectionIds.length > 0) {
-            const result = await supabase
+            const { data, error } = await supabase
               .from('course_content')
               .select('*')
               .in('section_id', sectionIds)
-              .order('order_index') as { data: DBCourseContent[] | null; error: PostgrestError | null };
-            contentsData = result.data;
-            contentsError = result.error;
+              .order('order_index');
+            contentsData = data;
+            contentsError = error;
             if (contentsError) throw contentsError;
             contents = contentsData ?? [];
           } else {
@@ -446,7 +440,7 @@ export default function CourseManager() {
       const section = updatedSections[sectionIndex];
       if (section && section.contents && section.contents[contentIndex]) {
         // Ensure the value is a valid ContentType
-        const validContentType = (['lesson', 'video', 'text', 'quiz', 'assignment'] as const).includes(value as any)
+        const validContentType = (['lesson', 'video', 'text', 'quiz', 'assignment', 'lecture'] as const).includes(value as any)
           ? (value as ContentType)
           : 'lesson';
         section.contents[contentIndex].content_type = validContentType;
@@ -731,13 +725,14 @@ export default function CourseManager() {
                                       <SelectTrigger className="h-8 text-xs w-[120px]">
                                         <SelectValue placeholder="Type" />
                                       </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="lesson">Lesson</SelectItem>
-                                        <SelectItem value="video">Video</SelectItem>
-                                        <SelectItem value="text">Text</SelectItem>
-                                        <SelectItem value="quiz">Quiz</SelectItem>
-                                        <SelectItem value="assignment">Assignment</SelectItem>
-                                      </SelectContent>
+                                       <SelectContent>
+                                         <SelectItem value="lesson">Lesson</SelectItem>
+                                         <SelectItem value="lecture">Lecture</SelectItem>
+                                         <SelectItem value="video">Video</SelectItem>
+                                         <SelectItem value="text">Text</SelectItem>
+                                         <SelectItem value="quiz">Quiz</SelectItem>
+                                         <SelectItem value="assignment">Assignment</SelectItem>
+                                       </SelectContent>
                                     </Select>
                                   </div>
                                   <div className="flex items-center gap-2">

@@ -105,9 +105,8 @@ export type Database = {
           duration_minutes: number | null
           id: string
           is_free: boolean
-          module_id: string | null
           order_index: number
-          submodule_id: string | null
+          section_id: string | null
           title: string
           updated_at: string
         }
@@ -123,9 +122,8 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           is_free?: boolean
-          module_id?: string | null
           order_index?: number
-          submodule_id?: string | null
+          section_id?: string | null
           title: string
           updated_at?: string
         }
@@ -141,9 +139,8 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           is_free?: boolean
-          module_id?: string | null
           order_index?: number
-          submodule_id?: string | null
+          section_id?: string | null
           title?: string
           updated_at?: string
         }
@@ -153,6 +150,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_content_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "course_sections"
             referencedColumns: ["id"]
           },
         ]
