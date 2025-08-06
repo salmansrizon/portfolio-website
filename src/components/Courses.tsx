@@ -178,7 +178,16 @@ export default function Courses() {
 
   const fetchCourseContent = async (courseId: string) => {
     try {
-      // First, fetch all content items for this course
+      // Fetch course sections
+      const { data: sectionsData, error: sectionsError } = await supabase
+        .from("course_sections")
+        .select("*")
+        .eq("course_id", courseId)
+        .order("order_index", { ascending: true });
+
+      if (sectionsError) throw sectionsError;
+
+      // Fetch course content
       const { data: contentData, error: contentError } = await supabase
         .from("course_content")
         .select("*")
@@ -187,25 +196,42 @@ export default function Courses() {
 
       if (contentError) throw contentError;
 
-      // For now, create a single default section since we don't have sections in the database
-      const defaultSection = {
-        id: 'default-section',
-        title: 'Course Content',
-        description: '',
-        order_index: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        course_id: courseId,
-        contents: contentData || []
-      };
+      // Group content by section
+      const contentBySection: Record<string, CourseContent[]> = {};
+      (contentData || []).forEach(content => {
+        if (!contentBySection[content.section_id]) {
+          contentBySection[content.section_id] = [];
+        }
+        contentBySection[content.section_id].push(content);
+      });
 
-      // Update the selected course with the fetched content
+      // Create sections with their content
+      const sections: CourseSection[] = (sectionsData || []).map(section => ({
+        id: section.id,
+        title: section.title,
+        description: (section.content && typeof section.content === 'object' && 'description' in section.content) ? String(section.content.description) : '',
+        order_index: section.order_index,
+        contents: contentBySection[section.id] || []
+      }));
+
+      // If no sections exist, create a default section with all content
+      if (sections.length === 0 && contentData && contentData.length > 0) {
+        sections.push({
+          id: 'default-section',
+          title: 'Course Content',
+          description: '',
+          order_index: 0,
+          contents: contentData
+        });
+      }
+
+      // Update the selected course with the fetched content and sections
       setSelectedCourse(prevCourse => {
         if (!prevCourse) return null;
         return {
           ...prevCourse,
           course_content: contentData || [],
-          sections: [defaultSection]
+          sections: sections
         };
       });
       
@@ -216,7 +242,7 @@ export default function Courses() {
             ? { 
                 ...course, 
                 course_content: contentData || [],
-                sections: [defaultSection]
+                sections: sections
               } 
             : course
         )
