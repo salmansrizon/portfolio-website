@@ -191,8 +191,6 @@ export default function CourseManager() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      let courseId = editingCourse?.id;
-      
       if (editingCourse) {
         // Update existing course
         const { error: courseError } = await supabase
@@ -212,9 +210,10 @@ export default function CourseManager() {
           })
           .eq('id', editingCourse.id);
         if (courseError) throw courseError;
+        showSuccess("Course updated successfully!");
       } else {
         // Create new course
-        const { data: newCourse, error: courseError } = await supabase
+        const { error: courseError } = await supabase
           .from('courses')
           .insert({
             title: formData.title,
@@ -228,76 +227,11 @@ export default function CourseManager() {
             duration_hours: formData.duration_hours,
             banner_image: formData.banner_image,
             technologies: formData.technologies,
-          })
-          .select()
-          .single();
+          });
         if (courseError) throw courseError;
-        courseId = newCourse.id;
-      }
-
-      // Save sections and content
-      if (courseId && formData.sections.length > 0) {
-        // Delete existing sections and content if editing
-        if (editingCourse) {
-          const { error: deleteContentError } = await supabase
-            .from('course_content')
-            .delete()
-            .eq('course_id', courseId);
-          if (deleteContentError) console.error('Error deleting content:', deleteContentError);
-
-          const { error: deleteSectionsError } = await supabase
-            .from('course_sections')
-            .delete()
-            .eq('course_id', courseId);
-          if (deleteSectionsError) console.error('Error deleting sections:', deleteSectionsError);
-        }
-
-        // Create sections
-        for (const section of formData.sections) {
-          const { data: newSection, error: sectionError } = await supabase
-            .from('course_sections')
-            .insert({
-              course_id: courseId,
-              title: section.title,
-              section_type: section.section_type || 'default',
-              order_index: section.order_index,
-              is_visible: section.is_visible !== false,
-              content: {}
-            })
-            .select()
-            .single();
-
-          if (sectionError) {
-            console.error('Error creating section:', sectionError);
-            continue;
-          }
-
-          // Create content for this section
-          if (section.contents && section.contents.length > 0) {
-            const contentToInsert = section.contents.map(content => ({
-              course_id: courseId,
-              section_id: newSection.id,
-              title: content.title,
-              description: content.description || '',
-              content_type: content.content_type,
-              content_data: content.content_data || {},
-              is_free: content.is_free,
-              order_index: content.order_index,
-              duration_minutes: content.duration_minutes || null
-            }));
-
-            const { error: contentError } = await supabase
-              .from('course_content')
-              .insert(contentToInsert);
-
-            if (contentError) {
-              console.error('Error creating content:', contentError);
-            }
-          }
-        }
+        showSuccess("Course created successfully!");
       }
       
-      showSuccess(editingCourse ? "Course updated successfully!" : "Course created successfully!");
       fetchCourses();
       setShowDialog(false);
       resetForm();
