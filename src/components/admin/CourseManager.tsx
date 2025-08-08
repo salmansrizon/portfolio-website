@@ -191,7 +191,9 @@ export default function CourseManager() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      if (editingCourse) {
+      let courseId: string | null = editingCourse?.id || null;
+
+      if (editingCourse && courseId) {
         // Update existing course
         const { error: courseError } = await supabase
           .from('courses')
@@ -208,12 +210,11 @@ export default function CourseManager() {
             banner_image: formData.banner_image,
             technologies: formData.technologies,
           })
-          .eq('id', editingCourse.id);
+          .eq('id', courseId);
         if (courseError) throw courseError;
-        showSuccess("Course updated successfully!");
       } else {
-        // Create new course
-        const { error: courseError } = await supabase
+        // Create new course and capture its id
+        const { data: created, error: courseError } = await supabase
           .from('courses')
           .insert({
             title: formData.title,
@@ -227,11 +228,19 @@ export default function CourseManager() {
             duration_hours: formData.duration_hours,
             banner_image: formData.banner_image,
             technologies: formData.technologies,
-          });
+          })
+          .select('id')
+          .single();
         if (courseError) throw courseError;
-        showSuccess("Course created successfully!");
+        courseId = created?.id || null;
       }
-      
+
+      if (!courseId) throw new Error('Missing course id');
+
+      // Sync sections and contents for this course
+      await syncSectionsAndContents(courseId);
+
+      showSuccess(editingCourse ? "Course updated successfully!" : "Course created successfully!");
       fetchCourses();
       setShowDialog(false);
       resetForm();
@@ -345,7 +354,7 @@ export default function CourseManager() {
           id: section.id,
           course_id: section.course_id,
           title: section.title,
-          description: (section as any).description || '', // Handle optional description field
+          description: ((section as any).content?.description) || '', // Read description from JSON content
           order_index: section.order_index || 0,
           section_type: section.section_type || 'default',
           is_visible: section.is_visible !== false, // default to true if not set
@@ -367,6 +376,102 @@ export default function CourseManager() {
       setIsLoadingSections(false);
     }
   };
+
+  async function syncSectionsAndContents(courseId: string) {
+    try {
+      const currentSections = formData.sections || [];
+
+      // Fetch existing section ids
+      const { data: existingSections } = await supabase
+        .from('course_sections')
+        .select('id')
+        .eq('course_id', courseId);
+      const existingSectionIds = (existingSections || []).map((s: any) => String(s.id));
+
+      const currentSectionIds = currentSections.map(s => String(s.id));
+      const sectionsToDelete = existingSectionIds.filter(id => !currentSectionIds.includes(id));
+      if (sectionsToDelete.length > 0) {
+        await supabase.from('course_content').delete().in('section_id', sectionsToDelete);
+        await supabase.from('course_sections').delete().in('id', sectionsToDelete);
+      }
+
+      const sectionIdMap: Record<string, string> = {};
+      for (let index = 0; index < currentSections.length; index++) {
+        const s = currentSections[index];
+        const payload: any = {
+          course_id: courseId,
+          title: s.title,
+          content: { description: s.description || '' },
+          order_index: index,
+          section_type: s.section_type || 'default',
+          is_visible: s.is_visible !== false,
+        };
+        if (!s.id || String(s.id).startsWith('section-')) {
+          const { data: inserted, error } = await supabase
+            .from('course_sections')
+            .insert(payload)
+            .select('id')
+            .single();
+          if (error) throw error;
+          const newId = String((inserted as any).id);
+          sectionIdMap[String(s.id)] = newId;
+          s.id = newId;
+        } else {
+          const { error } = await supabase
+            .from('course_sections')
+            .update(payload)
+            .eq('id', s.id);
+          if (error) throw error;
+          sectionIdMap[String(s.id)] = String(s.id);
+        }
+      }
+
+      // Sync contents for each section
+      for (const s of currentSections) {
+        const resolvedSectionId = sectionIdMap[String(s.id)] || String(s.id);
+        const { data: existingContents } = await supabase
+          .from('course_content')
+          .select('id')
+          .eq('section_id', resolvedSectionId);
+        const existingContentIds = (existingContents || []).map((c: any) => String(c.id));
+
+        const contents = (s.contents || []).map((c, idx) => ({ ...c, order_index: idx + 1 }));
+        const currentContentIds = contents.map(c => String(c.id));
+        const contentsToDelete = existingContentIds.filter(id => !currentContentIds.includes(id));
+        if (contentsToDelete.length > 0) {
+          await supabase.from('course_content').delete().in('id', contentsToDelete);
+        }
+
+        for (let i = 0; i < contents.length; i++) {
+          const c = contents[i];
+          const payload: any = {
+            course_id: courseId,
+            section_id: resolvedSectionId,
+            title: c.title,
+            description: c.description || null,
+            content_type: c.content_type || 'lesson',
+            content_data: c.content_data || {},
+            is_free: !!c.is_free,
+            order_index: i + 1,
+            duration_minutes: c.duration_minutes ?? null,
+          };
+          if (!c.id || String(c.id).startsWith('content-')) {
+            const { error } = await supabase.from('course_content').insert(payload);
+            if (error) throw error;
+          } else {
+            const { error } = await supabase
+              .from('course_content')
+              .update(payload)
+              .eq('id', c.id);
+            if (error) throw error;
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error syncing sections/contents', err);
+      throw err;
+    }
+  }
 
   const resetForm = () => {
     setEditingCourse(null);

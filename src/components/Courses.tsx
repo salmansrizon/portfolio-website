@@ -178,52 +178,70 @@ export default function Courses() {
 
   const fetchCourseContent = async (courseId: string) => {
     try {
-      // First, fetch all content items for this course
-      const { data: contentData, error: contentError } = await supabase
-        .from("course_content")
-        .select("*")
-        .eq("course_id", courseId)
-        .order("order_index", { ascending: true });
+      // Fetch sections for this course
+      const { data: sectionsData, error: sectionsError } = await supabase
+        .from('course_sections')
+        .select('*')
+        .eq('course_id', courseId)
+        .order('order_index', { ascending: true });
+      if (sectionsError) throw sectionsError;
 
+      // Fetch all content items for this course
+      const { data: contentData, error: contentError } = await supabase
+        .from('course_content')
+        .select('*')
+        .eq('course_id', courseId)
+        .order('order_index', { ascending: true });
       if (contentError) throw contentError;
 
-      // For now, create a single default section since we don't have sections in the database
-      const defaultSection = {
-        id: 'default-section',
-        title: 'Course Content',
-        description: '',
-        order_index: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        course_id: courseId,
-        contents: contentData || []
-      };
+      // Group content by section_id (including uncategorized)
+      const bySection: Record<string, CourseContent[]> = {};
+      (contentData || []).forEach((c: any) => {
+        const key = c.section_id || 'uncategorized';
+        if (!bySection[key]) bySection[key] = [];
+        bySection[key].push(c as CourseContent);
+      });
 
-      // Update the selected course with the fetched content
+      // Build sections with their contents
+      const sections: CourseSection[] = (sectionsData || []).map((s: any) => ({
+        id: s.id,
+        title: s.title,
+        description: s.description || '',
+        order_index: s.order_index || 0,
+        contents: bySection[s.id] || []
+      }));
+
+      // If there are uncategorized contents, show them first as a general section
+      if (bySection['uncategorized'] && bySection['uncategorized'].length > 0) {
+        sections.unshift({
+          id: 'no-section',
+          title: 'General',
+          description: '',
+          order_index: -1,
+          contents: bySection['uncategorized']
+        });
+      }
+
+      // Update selected course and list
       setSelectedCourse(prevCourse => {
         if (!prevCourse) return null;
         return {
           ...prevCourse,
           course_content: contentData || [],
-          sections: [defaultSection]
+          sections
         };
       });
-      
-      // Also update the course in the courses list for consistency
-      setCourses(prevCourses => 
-        prevCourses.map(course => 
-          course.id === courseId 
-            ? { 
-                ...course, 
-                course_content: contentData || [],
-                sections: [defaultSection]
-              } 
+
+      setCourses(prevCourses =>
+        prevCourses.map(course =>
+          course.id === courseId
+            ? { ...course, course_content: contentData || [], sections }
             : course
         )
       );
     } catch (error) {
-      console.error("Error fetching course content:", error);
-      toast.error("Failed to load course content");
+      console.error('Error fetching course content:', error);
+      toast.error('Failed to load course content');
     }
   };
 
