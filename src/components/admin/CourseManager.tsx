@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, X } from "lucide-react";
@@ -20,6 +21,7 @@ interface ToastOptions {
   variant?: ToastVariant;
   duration?: number;
 }
+
 // Helper function for showing toast messages with explicit types
 const useTypedToast = () => {
   const { toast: originalToast } = useToast();
@@ -88,24 +90,22 @@ interface Course {
 
 type ContentType = 'video' | 'text' | 'quiz' | 'lesson' | 'assignment' | 'lecture';
 
-// Type for database course content
 interface DBCourseContent {
   id: string;
   course_id: string;
   section_id: string;
   title: string;
   description: string | null;
-  content_type: string; // This comes from DB as string, we'll validate it
+  content_type: string;
   content_data: any;
   is_free: boolean;
   order_index: number;
   duration_minutes: number | null;
   created_at: string;
   updated_at: string;
-  content_category?: string; // Some DB schemas might use this
+  content_category?: string;
 }
 
-// Type for our application's course content
 interface CourseContent {
   id: string;
   course_id: string;
@@ -121,7 +121,6 @@ interface CourseContent {
   updated_at?: string;
 }
 
-// Helper function to safely convert string to ContentType
 function toContentType(type: string): ContentType {
   return (['video', 'text', 'quiz', 'lesson', 'assignment', 'lecture'] as const)
     .includes(type as any)
@@ -136,8 +135,8 @@ interface FormData {
   discounted_price: number | null;
   discount_percentage: number | null;
   is_free: boolean;
-  status: string // Changed to string to handle form input more flexibly;
-  difficulty_level: string // Changed to string to handle form input more flexibly;
+  status: string;
+  difficulty_level: string;
   duration_hours: number | null;
   banner_image: string;
   technologies: string[];
@@ -191,9 +190,9 @@ export default function CourseManager() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      let courseId: string | null = editingCourse?.id || null;
-
-      if (editingCourse && courseId) {
+      let courseId = editingCourse?.id;
+      
+      if (editingCourse) {
         // Update existing course
         const { error: courseError } = await supabase
           .from('courses')
@@ -210,11 +209,11 @@ export default function CourseManager() {
             banner_image: formData.banner_image,
             technologies: formData.technologies,
           })
-          .eq('id', courseId);
+          .eq('id', editingCourse.id);
         if (courseError) throw courseError;
       } else {
-        // Create new course and capture its id
-        const { data: created, error: courseError } = await supabase
+        // Create new course
+        const { data: newCourse, error: courseError } = await supabase
           .from('courses')
           .insert({
             title: formData.title,
@@ -229,17 +228,15 @@ export default function CourseManager() {
             banner_image: formData.banner_image,
             technologies: formData.technologies,
           })
-          .select('id')
+          .select()
           .single();
         if (courseError) throw courseError;
-        courseId = created?.id || null;
+        courseId = newCourse.id;
       }
 
-      if (!courseId) throw new Error('Missing course id');
-
-      // Sync sections and contents for this course
-      await syncSectionsAndContents(courseId);
-
+      // Save sections and content
+      await saveSectionsAndContent(courseId!);
+      
       showSuccess(editingCourse ? "Course updated successfully!" : "Course created successfully!");
       fetchCourses();
       setShowDialog(false);
@@ -247,6 +244,51 @@ export default function CourseManager() {
     } catch (error) {
       console.error("Error saving course:", error);
       showError("Failed to save course");
+    }
+  };
+
+  const saveSectionsAndContent = async (courseId: string) => {
+    // Delete existing sections and content if editing
+    if (editingCourse) {
+      await supabase.from('course_content').delete().eq('course_id', courseId);
+      await supabase.from('course_sections').delete().eq('course_id', courseId);
+    }
+
+    // Save sections
+    for (const section of formData.sections) {
+      const { data: savedSection, error: sectionError } = await supabase
+        .from('course_sections')
+        .insert({
+          course_id: courseId,
+          title: section.title,
+          section_type: section.section_type,
+          order_index: section.order_index,
+          is_visible: section.is_visible ?? true,
+          content: {}
+        })
+        .select()
+        .single();
+
+      if (sectionError) throw sectionError;
+
+      // Save content for this section
+      for (const content of section.contents) {
+        const { error: contentError } = await supabase
+          .from('course_content')
+          .insert({
+            course_id: courseId,
+            section_id: savedSection.id,
+            title: content.title,
+            description: content.description,
+            content_type: content.content_type,
+            content_data: content.content_data,
+            is_free: content.is_free,
+            order_index: content.order_index,
+            duration_minutes: content.duration_minutes
+          });
+
+        if (contentError) throw contentError;
+      }
     }
   };
 
@@ -268,7 +310,6 @@ export default function CourseManager() {
   const fetchCourseSections = async (courseId: string): Promise<CourseSection[]> => {
     try {
       setIsLoadingSections(true);
-      // First get all sections for the course with proper typing
       const { data: sections, error: sectionsError } = await supabase
         .from('course_sections')
         .select('*')
@@ -279,44 +320,24 @@ export default function CourseManager() {
         };
       if (sectionsError) throw sectionsError;
       if (!sections) return [];
-      // Get all contents for these sections in a single query
+
       const sectionIds: string[] = sections.map((s: any) => s.id);
       let contents: DBCourseContent[] = [];
       if (sectionIds.length > 0) {
         try {
-          // Query contents with proper typing
-          // Only run the query if sectionIds is not empty
-          let contentsData: DBCourseContent[] | null = [];
-          let contentsError: PostgrestError | null = null;
-          if (sectionIds.length > 0) {
-            const { data, error } = await supabase
-              .from('course_content')
-              .select('*')
-              .in('section_id', sectionIds)
-              .order('order_index');
-            contentsData = data;
-            contentsError = error;
-            if (contentsError) throw contentsError;
-            contents = contentsData ?? [];
-          } else {
-            contents = [];
-          }
-          // Ensure all contents have a section_id and proper types
-          contents = contents.filter((content: DBCourseContent): content is DBCourseContent => {
-            if (!content.section_id) return false;
-            // Ensure required fields have proper types
-            content.content_data = content.content_data || {};
-            content.is_free = Boolean(content.is_free);
-            content.order_index = Number(content.order_index) || 0;
-            return true;
-          });
+          const { data, error } = await supabase
+            .from('course_content')
+            .select('*')
+            .in('section_id', sectionIds)
+            .order('order_index');
+          if (error) throw error;
+          contents = data ?? [];
         } catch (error) {
           console.error('Error fetching course contents:', error);
-          // Continue with empty contents if there's an error
           contents = [];
         }
       }
-      // Group contents by section_id with proper typing
+
       const contentsBySection: Record<string, any[]> = {};
       for (const content of contents) {
         if (!content.section_id) continue;
@@ -325,7 +346,7 @@ export default function CourseManager() {
         }
         contentsBySection[content.section_id].push(content);
       }
-      // Transform the data to match our CourseSection interface
+
       const formattedSections = sections.map(section => {
         const sectionContents: CourseContent[] = [];
         const sectionContentsData = section.id ? contentsBySection[section.id] || [] : [];
@@ -354,17 +375,16 @@ export default function CourseManager() {
           id: section.id,
           course_id: section.course_id,
           title: section.title,
-          description: ((section as any).content?.description) || '', // Read description from JSON content
+          description: (section as any).description || '',
           order_index: section.order_index || 0,
           section_type: section.section_type || 'default',
-          is_visible: section.is_visible !== false, // default to true if not set
+          is_visible: section.is_visible !== false,
           contents: sectionContents
         };
       });
       return formattedSections;
     } catch (error) {
       console.error('Error fetching course sections:', error);
-      // Use explicit type annotation to prevent deep type inference
       const toastOptions = {
         title: 'Error' as const,
         description: 'Failed to load course content' as const,
@@ -376,102 +396,6 @@ export default function CourseManager() {
       setIsLoadingSections(false);
     }
   };
-
-  async function syncSectionsAndContents(courseId: string) {
-    try {
-      const currentSections = formData.sections || [];
-
-      // Fetch existing section ids
-      const { data: existingSections } = await supabase
-        .from('course_sections')
-        .select('id')
-        .eq('course_id', courseId);
-      const existingSectionIds = (existingSections || []).map((s: any) => String(s.id));
-
-      const currentSectionIds = currentSections.map(s => String(s.id));
-      const sectionsToDelete = existingSectionIds.filter(id => !currentSectionIds.includes(id));
-      if (sectionsToDelete.length > 0) {
-        await supabase.from('course_content').delete().in('section_id', sectionsToDelete);
-        await supabase.from('course_sections').delete().in('id', sectionsToDelete);
-      }
-
-      const sectionIdMap: Record<string, string> = {};
-      for (let index = 0; index < currentSections.length; index++) {
-        const s = currentSections[index];
-        const payload: any = {
-          course_id: courseId,
-          title: s.title,
-          content: { description: s.description || '' },
-          order_index: index,
-          section_type: s.section_type || 'default',
-          is_visible: s.is_visible !== false,
-        };
-        if (!s.id || String(s.id).startsWith('section-')) {
-          const { data: inserted, error } = await supabase
-            .from('course_sections')
-            .insert(payload)
-            .select('id')
-            .single();
-          if (error) throw error;
-          const newId = String((inserted as any).id);
-          sectionIdMap[String(s.id)] = newId;
-          s.id = newId;
-        } else {
-          const { error } = await supabase
-            .from('course_sections')
-            .update(payload)
-            .eq('id', s.id);
-          if (error) throw error;
-          sectionIdMap[String(s.id)] = String(s.id);
-        }
-      }
-
-      // Sync contents for each section
-      for (const s of currentSections) {
-        const resolvedSectionId = sectionIdMap[String(s.id)] || String(s.id);
-        const { data: existingContents } = await supabase
-          .from('course_content')
-          .select('id')
-          .eq('section_id', resolvedSectionId);
-        const existingContentIds = (existingContents || []).map((c: any) => String(c.id));
-
-        const contents = (s.contents || []).map((c, idx) => ({ ...c, order_index: idx + 1 }));
-        const currentContentIds = contents.map(c => String(c.id));
-        const contentsToDelete = existingContentIds.filter(id => !currentContentIds.includes(id));
-        if (contentsToDelete.length > 0) {
-          await supabase.from('course_content').delete().in('id', contentsToDelete);
-        }
-
-        for (let i = 0; i < contents.length; i++) {
-          const c = contents[i];
-          const payload: any = {
-            course_id: courseId,
-            section_id: resolvedSectionId,
-            title: c.title,
-            description: c.description || null,
-            content_type: c.content_type || 'lesson',
-            content_data: c.content_data || {},
-            is_free: !!c.is_free,
-            order_index: i + 1,
-            duration_minutes: c.duration_minutes ?? null,
-          };
-          if (!c.id || String(c.id).startsWith('content-')) {
-            const { error } = await supabase.from('course_content').insert(payload);
-            if (error) throw error;
-          } else {
-            const { error } = await supabase
-              .from('course_content')
-              .update(payload)
-              .eq('id', c.id);
-            if (error) throw error;
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Error syncing sections/contents', err);
-      throw err;
-    }
-  }
 
   const resetForm = () => {
     setEditingCourse(null);
@@ -498,7 +422,6 @@ export default function CourseManager() {
   const handleEdit = async (course: Course) => {
     try {
       setEditingCourse(course);
-      // Fetch basic course data first
       const { data: courseData, error: courseError } = await supabase
         .from('courses')
         .select('*')
@@ -514,7 +437,6 @@ export default function CourseManager() {
       if (!courseData) {
         throw new Error('Course not found');
       }
-      // Fetch course sections separately using our existing function
       const sections = await fetchCourseSections(course.id);
       setFormData({
         title: courseData.title || '',
@@ -544,7 +466,6 @@ export default function CourseManager() {
       const updatedSections = [...prev.sections];
       const section = updatedSections[sectionIndex];
       if (section && section.contents && section.contents[contentIndex]) {
-        // Ensure the value is a valid ContentType
         const validContentType = (['lesson', 'video', 'text', 'quiz', 'assignment', 'lecture'] as const).includes(value as any)
           ? (value as ContentType)
           : 'lesson';
@@ -552,6 +473,82 @@ export default function CourseManager() {
       }
       return { ...prev, sections: updatedSections };
     });
+  };
+
+  const addSection = () => {
+    const newSection: CourseSection = {
+      id: `temp-section-${Date.now()}`,
+      course_id: editingCourse?.id || '',
+      title: '',
+      description: '',
+      order_index: formData.sections.length,
+      section_type: 'default',
+      is_visible: true,
+      contents: []
+    };
+    setFormData({ ...formData, sections: [...formData.sections, newSection] });
+  };
+
+  const deleteSection = async (sectionIndex: number) => {
+    const section = formData.sections[sectionIndex];
+    
+    if (section.id && !section.id.startsWith('temp-')) {
+      try {
+        await supabase.from('course_content').delete().eq('section_id', section.id);
+        await supabase.from('course_sections').delete().eq('id', section.id);
+      } catch (error) {
+        console.error('Error deleting section:', error);
+      }
+    }
+    
+    const updatedSections = formData.sections.filter((_, i) => i !== sectionIndex);
+    setFormData({ ...formData, sections: updatedSections });
+  };
+
+  const addContent = (sectionIndex: number) => {
+    const section = formData.sections[sectionIndex];
+    const newContent: CourseContent = {
+      id: `temp-content-${Date.now()}`,
+      course_id: editingCourse?.id || '',
+      section_id: section.id || '',
+      title: '',
+      description: '',
+      content_type: 'lesson',
+      content_data: {},
+      is_free: false,
+      order_index: (section.contents?.length || 0)
+    };
+    
+    const updatedSections = [...formData.sections];
+    if (!updatedSections[sectionIndex].contents) {
+      updatedSections[sectionIndex].contents = [];
+    }
+    updatedSections[sectionIndex].contents.push(newContent);
+    setFormData({ ...formData, sections: updatedSections });
+  };
+
+  const deleteContent = async (sectionIndex: number, contentIndex: number) => {
+    const content = formData.sections[sectionIndex].contents[contentIndex];
+    
+    if (content.id && !content.id.startsWith('temp-')) {
+      try {
+        await supabase.from('course_content').delete().eq('id', content.id);
+      } catch (error) {
+        console.error('Error deleting content:', error);
+      }
+    }
+    
+    const updatedSections = [...formData.sections];
+    updatedSections[sectionIndex].contents = updatedSections[sectionIndex].contents.filter((_, i) => i !== contentIndex);
+    setFormData({ ...formData, sections: updatedSections });
+  };
+
+  const updateContentField = (sectionIndex: number, contentIndex: number, field: string, value: any) => {
+    const updatedSections = [...formData.sections];
+    if (updatedSections[sectionIndex].contents) {
+      (updatedSections[sectionIndex].contents[contentIndex] as any)[field] = value;
+      setFormData({ ...formData, sections: updatedSections });
+    }
   };
 
   return (
@@ -565,11 +562,11 @@ export default function CourseManager() {
               Add Course
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingCourse ? "Edit Course" : "Add New Course"}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Label htmlFor="title">Title</Label>
                 <Input
@@ -614,30 +611,29 @@ export default function CourseManager() {
                   <Input
                     id="discount_percentage"
                     type="number"
-                    min="0"
-                    max="100"
                     value={formData.discount_percentage || ''}
                     onChange={(e) => setFormData({ ...formData, discount_percentage: parseInt(e.target.value) || null })}
                     placeholder="Discount percentage"
                   />
                 </div>
               </div>
-              <div>
-                <Label htmlFor="banner_image">Banner Image URL</Label>
-                <Input
-                  id="banner_image"
-                  value={formData.banner_image}
-                  onChange={(e) => setFormData({ ...formData, banner_image: e.target.value })}
-                  placeholder="Image URL"
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="published">Published</SelectItem>
+                      <SelectItem value="archived">Archived</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div>
                   <Label htmlFor="difficulty_level">Difficulty Level</Label>
-                  <Select
-                    value={formData.difficulty_level}
-                    onValueChange={(value) => setFormData({ ...formData, difficulty_level: value })}
-                  >
+                  <Select value={formData.difficulty_level} onValueChange={(value) => setFormData({ ...formData, difficulty_level: value })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select difficulty" />
                     </SelectTrigger>
@@ -660,15 +656,26 @@ export default function CourseManager() {
                 </div>
               </div>
               <div>
+                <Label htmlFor="banner_image">Banner Image URL</Label>
+                <Input
+                  id="banner_image"
+                  value={formData.banner_image}
+                  onChange={(e) => setFormData({ ...formData, banner_image: e.target.value })}
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
+              <div>
                 <Label>Technologies</Label>
                 <div className="flex gap-2 mb-2">
                   <Input
                     value={newTechnology}
                     onChange={(e) => setNewTechnology(e.target.value)}
                     placeholder="Add technology"
-                    onKeyPress={(e) => e.key === 'Enter' && addTechnology()}
+                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTechnology())}
                   />
-                  <Button type="button" onClick={addTechnology}>Add</Button>
+                  <Button type="button" onClick={addTechnology}>
+                    <Plus className="w-4 h-4" />
+                  </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {formData.technologies.map((tech, index) => (
@@ -687,299 +694,224 @@ export default function CourseManager() {
                 />
                 <Label htmlFor="is_free">Free Course</Label>
               </div>
-              {/* Course Content Sections */}
+
+              {/* Section and Content Management */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-medium">
-                    Course Content
-                    {isLoadingSections && (
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        Loading content...
-                      </span>
-                    )}
-                  </h4>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const newSection: CourseSection = {
-                        id: `section-${Date.now()}`,
-                        course_id: editingCourse?.id || '',
-                        title: 'New Section',
-                        description: '',
-                        order_index: (formData.sections?.length || 0),
-                        section_type: 'default',
-                        is_visible: true,
-                        contents: []
-                      };
-                      setFormData(prev => ({
-                        ...prev,
-                        sections: [...(prev.sections || []), newSection]
-                      }));
-                    }}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Section
-                  </Button>
-                </div>
-                <div className="space-y-4 border rounded-lg p-4">
-                  {formData.sections?.map((section, sectionIndex) => (
-                    <div key={section.id} className="border rounded-md p-4 space-y-3">
+                <h3 className="text-lg font-semibold">Course Sections & Content</h3>
+                {formData.sections.map((section, sectionIndex) => (
+                  <Card key={section.id || sectionIndex} className="p-4">
+                    <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <Input
-                          value={section.title}
-                          onChange={(e) => {
-                            const newSections = [...(formData.sections || [])];
-                            newSections[sectionIndex] = { ...section, title: e.target.value };
-                            setFormData({ ...formData, sections: newSections });
-                          }}
-                          placeholder="Section title"
-                          className="border-0 p-0 text-base font-medium shadow-none focus-visible:ring-0"
-                        />
+                        <div className="flex-1 grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Section Title</Label>
+                            <Input
+                              value={section.title}
+                              onChange={(e) => {
+                                const updatedSections = [...formData.sections];
+                                updatedSections[sectionIndex].title = e.target.value;
+                                setFormData({ ...formData, sections: updatedSections });
+                              }}
+                              placeholder="Section title"
+                            />
+                          </div>
+                          <div>
+                            <Label>Section Type</Label>
+                            <Input
+                              value={section.section_type}
+                              onChange={(e) => {
+                                const updatedSections = [...formData.sections];
+                                updatedSections[sectionIndex].section_type = e.target.value;
+                                setFormData({ ...formData, sections: updatedSections });
+                              }}
+                              placeholder="Section type"
+                            />
+                          </div>
+                        </div>
                         <Button
                           type="button"
-                          variant="ghost"
+                          variant="destructive"
                           size="sm"
-                          onClick={() => {
-                            const newSections = [...(formData.sections || [])];
-                            newSections.splice(sectionIndex, 1);
-                            setFormData({ ...formData, sections: newSections });
-                          }}
+                          onClick={() => deleteSection(sectionIndex)}
                         >
-                          <Trash2 className="w-4 h-4 text-destructive" />
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
-                      <Textarea
-                        value={section.description}
-                        onChange={(e) => {
-                          const newSections = [...(formData.sections || [])];
-                          newSections[sectionIndex] = { ...section, description: e.target.value };
-                          setFormData({ ...formData, sections: newSections });
-                        }}
-                        placeholder="Section description (optional)"
-                        className="min-h-[60px]"
-                      />
+                      
+                      {/* Section Content Management */}
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Content Items</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              const newSections = [...(formData.sections || [])];
-                              const newContent: CourseContent = {
-                                id: `content-${Date.now()}`,
-                                section_id: section.id,
-                                title: 'New Lesson',
-                                description: '',
-                                content_type: 'lesson',
-                                is_free: false,
-                                duration_minutes: 0,
-                                order_index: (section.contents?.length || 0) + 1,
-                                content_data: {},
-                                course_id: editingCourse?.id || '' // Will be set when saving
-                              };
-                              newSections[sectionIndex] = {
-                                ...section,
-                                contents: [...(section.contents || []), newContent]
-                              };
-                              setFormData({ ...formData, sections: newSections });
-                            }}
-                          >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Add Content
-                          </Button>
-                        </div>
-                        <div className="space-y-2">
-                          {section.contents?.map((content, contentIndex) => (
-                            <div key={content.id} className="flex items-start gap-3 p-3 border rounded-md">
-                              <div className="flex-1 space-y-2">
-                                <Input
-                                  value={content.title}
-                                  onChange={(e) => {
-                                    const newSections = [...(formData.sections || [])];
-                                    const contents = [...(section.contents || [])];
-                                    contents[contentIndex] = { ...content, title: e.target.value };
-                                    newSections[sectionIndex] = { ...section, contents };
-                                    setFormData({ ...formData, sections: newSections });
-                                  }}
-                                  placeholder="Content title"
-                                  className="border-0 p-0 shadow-none focus-visible:ring-0"
-                                />
-                                <Textarea
-                                  value={content.description}
-                                  onChange={(e) => {
-                                    const newSections = [...(formData.sections || [])];
-                                    const contents = [...(section.contents || [])];
-                                    contents[contentIndex] = { ...content, description: e.target.value };
-                                    newSections[sectionIndex] = { ...section, contents };
-                                    setFormData({ ...formData, sections: newSections });
-                                  }}
-                                  placeholder="Content description (optional)"
-                                  className="min-h-[60px] text-sm"
-                                />
-                                <div className="flex items-center gap-4">
-                                  <div className="flex items-center gap-2">
-                                    <Label htmlFor={`content-type-${content.id}`} className="text-xs">Type:</Label>
-                                    <Select
-                                      value={content.content_type}
-                                      onValueChange={(value) => handleContentTypeChange(sectionIndex, contentIndex, value)}
-                                    >
-                                      <SelectTrigger className="h-8 text-xs w-[120px]">
-                                        <SelectValue placeholder="Type" />
-                                      </SelectTrigger>
-                                       <SelectContent>
-                                         <SelectItem value="lesson">Lesson</SelectItem>
-                                         <SelectItem value="lecture">Lecture</SelectItem>
-                                         <SelectItem value="video">Video</SelectItem>
-                                         <SelectItem value="text">Text</SelectItem>
-                                         <SelectItem value="quiz">Quiz</SelectItem>
-                                         <SelectItem value="assignment">Assignment</SelectItem>
-                                       </SelectContent>
-                                    </Select>
+                        <h4 className="font-medium">Section Contents</h4>
+                        {section.contents && section.contents.length > 0 ? (
+                          section.contents.map((content, contentIndex) => (
+                            <Card key={content.id || contentIndex} className="p-3 border-l-4 border-l-primary/30">
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex-1 grid grid-cols-2 gap-3">
+                                    <div>
+                                      <Label className="text-xs">Content Title</Label>
+                                      <Input
+                                        value={content.title}
+                                        onChange={(e) => updateContentField(sectionIndex, contentIndex, 'title', e.target.value)}
+                                        placeholder="Content title"
+                                        className="h-8 text-sm"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label className="text-xs">Content Type</Label>
+                                      <Select 
+                                        value={content.content_type} 
+                                        onValueChange={(value) => handleContentTypeChange(sectionIndex, contentIndex, value)}
+                                      >
+                                        <SelectTrigger className="h-8 text-sm">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="lesson">Lesson</SelectItem>
+                                          <SelectItem value="video">Video</SelectItem>
+                                          <SelectItem value="text">Text</SelectItem>
+                                          <SelectItem value="quiz">Quiz</SelectItem>
+                                          <SelectItem value="assignment">Assignment</SelectItem>
+                                          <SelectItem value="lecture">Lecture</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
                                   </div>
-                                  <div className="flex items-center gap-2">
-                                    <Label htmlFor={`duration-${content.id}`} className="text-xs">Duration (min):</Label>
+                                  <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => deleteContent(sectionIndex, contentIndex)}
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                                <div>
+                                  <Label className="text-xs">Description</Label>
+                                  <Textarea
+                                    value={content.description}
+                                    onChange={(e) => updateContentField(sectionIndex, contentIndex, 'description', e.target.value)}
+                                    placeholder="Content description"
+                                    className="min-h-[60px] text-sm"
+                                  />
+                                </div>
+                                <div className="flex gap-3">
+                                  <div className="flex-1">
+                                    <Label className="text-xs">Duration (minutes)</Label>
                                     <Input
-                                      id={`duration-${content.id}`}
                                       type="number"
                                       value={content.duration_minutes || ''}
-                                      onChange={(e) => {
-                                        const newSections = [...(formData.sections || [])];
-                                        const contents = [...(section.contents || [])];
-                                        contents[contentIndex] = {
-                                          ...content,
-                                          duration_minutes: e.target.value ? parseInt(e.target.value) : 0
-                                        };
-                                        newSections[sectionIndex] = { ...section, contents };
-                                        setFormData({ ...formData, sections: newSections });
-                                      }}
-                                      className="h-8 w-20 text-xs"
-                                      min="0"
+                                      onChange={(e) => updateContentField(sectionIndex, contentIndex, 'duration_minutes', parseInt(e.target.value) || undefined)}
+                                      placeholder="Duration"
+                                      className="h-8 text-sm"
                                     />
                                   </div>
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center space-x-2 pt-4">
                                     <Switch
-                                      id={`is-free-${content.id}`}
                                       checked={content.is_free}
-                                      onCheckedChange={(checked) => {
-                                        const newSections = [...(formData.sections || [])];
-                                        const contents = [...(section.contents || [])];
-                                        contents[contentIndex] = { ...content, is_free: checked };
-                                        newSections[sectionIndex] = { ...section, contents };
-                                        setFormData({ ...formData, sections: newSections });
-                                      }}
+                                      onCheckedChange={(checked) => updateContentField(sectionIndex, contentIndex, 'is_free', checked)}
                                     />
-                                    <Label htmlFor={`is-free-${content.id}`} className="text-xs">Free Preview</Label>
+                                    <Label className="text-xs">Free</Label>
                                   </div>
                                 </div>
                               </div>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  const newSections = [...(formData.sections || [])];
-                                  const contents = [...(section.contents || [])];
-                                  contents.splice(contentIndex, 1);
-                                  newSections[sectionIndex] = { ...section, contents };
-                                  setFormData({ ...formData, sections: newSections });
-                                }}
-                              >
-                                <Trash2 className="w-4 h-4 text-destructive" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
+                            </Card>
+                          ))
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic">No content items in this section</p>
+                        )}
+                        
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addContent(sectionIndex)}
+                        >
+                          <Plus className="w-3 h-3 mr-1" />
+                          Add Content
+                        </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) => setFormData({ ...formData, status: value })}
+                  </Card>
+                ))}
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addSection}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Section
+                </Button>
               </div>
-              <Button onClick={handleSubmit} className="w-full">
-                {editingCourse ? "Update Course" : "Create Course"}
-              </Button>
-            </div>
+
+              <div className="flex gap-4 pt-6">
+                <Button type="submit" disabled={!formData.title || !formData.description}>
+                  {editingCourse ? "Update" : "Create"} Course
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowDialog(false);
+                    resetForm();
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Courses List */}
-      <div className="border rounded-lg overflow-hidden">
-        <div className="bg-gray-50 dark:bg-gray-800 px-4 py-3 font-medium text-sm grid grid-cols-12 gap-4">
-          <div className="col-span-4">Title</div>
-          <div className="col-span-2">Status</div>
-          <div className="col-span-2">Price</div>
-          <div className="col-span-2">Students</div>
-          <div className="col-span-2 text-right">Actions</div>
-        </div>
-        <div className="divide-y">
-          {courses.length > 0 ? (
-            courses.map((course) => (
-              <div key={course.id} className="px-4 py-3 grid grid-cols-12 gap-4 items-center hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                <div className="col-span-4 font-medium">
-                  <div className="truncate max-w-xs">{course.title}</div>
-                  <div className="text-xs text-muted-foreground truncate max-w-xs">{course.description}</div>
-                </div>
-                <div className="col-span-2">
-                  <Badge variant={course.status === 'published' ? 'default' : 'secondary'}>
-                    {course.status}
-                  </Badge>
-                  {course.is_free && <Badge variant="outline" className="ml-1">Free</Badge>}
-                </div>
-                <div className="col-span-2 text-sm">
-                  {course.is_free ? 'Free' : course.discounted_price ? (
-                    <span>
-                      ৳{course.discounted_price}
-                      <span className="line-through text-muted-foreground ml-1 text-xs">৳{course.price}</span>
-                    </span>
-                  ) : `৳${course.price}`}
-                </div>
-                <div className="col-span-2 text-sm">
-                  {course.student_count || 0}
-                </div>
-                <div className="col-span-2 flex justify-end gap-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEdit(course)}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => deleteCourse(course.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {courses.map((course) => (
+          <Card key={course.id} className="p-6">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold">{course.title}</h3>
+                <p className="text-sm text-muted-foreground line-clamp-2">{course.description}</p>
               </div>
-            ))
-          ) : (
-            <div className="px-4 py-8 text-center text-muted-foreground">
-              No courses found. Create your first course.
+              <div className="flex flex-wrap gap-2">
+                {course.technologies.slice(0, 3).map((tech, index) => (
+                  <Badge key={index} variant="outline" className="text-xs">
+                    {tech}
+                  </Badge>
+                ))}
+                {course.technologies.length > 3 && (
+                  <Badge variant="outline" className="text-xs">
+                    +{course.technologies.length - 3} more
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <Badge variant={course.is_free ? "default" : "secondary"}>
+                    {course.is_free ? "Free" : `৳${course.price}`}
+                  </Badge>
+                  <Badge variant="outline">{course.status}</Badge>
+                </div>
+                <Badge variant="outline">{course.difficulty_level}</Badge>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => handleEdit(course)}>
+                  <Edit className="w-4 h-4" />
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => deleteCourse(course.id)}>
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
-          )}
-        </div>
+          </Card>
+        ))}
       </div>
+
+      {courses.length === 0 && (
+        <div className="text-center py-12">
+          <h3 className="text-lg font-semibold mb-2">No courses yet</h3>
+          <p className="text-muted-foreground">Create your first course to get started.</p>
+        </div>
+      )}
     </div>
   );
 }
