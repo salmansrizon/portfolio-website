@@ -141,6 +141,7 @@ interface FormData {
   duration_hours: number | null;
   banner_image: string;
   technologies: string[];
+  generalContents: CourseContent[];
   sections: CourseSection[];
   rating: number;
 }
@@ -157,6 +158,7 @@ const initialFormData: FormData = {
   duration_hours: null,
   banner_image: "",
   technologies: [],
+  generalContents: [],
   sections: [],
   rating: 0,
 };
@@ -381,6 +383,45 @@ export default function CourseManager() {
     try {
       const currentSections = formData.sections || [];
 
+      // First, sync GENERAL contents that are not attached to any section (section_id is null)
+      const generalContents = (formData.generalContents || []).map((c, idx) => ({ ...c, order_index: idx + 1 }));
+      // Fetch existing general content ids
+      const { data: existingGeneral } = await supabase
+        .from('course_content')
+        .select('id')
+        .eq('course_id', courseId)
+        .is('section_id', null);
+      const existingGeneralIds = (existingGeneral || []).map((c: any) => String(c.id));
+      const currentGeneralIds = generalContents.map(c => String(c.id));
+      const generalToDelete = existingGeneralIds.filter(id => !currentGeneralIds.includes(id));
+      if (generalToDelete.length > 0) {
+        await supabase.from('course_content').delete().in('id', generalToDelete);
+      }
+      for (let i = 0; i < generalContents.length; i++) {
+        const c = generalContents[i];
+        const payload: any = {
+          course_id: courseId,
+          section_id: null,
+          title: c.title,
+          description: c.description || null,
+          content_type: c.content_type || 'lesson',
+          content_data: c.content_data || {},
+          is_free: !!c.is_free,
+          order_index: i + 1,
+          duration_minutes: c.duration_minutes ?? null,
+        };
+        if (!c.id || String(c.id).startsWith('content-')) {
+          const { error } = await supabase.from('course_content').insert(payload);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from('course_content')
+            .update(payload)
+            .eq('id', c.id);
+          if (error) throw error;
+        }
+      }
+
       // Fetch existing section ids
       const { data: existingSections } = await supabase
         .from('course_sections')
@@ -516,6 +557,32 @@ export default function CourseManager() {
       }
       // Fetch course sections separately using our existing function
       const sections = await fetchCourseSections(course.id);
+
+      // Fetch general (uncategorized) course contents
+      const { data: generalData, error: generalError } = await supabase
+        .from('course_content')
+        .select('*')
+        .eq('course_id', course.id)
+        .is('section_id', null)
+        .order('order_index', { ascending: true });
+      if (generalError) {
+        console.error('General contents fetch error:', generalError);
+      }
+      const generalContents: CourseContent[] = (generalData || []).map((c: any, idx: number) => ({
+        id: String(c.id),
+        course_id: String(c.course_id || ''),
+        section_id: c.section_id,
+        title: String(c.title || 'Untitled'),
+        description: String(c.description || ''),
+        content_type: toContentType(c.content_type || 'lesson'),
+        content_data: c.content_data || {},
+        is_free: Boolean(c.is_free),
+        order_index: Number(c.order_index) || idx + 1,
+        duration_minutes: c.duration_minutes ? Number(c.duration_minutes) : 0,
+        created_at: c.created_at,
+        updated_at: c.updated_at
+      }));
+
       setFormData({
         title: courseData.title || '',
         description: courseData.description || '',
@@ -528,6 +595,7 @@ export default function CourseManager() {
         duration_hours: courseData.duration_hours || null,
         banner_image: courseData.banner_image || "",
         technologies: courseData.technologies || [],
+        generalContents: generalContents,
         sections: sections,
         rating: courseData.rating || 0,
       });
@@ -687,6 +755,134 @@ export default function CourseManager() {
                 />
                 <Label htmlFor="is_free">Free Course</Label>
               </div>
+              {/* General Section (Uncategorized items) */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-medium">General Section</h4>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const newItem: CourseContent = {
+                        id: `content-${Date.now()}`,
+                        section_id: '' as any, // will be stored as null in DB
+                        title: 'New item',
+                        description: '',
+                        content_type: 'lesson',
+                        is_free: false,
+                        duration_minutes: 0,
+                        order_index: (formData.generalContents?.length || 0) + 1,
+                        content_data: {},
+                        course_id: editingCourse?.id || ''
+                      };
+                      setFormData(prev => ({
+                        ...prev,
+                        generalContents: [...(prev.generalContents || []), newItem]
+                      }));
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add General Item
+                  </Button>
+                </div>
+                <div className="space-y-2 border rounded-lg p-4">
+                  {formData.generalContents?.map((content, contentIndex) => (
+                    <div key={content.id} className="flex items-start gap-3 p-3 border rounded-md">
+                      <div className="flex-1 space-y-2">
+                        <Input
+                          value={content.title}
+                          onChange={(e) => {
+                            const items = [...(formData.generalContents || [])];
+                            items[contentIndex] = { ...content, title: e.target.value };
+                            setFormData({ ...formData, generalContents: items });
+                          }}
+                          placeholder="Item title"
+                          className="border-0 p-0 shadow-none focus-visible:ring-0"
+                        />
+                        <Textarea
+                          value={content.description}
+                          onChange={(e) => {
+                            const items = [...(formData.generalContents || [])];
+                            items[contentIndex] = { ...content, description: e.target.value };
+                            setFormData({ ...formData, generalContents: items });
+                          }}
+                          placeholder="Item description (optional)"
+                          className="min-h-[60px] text-sm"
+                        />
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor={`general-type-${content.id}`} className="text-xs">Type:</Label>
+                            <Select
+                              value={content.content_type}
+                              onValueChange={(value) => {
+                                const items = [...(formData.generalContents || [])];
+                                items[contentIndex] = { ...content, content_type: value as any };
+                                setFormData({ ...formData, generalContents: items });
+                              }}
+                            >
+                              <SelectTrigger className="h-8 text-xs w-[120px]">
+                                <SelectValue placeholder="Type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="lesson">Lesson</SelectItem>
+                                <SelectItem value="lecture">Lecture</SelectItem>
+                                <SelectItem value="video">Video</SelectItem>
+                                <SelectItem value="text">Text</SelectItem>
+                                <SelectItem value="quiz">Quiz</SelectItem>
+                                <SelectItem value="assignment">Assignment</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor={`general-duration-${content.id}`} className="text-xs">Duration (min):</Label>
+                            <Input
+                              id={`general-duration-${content.id}`}
+                              type="number"
+                              value={content.duration_minutes || ''}
+                              onChange={(e) => {
+                                const items = [...(formData.generalContents || [])];
+                                items[contentIndex] = { ...content, duration_minutes: e.target.value ? parseInt(e.target.value) : 0 };
+                                setFormData({ ...formData, generalContents: items });
+                              }}
+                              className="h-8 w-20 text-xs"
+                              min="0"
+                            />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              id={`general-free-${content.id}`}
+                              checked={content.is_free}
+                              onCheckedChange={(checked) => {
+                                const items = [...(formData.generalContents || [])];
+                                items[contentIndex] = { ...content, is_free: checked };
+                                setFormData({ ...formData, generalContents: items });
+                              }}
+                            />
+                            <Label htmlFor={`general-free-${content.id}`} className="text-xs">Free Preview</Label>
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const items = [...(formData.generalContents || [])];
+                          items.splice(contentIndex, 1);
+                          setFormData({ ...formData, generalContents: items });
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                  {(!formData.generalContents || formData.generalContents.length === 0) && (
+                    <div className="text-sm text-muted-foreground">No general items yet.</div>
+                  )}
+                </div>
+              </div>
+
               {/* Course Content Sections */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
