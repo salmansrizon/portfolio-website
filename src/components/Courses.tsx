@@ -178,78 +178,70 @@ export default function Courses() {
 
   const fetchCourseContent = async (courseId: string) => {
     try {
-      // Fetch course sections
+      // Fetch sections for this course
       const { data: sectionsData, error: sectionsError } = await supabase
-        .from("course_sections")
-        .select("*")
-        .eq("course_id", courseId)
-        .order("order_index", { ascending: true });
-
+        .from('course_sections')
+        .select('*')
+        .eq('course_id', courseId)
+        .order('order_index', { ascending: true });
       if (sectionsError) throw sectionsError;
 
-      // Fetch course content
+      // Fetch all content items for this course
       const { data: contentData, error: contentError } = await supabase
-        .from("course_content")
-        .select("*")
-        .eq("course_id", courseId)
-        .order("order_index", { ascending: true });
-
+        .from('course_content')
+        .select('*')
+        .eq('course_id', courseId)
+        .order('order_index', { ascending: true });
       if (contentError) throw contentError;
 
-      // Group content by section
-      const contentBySection: Record<string, CourseContent[]> = {};
-      (contentData || []).forEach(content => {
-        if (!contentBySection[content.section_id]) {
-          contentBySection[content.section_id] = [];
-        }
-        contentBySection[content.section_id].push(content);
+      // Group content by section_id (including uncategorized)
+      const bySection: Record<string, CourseContent[]> = {};
+      (contentData || []).forEach((c: any) => {
+        const key = c.section_id || 'uncategorized';
+        if (!bySection[key]) bySection[key] = [];
+        bySection[key].push(c as CourseContent);
       });
 
-      // Create sections with their content
-      const sections: CourseSection[] = (sectionsData || []).map(section => ({
-        id: section.id,
-        title: section.title,
-        description: (section.content && typeof section.content === 'object' && 'description' in section.content) ? String(section.content.description) : '',
-        order_index: section.order_index,
-        contents: contentBySection[section.id] || []
+      // Build sections with their contents
+      const sections: CourseSection[] = (sectionsData || []).map((s: any) => ({
+        id: s.id,
+        title: s.title,
+        description: s.description || '',
+        order_index: s.order_index || 0,
+        contents: bySection[s.id] || []
       }));
 
-      // If no sections exist, create a default section with all content
-      if (sections.length === 0 && contentData && contentData.length > 0) {
-        sections.push({
-          id: 'default-section',
-          title: 'Course Content',
+      // If there are uncategorized contents, show them first as a general section
+      if (bySection['uncategorized'] && bySection['uncategorized'].length > 0) {
+        sections.unshift({
+          id: 'no-section',
+          title: 'General',
           description: '',
-          order_index: 0,
-          contents: contentData
+          order_index: -1,
+          contents: bySection['uncategorized']
         });
       }
 
-      // Update the selected course with the fetched content and sections
+      // Update selected course and list
       setSelectedCourse(prevCourse => {
         if (!prevCourse) return null;
         return {
           ...prevCourse,
           course_content: contentData || [],
-          sections: sections
+          sections
         };
       });
-      
-      // Also update the course in the courses list for consistency
-      setCourses(prevCourses => 
-        prevCourses.map(course => 
-          course.id === courseId 
-            ? { 
-                ...course, 
-                course_content: contentData || [],
-                sections: sections
-              } 
+
+      setCourses(prevCourses =>
+        prevCourses.map(course =>
+          course.id === courseId
+            ? { ...course, course_content: contentData || [], sections }
             : course
         )
       );
     } catch (error) {
-      console.error("Error fetching course content:", error);
-      toast.error("Failed to load course content");
+      console.error('Error fetching course content:', error);
+      toast.error('Failed to load course content');
     }
   };
 
