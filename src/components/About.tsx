@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import profileImage from "@/assets/formal.jpeg";
+import profileImage from "@/assets/formal.jpg";
 
 const About = () => {
   const stats = [
