@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
@@ -63,6 +63,7 @@ interface DBCourseSection {
 }
 
 interface CourseSection extends Omit<DBCourseSection, 'content' | 'created_at' | 'updated_at'> {
+  id: string;
   contents: CourseContent[];
 }
 
@@ -268,67 +269,41 @@ export default function CourseManager() {
   const fetchCourseSections = async (courseId: string): Promise<CourseSection[]> => {
     try {
       setIsLoadingSections(true);
-      // First get all sections for the course with proper typing
+      
+      // First get all sections for the course
       const { data: sections, error: sectionsError } = await supabase
         .from('course_sections')
         .select('*')
         .eq('course_id', courseId)
-        .order('order_index') as unknown as {
-          data: DBCourseSection[] | null;
-          error: PostgrestError | null;
-        };
+        .order('order_index');
       if (sectionsError) throw sectionsError;
-      if (!sections) return [];
-      // Get all contents for these sections in a single query
-      const sectionIds: string[] = sections.map((s: any) => s.id);
-      let contents: DBCourseContent[] = [];
-      if (sectionIds.length > 0) {
-        try {
-          // Query contents with proper typing
-          // Only run the query if sectionIds is not empty
-          let contentsData: DBCourseContent[] | null = [];
-          let contentsError: PostgrestError | null = null;
-          if (sectionIds.length > 0) {
-            const { data, error } = await supabase
-              .from('course_content')
-              .select('*')
-              .in('section_id', sectionIds)
-              .order('order_index');
-            contentsData = data;
-            contentsError = error;
-            if (contentsError) throw contentsError;
-            contents = contentsData ?? [];
-          } else {
-            contents = [];
-          }
-          // Ensure all contents have a section_id and proper types
-          contents = contents.filter((content: DBCourseContent): content is DBCourseContent => {
-            if (!content.section_id) return false;
-            // Ensure required fields have proper types
-            content.content_data = content.content_data || {};
-            content.is_free = Boolean(content.is_free);
-            content.order_index = Number(content.order_index) || 0;
-            return true;
-          });
-        } catch (error) {
-          console.error('Error fetching course contents:', error);
-          // Continue with empty contents if there's an error
-          contents = [];
-        }
-      }
-      // Group contents by section_id with proper typing
-      const contentsBySection: Record<string, any[]> = {};
-      for (const content of contents) {
-        if (!content.section_id) continue;
+      
+      // Get all course content for this course (including items without section_id)
+      const { data: allContent, error: contentError } = await supabase
+        .from('course_content')
+        .select('*')
+        .eq('course_id', courseId)
+        .order('order_index');
+      if (contentError) throw contentError;
+      
+      // Separate content into sectioned and general content
+      const sectionedContent = (allContent || []).filter(content => content.section_id);
+      const generalContent = (allContent || []).filter(content => !content.section_id);
+      
+      // Group sectioned content by section_id
+      const contentsBySection: Record<string, DBCourseContent[]> = {};
+      for (const content of sectionedContent) {
         if (!contentsBySection[content.section_id]) {
           contentsBySection[content.section_id] = [];
         }
         contentsBySection[content.section_id].push(content);
       }
-      // Transform the data to match our CourseSection interface
-      const formattedSections = sections.map(section => {
+      
+      // Transform sections and their content
+      const formattedSections = (sections || []).map(section => {
         const sectionContents: CourseContent[] = [];
-        const sectionContentsData = section.id ? contentsBySection[section.id] || [] : [];
+        const sectionContentsData = contentsBySection[section.id] || [];
+        
         for (const content of sectionContentsData) {
           try {
             const courseContent: CourseContent = {
@@ -338,7 +313,9 @@ export default function CourseManager() {
               title: String(content.title || 'Untitled'),
               description: String(content.description || ''),
               content_type: toContentType(content.content_type || 'lesson'),
-              content_data: content.content_data || {},
+              content_data: (content.content_data && typeof content.content_data === 'object' && !Array.isArray(content.content_data)) 
+                ? content.content_data as Record<string, any> 
+                : {},
               is_free: Boolean(content.is_free),
               order_index: Number(content.order_index) || 0,
               duration_minutes: content.duration_minutes ? Number(content.duration_minutes) : undefined,
@@ -347,24 +324,69 @@ export default function CourseManager() {
             };
             sectionContents.push(courseContent);
           } catch (error) {
-            console.error('Error processing content:', content, error);
+            console.error('Error processing sectioned content:', content, error);
           }
         }
+        
         return {
           id: section.id,
           course_id: section.course_id,
           title: section.title,
-          description: ((section as any).content?.description) || '', // Read description from JSON content
+          description: ((section as any).content?.description) || '',
           order_index: section.order_index || 0,
           section_type: section.section_type || 'default',
-          is_visible: section.is_visible !== false, // default to true if not set
+          is_visible: section.is_visible !== false,
           contents: sectionContents
         };
       });
+      
+      // If there's general content (content without section_id), create a "General" section
+      if (generalContent.length > 0) {
+        const generalSectionContents: CourseContent[] = [];
+        
+        for (const content of generalContent) {
+          try {
+            const courseContent: CourseContent = {
+              id: String(content.id),
+              course_id: String(content.course_id || ''),
+              section_id: 'general', // Use a special section_id for general content
+              title: String(content.title || 'Untitled'),
+              description: String(content.description || ''),
+              content_type: toContentType(content.content_type || 'lesson'),
+              content_data: (content.content_data && typeof content.content_data === 'object' && !Array.isArray(content.content_data)) 
+                ? content.content_data as Record<string, any> 
+                : {},
+              is_free: Boolean(content.is_free),
+              order_index: Number(content.order_index) || 0,
+              duration_minutes: content.duration_minutes ? Number(content.duration_minutes) : undefined,
+              created_at: content.created_at,
+              updated_at: content.updated_at
+            };
+            generalSectionContents.push(courseContent);
+          } catch (error) {
+            console.error('Error processing general content:', content, error);
+          }
+        }
+        
+        // Create a virtual "General" section for content without specific sections
+        const generalSection: CourseSection = {
+          id: 'general',
+          course_id: courseId,
+          title: 'General Content',
+          description: 'Course content not organized in specific sections',
+          order_index: -1, // Put it first
+          section_type: 'general',
+          is_visible: true,
+          contents: generalSectionContents
+        };
+        
+        // Add general section at the beginning
+        return [generalSection, ...formattedSections];
+      }
+      
       return formattedSections;
     } catch (error) {
       console.error('Error fetching course sections:', error);
-      // Use explicit type annotation to prevent deep type inference
       const toastOptions = {
         title: 'Error' as const,
         description: 'Failed to load course content' as const,
@@ -568,6 +590,9 @@ export default function CourseManager() {
           <DialogContent className="max-w-5xl max-h-[95vh] overflow-hidden flex flex-col">
             <DialogHeader className="border-b pb-4">
               <DialogTitle>{editingCourse ? `Edit Course: ${editingCourse.title}` : "Create New Course"}</DialogTitle>
+              <DialogDescription>
+                {editingCourse ? "Edit course details and manage content sections" : "Create a new course with sections and content"}
+              </DialogDescription>
             </DialogHeader>
             
             <div className="flex-1 overflow-y-auto">
@@ -825,12 +850,12 @@ export default function CourseManager() {
                                 </div>
                               ) : (
                                 section.contents?.map((content, contentIndex) => (
-                                  <div key={content.id} className="border rounded-md p-4 bg-background space-y-3">
-                                    <div className="flex items-start justify-between">
-                                      <div className="flex-1 space-y-3">
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-xs font-medium text-muted-foreground min-w-0">
-                                            {contentIndex + 1}.
+                                  <div key={content.id} className="border rounded-md bg-background">
+                                    <div className="border-b bg-muted/30 px-4 py-3">
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3 flex-1">
+                                          <span className="text-xs font-medium text-muted-foreground bg-background px-2 py-1 rounded">
+                                            {contentIndex + 1}
                                           </span>
                                           <Input
                                             value={content.title}
@@ -842,10 +867,65 @@ export default function CourseManager() {
                                               setFormData({ ...formData, sections: newSections });
                                             }}
                                             placeholder="Content title"
-                                            className="font-medium"
+                                            className="font-medium border-0 bg-transparent shadow-none focus-visible:ring-1"
                                           />
                                         </div>
-                                        
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => {
+                                            const newSections = [...(formData.sections || [])];
+                                            const contents = [...(section.contents || [])];
+                                            contents.splice(contentIndex, 1);
+                                            newSections[sectionIndex] = { ...section, contents };
+                                            setFormData({ ...formData, sections: newSections });
+                                          }}
+                                        >
+                                          <Trash2 className="w-4 h-4 text-destructive" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="p-4 space-y-4">
+                                      {/* Content Preview */}
+                                      <div className="bg-muted/50 rounded-md p-3">
+                                        <Label className="text-xs font-medium text-muted-foreground mb-2 block">Content Preview</Label>
+                                        {content.description ? (
+                                          <div className="text-sm space-y-2">
+                                            {content.description.split('\n').map((line, idx) => {
+                                              if (line.trim().startsWith('✅')) {
+                                                return (
+                                                  <div key={idx} className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                                                    <span>✅</span>
+                                                    <span>{line.replace('✅', '').trim()}</span>
+                                                  </div>
+                                                );
+                                              } else if (line.trim().startsWith('📌')) {
+                                                return (
+                                                  <div key={idx} className="flex items-center gap-2 font-medium text-blue-700 dark:text-blue-400 mt-3 first:mt-0">
+                                                    <span>📌</span>
+                                                    <span>{line.replace('📌', '').trim()}</span>
+                                                  </div>
+                                                );
+                                              } else if (line.trim()) {
+                                                return (
+                                                  <div key={idx} className="ml-4 text-muted-foreground">
+                                                    {line.trim()}
+                                                  </div>
+                                                );
+                                              }
+                                              return null;
+                                            })}
+                                          </div>
+                                        ) : (
+                                          <p className="text-xs text-muted-foreground">No content preview available</p>
+                                        )}
+                                      </div>
+                                      
+                                      {/* Edit Content */}
+                                      <div>
+                                        <Label className="text-xs font-medium">Content Description</Label>
                                         <Textarea
                                           value={content.description || ''}
                                           onChange={(e) => {
@@ -855,85 +935,79 @@ export default function CourseManager() {
                                             newSections[sectionIndex] = { ...section, contents };
                                             setFormData({ ...formData, sections: newSections });
                                           }}
-                                          placeholder="Content description"
-                                          rows={2}
-                                          className="text-sm"
+                                          placeholder="Enter content description with lessons (use ✅ for completed items, 📌 for lessons)"
+                                          rows={6}
+                                          className="text-sm font-mono"
                                         />
+                                      </div>
+                                      
+                                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div>
+                                          <Label htmlFor={`content-type-${content.id}`} className="text-xs">Type</Label>
+                                          <Select
+                                            value={content.content_type}
+                                            onValueChange={(value) => handleContentTypeChange(sectionIndex, contentIndex, value)}
+                                          >
+                                            <SelectTrigger className="h-8 text-xs">
+                                              <SelectValue placeholder="Type" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="lesson">✅ Lesson</SelectItem>
+                                              <SelectItem value="lecture">🎓 Lecture</SelectItem>
+                                              <SelectItem value="video">📹 Video</SelectItem>
+                                              <SelectItem value="text">📝 Text</SelectItem>
+                                              <SelectItem value="quiz">❓ Quiz</SelectItem>
+                                              <SelectItem value="assignment">📋 Assignment</SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                        </div>
                                         
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                          <div>
-                                            <Label htmlFor={`content-type-${content.id}`} className="text-xs">Type</Label>
-                                            <Select
-                                              value={content.content_type}
-                                              onValueChange={(value) => handleContentTypeChange(sectionIndex, contentIndex, value)}
-                                            >
-                                              <SelectTrigger className="h-8 text-xs">
-                                                <SelectValue placeholder="Type" />
-                                              </SelectTrigger>
-                                              <SelectContent>
-                                                <SelectItem value="lesson">✅ Lesson</SelectItem>
-                                                <SelectItem value="lecture">🎓 Lecture</SelectItem>
-                                                <SelectItem value="video">📹 Video</SelectItem>
-                                                <SelectItem value="text">📝 Text</SelectItem>
-                                                <SelectItem value="quiz">❓ Quiz</SelectItem>
-                                                <SelectItem value="assignment">📋 Assignment</SelectItem>
-                                              </SelectContent>
-                                            </Select>
-                                          </div>
-                                          
-                                          <div>
-                                            <Label htmlFor={`duration-${content.id}`} className="text-xs">Duration (min)</Label>
-                                            <Input
-                                              id={`duration-${content.id}`}
-                                              type="number"
-                                              value={content.duration_minutes || ''}
-                                              onChange={(e) => {
-                                                const newSections = [...(formData.sections || [])];
-                                                const contents = [...(section.contents || [])];
-                                                contents[contentIndex] = {
-                                                  ...content,
-                                                  duration_minutes: e.target.value ? parseInt(e.target.value) : 0
-                                                };
-                                                newSections[sectionIndex] = { ...section, contents };
-                                                setFormData({ ...formData, sections: newSections });
-                                              }}
-                                              className="h-8 text-xs"
-                                              min="0"
-                                              placeholder="0"
-                                            />
-                                          </div>
-                                          
-                                          <div className="flex items-center space-x-2">
-                                            <Switch
-                                              id={`is-free-${content.id}`}
-                                              checked={content.is_free}
-                                              onCheckedChange={(checked) => {
-                                                const newSections = [...(formData.sections || [])];
-                                                const contents = [...(section.contents || [])];
-                                                contents[contentIndex] = { ...content, is_free: checked };
-                                                newSections[sectionIndex] = { ...section, contents };
-                                                setFormData({ ...formData, sections: newSections });
-                                              }}
-                                            />
-                                            <Label htmlFor={`is-free-${content.id}`} className="text-xs">Free Preview</Label>
-                                          </div>
-                                          
-                                          <div className="flex justify-end">
-                                            <Button
-                                              type="button"
-                                              variant="ghost"
-                                              size="sm"
-                                              onClick={() => {
-                                                const newSections = [...(formData.sections || [])];
-                                                const contents = [...(section.contents || [])];
-                                                contents.splice(contentIndex, 1);
-                                                newSections[sectionIndex] = { ...section, contents };
-                                                setFormData({ ...formData, sections: newSections });
-                                              }}
-                                            >
-                                              <Trash2 className="w-4 h-4 text-destructive" />
-                                            </Button>
-                                          </div>
+                                        <div>
+                                          <Label htmlFor={`duration-${content.id}`} className="text-xs">Duration (min)</Label>
+                                          <Input
+                                            id={`duration-${content.id}`}
+                                            type="number"
+                                            value={content.duration_minutes || ''}
+                                            onChange={(e) => {
+                                              const newSections = [...(formData.sections || [])];
+                                              const contents = [...(section.contents || [])];
+                                              contents[contentIndex] = {
+                                                ...content,
+                                                duration_minutes: e.target.value ? parseInt(e.target.value) : 0
+                                              };
+                                              newSections[sectionIndex] = { ...section, contents };
+                                              setFormData({ ...formData, sections: newSections });
+                                            }}
+                                            className="h-8 text-xs"
+                                            min="0"
+                                            placeholder="180"
+                                          />
+                                        </div>
+                                        
+                                        <div className="flex items-center space-x-2">
+                                          <Switch
+                                            id={`is-free-${content.id}`}
+                                            checked={content.is_free}
+                                            onCheckedChange={(checked) => {
+                                              const newSections = [...(formData.sections || [])];
+                                              const contents = [...(section.contents || [])];
+                                              contents[contentIndex] = { ...content, is_free: checked };
+                                              newSections[sectionIndex] = { ...section, contents };
+                                              setFormData({ ...formData, sections: newSections });
+                                            }}
+                                          />
+                                          <Label htmlFor={`is-free-${content.id}`} className="text-xs">Free Preview</Label>
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-2">
+                                          <Badge variant={content.content_type === 'video' ? 'default' : 'secondary'} className="text-xs">
+                                            {content.content_type}
+                                          </Badge>
+                                          {content.is_free && (
+                                            <Badge variant="outline" className="text-xs text-green-600">
+                                              Free
+                                            </Badge>
+                                          )}
                                         </div>
                                       </div>
                                     </div>
