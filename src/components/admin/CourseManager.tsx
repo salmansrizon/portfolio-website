@@ -557,425 +557,519 @@ export default function CourseManager() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Course Manager</h2>
+        <h2 className="text-2xl font-bold">Course Management</h2>
         <Dialog open={showDialog} onOpenChange={setShowDialog}>
           <DialogTrigger asChild>
             <Button onClick={resetForm}>
               <Plus className="w-4 h-4 mr-2" />
-              Add Course
+              Add New Course
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{editingCourse ? "Edit Course" : "Add New Course"}</DialogTitle>
+          <DialogContent className="max-w-5xl max-h-[95vh] overflow-hidden flex flex-col">
+            <DialogHeader className="border-b pb-4">
+              <DialogTitle>{editingCourse ? `Edit Course: ${editingCourse.title}` : "Create New Course"}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="price">Price (৳)</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    value={formData.price || ''}
-                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-                    placeholder="Course price"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="discounted_price">Discounted Price (৳)</Label>
-                  <Input
-                    id="discounted_price"
-                    type="number"
-                    step="0.01"
-                    value={formData.discounted_price || ''}
-                    onChange={(e) => setFormData({ ...formData, discounted_price: parseFloat(e.target.value) || null })}
-                    placeholder="Discounted price"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="discount_percentage">Discount %</Label>
-                  <Input
-                    id="discount_percentage"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={formData.discount_percentage || ''}
-                    onChange={(e) => setFormData({ ...formData, discount_percentage: parseInt(e.target.value) || null })}
-                    placeholder="Discount percentage"
-                  />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="banner_image">Banner Image URL</Label>
-                <Input
-                  id="banner_image"
-                  value={formData.banner_image}
-                  onChange={(e) => setFormData({ ...formData, banner_image: e.target.value })}
-                  placeholder="Image URL"
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="difficulty_level">Difficulty Level</Label>
-                  <Select
-                    value={formData.difficulty_level}
-                    onValueChange={(value) => setFormData({ ...formData, difficulty_level: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select difficulty" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="beginner">Beginner</SelectItem>
-                      <SelectItem value="intermediate">Intermediate</SelectItem>
-                      <SelectItem value="advanced">Advanced</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="duration_hours">Duration (hours)</Label>
-                  <Input
-                    id="duration_hours"
-                    type="number"
-                    value={formData.duration_hours || ''}
-                    onChange={(e) => setFormData({ ...formData, duration_hours: parseInt(e.target.value) || null })}
-                    placeholder="Course duration"
-                  />
-                </div>
-              </div>
-              <div>
-                <Label>Technologies</Label>
-                <div className="flex gap-2 mb-2">
-                  <Input
-                    value={newTechnology}
-                    onChange={(e) => setNewTechnology(e.target.value)}
-                    placeholder="Add technology"
-                    onKeyPress={(e) => e.key === 'Enter' && addTechnology()}
-                  />
-                  <Button type="button" onClick={addTechnology}>Add</Button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {formData.technologies.map((tech, index) => (
-                    <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                      {tech}
-                      <X className="w-3 h-3 cursor-pointer" onClick={() => removeTechnology(tech)} />
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="is_free"
-                  checked={formData.is_free}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_free: checked })}
-                />
-                <Label htmlFor="is_free">Free Course</Label>
-              </div>
-              {/* Course Content Sections */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-medium">
-                    Course Content
-                    {isLoadingSections && (
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        Loading content...
-                      </span>
-                    )}
-                  </h4>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const newSection: CourseSection = {
-                        id: `section-${Date.now()}`,
-                        course_id: editingCourse?.id || '',
-                        title: 'New Section',
-                        description: '',
-                        order_index: (formData.sections?.length || 0),
-                        section_type: 'default',
-                        is_visible: true,
-                        contents: []
-                      };
-                      setFormData(prev => ({
-                        ...prev,
-                        sections: [...(prev.sections || []), newSection]
-                      }));
-                    }}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Section
-                  </Button>
-                </div>
-                <div className="space-y-4 border rounded-lg p-4">
-                  {formData.sections?.map((section, sectionIndex) => (
-                    <div key={section.id} className="border rounded-md p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <Input
-                          value={section.title}
-                          onChange={(e) => {
-                            const newSections = [...(formData.sections || [])];
-                            newSections[sectionIndex] = { ...section, title: e.target.value };
-                            setFormData({ ...formData, sections: newSections });
-                          }}
-                          placeholder="Section title"
-                          className="border-0 p-0 text-base font-medium shadow-none focus-visible:ring-0"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            const newSections = [...(formData.sections || [])];
-                            newSections.splice(sectionIndex, 1);
-                            setFormData({ ...formData, sections: newSections });
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
-                      </div>
-                      <Textarea
-                        value={section.description}
-                        onChange={(e) => {
-                          const newSections = [...(formData.sections || [])];
-                          newSections[sectionIndex] = { ...section, description: e.target.value };
-                          setFormData({ ...formData, sections: newSections });
-                        }}
-                        placeholder="Section description (optional)"
-                        className="min-h-[60px]"
+            
+            <div className="flex-1 overflow-y-auto">
+              <div className="space-y-6 p-6">
+                {/* Basic Course Information */}
+                <div className="border rounded-lg p-4 space-y-4">
+                  <h3 className="text-lg font-semibold">Basic Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <Label htmlFor="title">Course Title</Label>
+                      <Input
+                        id="title"
+                        value={formData.title}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        placeholder="Enter course title"
                       />
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Content Items</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="description">Course Description</Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        placeholder="Enter course description"
+                        rows={3}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="price">Price (৳)</Label>
+                      <Input
+                        id="price"
+                        type="number"
+                        step="0.01"
+                        value={formData.price || ''}
+                        onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                        placeholder="Course price"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="discounted_price">Discounted Price (৳)</Label>
+                      <Input
+                        id="discounted_price"
+                        type="number"
+                        step="0.01"
+                        value={formData.discounted_price || ''}
+                        onChange={(e) => setFormData({ ...formData, discounted_price: parseFloat(e.target.value) || null })}
+                        placeholder="Discounted price"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="difficulty_level">Difficulty Level</Label>
+                      <Select
+                        value={formData.difficulty_level}
+                        onValueChange={(value) => setFormData({ ...formData, difficulty_level: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select difficulty" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="beginner">Beginner</SelectItem>
+                          <SelectItem value="intermediate">Intermediate</SelectItem>
+                          <SelectItem value="advanced">Advanced</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="duration_hours">Duration (hours)</Label>
+                      <Input
+                        id="duration_hours"
+                        type="number"
+                        value={formData.duration_hours || ''}
+                        onChange={(e) => setFormData({ ...formData, duration_hours: parseInt(e.target.value) || null })}
+                        placeholder="Course duration"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="banner_image">Banner Image URL</Label>
+                      <Input
+                        id="banner_image"
+                        value={formData.banner_image}
+                        onChange={(e) => setFormData({ ...formData, banner_image: e.target.value })}
+                        placeholder="Image URL"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label>Technologies</Label>
+                      <div className="flex gap-2 mb-2">
+                        <Input
+                          value={newTechnology}
+                          onChange={(e) => setNewTechnology(e.target.value)}
+                          placeholder="Add technology"
+                          onKeyPress={(e) => e.key === 'Enter' && addTechnology()}
+                        />
+                        <Button type="button" onClick={addTechnology}>Add</Button>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {formData.technologies.map((tech, index) => (
+                          <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                            {tech}
+                            <X className="w-3 h-3 cursor-pointer" onClick={() => removeTechnology(tech)} />
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="is_free"
+                        checked={formData.is_free}
+                        onCheckedChange={(checked) => setFormData({ ...formData, is_free: checked })}
+                      />
+                      <Label htmlFor="is_free">Free Course</Label>
+                    </div>
+                    <div>
+                      <Label htmlFor="status">Status</Label>
+                      <Select
+                        value={formData.status}
+                        onValueChange={(value) => setFormData({ ...formData, status: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="published">Published</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Course Content Management */}
+                <div className="border rounded-lg p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">Course Content</h3>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const newSection: CourseSection = {
+                          id: `section-${Date.now()}`,
+                          course_id: editingCourse?.id || '',
+                          title: 'New Section',
+                          description: '',
+                          order_index: (formData.sections?.length || 0),
+                          section_type: 'default',
+                          is_visible: true,
+                          contents: []
+                        };
+                        setFormData(prev => ({
+                          ...prev,
+                          sections: [...(prev.sections || []), newSection]
+                        }));
+                      }}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Section
+                    </Button>
+                  </div>
+                  
+                  {isLoadingSections && (
+                    <div className="flex items-center justify-center py-8 text-muted-foreground">
+                      Loading course content...
+                    </div>
+                  )}
+                  
+                  <div className="space-y-4">
+                    {formData.sections?.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
+                        <p>No sections yet. Add your first section to get started.</p>
+                      </div>
+                    ) : (
+                      formData.sections?.map((section, sectionIndex) => (
+                        <div key={section.id} className="border rounded-lg p-4 space-y-4 bg-card">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 flex-1">
+                              <span className="text-sm font-medium text-muted-foreground">
+                                Section {sectionIndex + 1}
+                              </span>
+                              <Input
+                                value={section.title}
+                                onChange={(e) => {
+                                  const newSections = [...(formData.sections || [])];
+                                  newSections[sectionIndex] = { ...section, title: e.target.value };
+                                  setFormData({ ...formData, sections: newSections });
+                                }}
+                                placeholder="Section title"
+                                className="font-medium text-base"
+                              />
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const newSections = [...(formData.sections || [])];
+                                newSections.splice(sectionIndex, 1);
+                                setFormData({ ...formData, sections: newSections });
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </div>
+                          
+                          <Textarea
+                            value={section.description || ''}
+                            onChange={(e) => {
                               const newSections = [...(formData.sections || [])];
-                              const newContent: CourseContent = {
-                                id: `content-${Date.now()}`,
-                                section_id: section.id,
-                                title: 'New Lesson',
-                                description: '',
-                                content_type: 'lesson',
-                                is_free: false,
-                                duration_minutes: 0,
-                                order_index: (section.contents?.length || 0) + 1,
-                                content_data: {},
-                                course_id: editingCourse?.id || '' // Will be set when saving
-                              };
-                              newSections[sectionIndex] = {
-                                ...section,
-                                contents: [...(section.contents || []), newContent]
-                              };
+                              newSections[sectionIndex] = { ...section, description: e.target.value };
                               setFormData({ ...formData, sections: newSections });
                             }}
-                          >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Add Content
-                          </Button>
-                        </div>
-                        <div className="space-y-2">
-                          {section.contents?.map((content, contentIndex) => (
-                            <div key={content.id} className="flex items-start gap-3 p-3 border rounded-md">
-                              <div className="flex-1 space-y-2">
-                                <Input
-                                  value={content.title}
-                                  onChange={(e) => {
-                                    const newSections = [...(formData.sections || [])];
-                                    const contents = [...(section.contents || [])];
-                                    contents[contentIndex] = { ...content, title: e.target.value };
-                                    newSections[sectionIndex] = { ...section, contents };
-                                    setFormData({ ...formData, sections: newSections });
-                                  }}
-                                  placeholder="Content title"
-                                  className="border-0 p-0 shadow-none focus-visible:ring-0"
-                                />
-                                <Textarea
-                                  value={content.description}
-                                  onChange={(e) => {
-                                    const newSections = [...(formData.sections || [])];
-                                    const contents = [...(section.contents || [])];
-                                    contents[contentIndex] = { ...content, description: e.target.value };
-                                    newSections[sectionIndex] = { ...section, contents };
-                                    setFormData({ ...formData, sections: newSections });
-                                  }}
-                                  placeholder="Content description (optional)"
-                                  className="min-h-[60px] text-sm"
-                                />
-                                <div className="flex items-center gap-4">
-                                  <div className="flex items-center gap-2">
-                                    <Label htmlFor={`content-type-${content.id}`} className="text-xs">Type:</Label>
-                                    <Select
-                                      value={content.content_type}
-                                      onValueChange={(value) => handleContentTypeChange(sectionIndex, contentIndex, value)}
-                                    >
-                                      <SelectTrigger className="h-8 text-xs w-[120px]">
-                                        <SelectValue placeholder="Type" />
-                                      </SelectTrigger>
-                                       <SelectContent>
-                                         <SelectItem value="lesson">Lesson</SelectItem>
-                                         <SelectItem value="lecture">Lecture</SelectItem>
-                                         <SelectItem value="video">Video</SelectItem>
-                                         <SelectItem value="text">Text</SelectItem>
-                                         <SelectItem value="quiz">Quiz</SelectItem>
-                                         <SelectItem value="assignment">Assignment</SelectItem>
-                                       </SelectContent>
-                                    </Select>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <Label htmlFor={`duration-${content.id}`} className="text-xs">Duration (min):</Label>
-                                    <Input
-                                      id={`duration-${content.id}`}
-                                      type="number"
-                                      value={content.duration_minutes || ''}
-                                      onChange={(e) => {
-                                        const newSections = [...(formData.sections || [])];
-                                        const contents = [...(section.contents || [])];
-                                        contents[contentIndex] = {
-                                          ...content,
-                                          duration_minutes: e.target.value ? parseInt(e.target.value) : 0
-                                        };
-                                        newSections[sectionIndex] = { ...section, contents };
-                                        setFormData({ ...formData, sections: newSections });
-                                      }}
-                                      className="h-8 w-20 text-xs"
-                                      min="0"
-                                    />
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <Switch
-                                      id={`is-free-${content.id}`}
-                                      checked={content.is_free}
-                                      onCheckedChange={(checked) => {
-                                        const newSections = [...(formData.sections || [])];
-                                        const contents = [...(section.contents || [])];
-                                        contents[contentIndex] = { ...content, is_free: checked };
-                                        newSections[sectionIndex] = { ...section, contents };
-                                        setFormData({ ...formData, sections: newSections });
-                                      }}
-                                    />
-                                    <Label htmlFor={`is-free-${content.id}`} className="text-xs">Free Preview</Label>
-                                  </div>
-                                </div>
-                              </div>
+                            placeholder="Section description (optional)"
+                            className="min-h-[80px]"
+                          />
+                          
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-sm font-medium text-muted-foreground">
+                                Content Items ({section.contents?.length || 0})
+                              </h4>
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => {
                                   const newSections = [...(formData.sections || [])];
-                                  const contents = [...(section.contents || [])];
-                                  contents.splice(contentIndex, 1);
-                                  newSections[sectionIndex] = { ...section, contents };
+                                  const newContent: CourseContent = {
+                                    id: `content-${Date.now()}`,
+                                    section_id: section.id,
+                                    title: 'New Lesson',
+                                    description: '',
+                                    content_type: 'lesson',
+                                    is_free: false,
+                                    duration_minutes: 0,
+                                    order_index: (section.contents?.length || 0) + 1,
+                                    content_data: {},
+                                    course_id: editingCourse?.id || ''
+                                  };
+                                  newSections[sectionIndex] = {
+                                    ...section,
+                                    contents: [...(section.contents || []), newContent]
+                                  };
                                   setFormData({ ...formData, sections: newSections });
                                 }}
                               >
-                                <Trash2 className="w-4 h-4 text-destructive" />
+                                <Plus className="w-4 h-4 mr-2" />
+                                Add Content
                               </Button>
                             </div>
-                          ))}
+                            
+                            <div className="space-y-3">
+                              {section.contents?.length === 0 ? (
+                                <div className="text-center py-6 text-muted-foreground border-2 border-dashed rounded-md bg-muted/20">
+                                  <p className="text-sm">No content items. Add your first lesson.</p>
+                                </div>
+                              ) : (
+                                section.contents?.map((content, contentIndex) => (
+                                  <div key={content.id} className="border rounded-md p-4 bg-background space-y-3">
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex-1 space-y-3">
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-xs font-medium text-muted-foreground min-w-0">
+                                            {contentIndex + 1}.
+                                          </span>
+                                          <Input
+                                            value={content.title}
+                                            onChange={(e) => {
+                                              const newSections = [...(formData.sections || [])];
+                                              const contents = [...(section.contents || [])];
+                                              contents[contentIndex] = { ...content, title: e.target.value };
+                                              newSections[sectionIndex] = { ...section, contents };
+                                              setFormData({ ...formData, sections: newSections });
+                                            }}
+                                            placeholder="Content title"
+                                            className="font-medium"
+                                          />
+                                        </div>
+                                        
+                                        <Textarea
+                                          value={content.description || ''}
+                                          onChange={(e) => {
+                                            const newSections = [...(formData.sections || [])];
+                                            const contents = [...(section.contents || [])];
+                                            contents[contentIndex] = { ...content, description: e.target.value };
+                                            newSections[sectionIndex] = { ...section, contents };
+                                            setFormData({ ...formData, sections: newSections });
+                                          }}
+                                          placeholder="Content description"
+                                          rows={2}
+                                          className="text-sm"
+                                        />
+                                        
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                          <div>
+                                            <Label htmlFor={`content-type-${content.id}`} className="text-xs">Type</Label>
+                                            <Select
+                                              value={content.content_type}
+                                              onValueChange={(value) => handleContentTypeChange(sectionIndex, contentIndex, value)}
+                                            >
+                                              <SelectTrigger className="h-8 text-xs">
+                                                <SelectValue placeholder="Type" />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                <SelectItem value="lesson">✅ Lesson</SelectItem>
+                                                <SelectItem value="lecture">🎓 Lecture</SelectItem>
+                                                <SelectItem value="video">📹 Video</SelectItem>
+                                                <SelectItem value="text">📝 Text</SelectItem>
+                                                <SelectItem value="quiz">❓ Quiz</SelectItem>
+                                                <SelectItem value="assignment">📋 Assignment</SelectItem>
+                                              </SelectContent>
+                                            </Select>
+                                          </div>
+                                          
+                                          <div>
+                                            <Label htmlFor={`duration-${content.id}`} className="text-xs">Duration (min)</Label>
+                                            <Input
+                                              id={`duration-${content.id}`}
+                                              type="number"
+                                              value={content.duration_minutes || ''}
+                                              onChange={(e) => {
+                                                const newSections = [...(formData.sections || [])];
+                                                const contents = [...(section.contents || [])];
+                                                contents[contentIndex] = {
+                                                  ...content,
+                                                  duration_minutes: e.target.value ? parseInt(e.target.value) : 0
+                                                };
+                                                newSections[sectionIndex] = { ...section, contents };
+                                                setFormData({ ...formData, sections: newSections });
+                                              }}
+                                              className="h-8 text-xs"
+                                              min="0"
+                                              placeholder="0"
+                                            />
+                                          </div>
+                                          
+                                          <div className="flex items-center space-x-2">
+                                            <Switch
+                                              id={`is-free-${content.id}`}
+                                              checked={content.is_free}
+                                              onCheckedChange={(checked) => {
+                                                const newSections = [...(formData.sections || [])];
+                                                const contents = [...(section.contents || [])];
+                                                contents[contentIndex] = { ...content, is_free: checked };
+                                                newSections[sectionIndex] = { ...section, contents };
+                                                setFormData({ ...formData, sections: newSections });
+                                              }}
+                                            />
+                                            <Label htmlFor={`is-free-${content.id}`} className="text-xs">Free Preview</Label>
+                                          </div>
+                                          
+                                          <div className="flex justify-end">
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() => {
+                                                const newSections = [...(formData.sections || [])];
+                                                const contents = [...(section.contents || [])];
+                                                contents.splice(contentIndex, 1);
+                                                newSections[sectionIndex] = { ...section, contents };
+                                                setFormData({ ...formData, sections: newSections });
+                                              }}
+                                            >
+                                              <Trash2 className="w-4 h-4 text-destructive" />
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  ))}
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) => setFormData({ ...formData, status: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
-                  </SelectContent>
-                </Select>
+            </div>
+
+            <div className="border-t pt-4 pb-2 px-6">
+              <div className="flex gap-3">
+                <Button onClick={handleSubmit} className="flex-1">
+                  {editingCourse ? "Update Course" : "Create Course"}
+                </Button>
+                <Button variant="outline" onClick={() => setShowDialog(false)}>
+                  Cancel
+                </Button>
               </div>
-              <Button onClick={handleSubmit} className="w-full">
-                {editingCourse ? "Update Course" : "Create Course"}
-              </Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
       {/* Courses List */}
-      <div className="border rounded-lg overflow-hidden">
-        <div className="bg-gray-50 dark:bg-gray-800 px-4 py-3 font-medium text-sm grid grid-cols-12 gap-4">
-          <div className="col-span-4">Title</div>
-          <div className="col-span-2">Status</div>
-          <div className="col-span-2">Price</div>
-          <div className="col-span-2">Students</div>
-          <div className="col-span-2 text-right">Actions</div>
+      <div className="border rounded-lg overflow-hidden bg-card">
+        <div className="bg-muted px-6 py-4 border-b">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">Your Courses ({courses.length})</h3>
+            <div className="text-sm text-muted-foreground">
+              {courses.filter(c => c.status === 'published').length} published
+            </div>
+          </div>
         </div>
+        
         <div className="divide-y">
           {courses.length > 0 ? (
             courses.map((course) => (
-              <div key={course.id} className="px-4 py-3 grid grid-cols-12 gap-4 items-center hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                <div className="col-span-4 font-medium">
-                  <div className="truncate max-w-xs">{course.title}</div>
-                  <div className="text-xs text-muted-foreground truncate max-w-xs">{course.description}</div>
-                </div>
-                <div className="col-span-2">
-                  <Badge variant={course.status === 'published' ? 'default' : 'secondary'}>
-                    {course.status}
-                  </Badge>
-                  {course.is_free && <Badge variant="outline" className="ml-1">Free</Badge>}
-                </div>
-                <div className="col-span-2 text-sm">
-                  {course.is_free ? 'Free' : course.discounted_price ? (
-                    <span>
-                      ৳{course.discounted_price}
-                      <span className="line-through text-muted-foreground ml-1 text-xs">৳{course.price}</span>
-                    </span>
-                  ) : `৳${course.price}`}
-                </div>
-                <div className="col-span-2 text-sm">
-                  {course.student_count || 0}
-                </div>
-                <div className="col-span-2 flex justify-end gap-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEdit(course)}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => deleteCourse(course.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+              <div key={course.id} className="p-6 hover:bg-muted/50 transition-colors">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h4 className="text-lg font-semibold">{course.title}</h4>
+                      <Badge variant={course.status === 'published' ? 'default' : 'secondary'}>
+                        {course.status}
+                      </Badge>
+                      {course.is_free && <Badge variant="outline">Free</Badge>}
+                    </div>
+                    
+                    <p className="text-muted-foreground mb-3 line-clamp-2">{course.description}</p>
+                    
+                    <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <span>💰</span>
+                        <span>
+                          {course.is_free ? 'Free' : course.discounted_price ? (
+                            <>
+                              ৳{course.discounted_price}
+                              <span className="line-through ml-1">৳{course.price}</span>
+                            </>
+                          ) : `৳${course.price}`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span>👥</span>
+                        <span>{course.student_count || 0} students</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span>📚</span>
+                        <span>{course.difficulty_level}</span>
+                      </div>
+                      {course.duration_hours && (
+                        <div className="flex items-center gap-1">
+                          <span>⏱️</span>
+                          <span>{course.duration_hours}h</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {course.technologies.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {course.technologies.slice(0, 4).map((tech, index) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            {tech}
+                          </Badge>
+                        ))}
+                        {course.technologies.length > 4 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{course.technologies.length - 4} more
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex gap-2 ml-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(course)}
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Content
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (window.confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
+                          deleteCourse(course.id);
+                        }
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))
           ) : (
-            <div className="px-4 py-8 text-center text-muted-foreground">
-              No courses found. Create your first course.
+            <div className="px-6 py-12 text-center">
+              <div className="text-muted-foreground mb-4">
+                <span className="text-4xl">📚</span>
+              </div>
+              <h3 className="text-lg font-medium mb-2">No courses yet</h3>
+              <p className="text-muted-foreground mb-4">Create your first course to get started</p>
+              <Button onClick={resetForm} variant="outline">
+                <Plus className="w-4 h-4 mr-2" />
+                Create Your First Course
+              </Button>
             </div>
           )}
         </div>
