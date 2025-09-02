@@ -88,16 +88,16 @@ export function BlogCarousel({ blogs, title = 'Latest Blogs', maxItems = 6 }: Bl
                 {filteredBlogs.map((blog) => (
                   <CarouselItem key={blog.id} className="pl-1 md:basis-1/2 lg:basis-1/3">
                     <div className="p-1">
-                      <Card className="h-full overflow-hidden transition-all hover:shadow-lg">
-                        <div className="aspect-video overflow-hidden">
+                      <Card className="h-[420px] overflow-hidden transition-all hover:shadow-lg flex flex-col">
+                        <div className="aspect-video overflow-hidden flex-shrink-0">
                           <img
                             src={blog.featured_image || defaultFeaturedImage}
                             alt={blog.title}
                             className="h-full w-full object-cover"
                           />
                         </div>
-                        <CardContent className="p-6">
-                          <div className="flex flex-wrap gap-2 mb-3">
+                        <CardContent className="p-6 flex flex-col flex-1">
+                          <div className="flex flex-wrap gap-2 mb-3 min-h-[32px]">
                             {blog.categories?.slice(0, 2).map((category) => (
                               <Badge key={category} variant="outline" className="text-xs">
                                 {BLOG_CATEGORIES.find(c => c.id === category)?.label || category}
@@ -109,13 +109,13 @@ export function BlogCarousel({ blogs, title = 'Latest Blogs', maxItems = 6 }: Bl
                               </Badge>
                             )}
                           </div>
-                          <h3 className="text-xl font-bold mb-2 line-clamp-2">
+                          <h3 className="text-xl font-bold mb-2 line-clamp-2 min-h-[56px] flex items-start">
                             {blog.title}
                           </h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-2">
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-2 flex-1">
                             {blog.excerpt}
                           </p>
-                          <div className="flex items-center justify-between mt-4">
+                          <div className="flex items-center justify-between mt-auto pt-2">
                             <span className="text-xs text-gray-500 dark:text-gray-400">
                               {format(new Date(blog.created_at), 'MMM d, yyyy')}
                             </span>
