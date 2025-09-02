@@ -9,6 +9,7 @@ import { Loader2, ArrowRight, ExternalLink, Search } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { BlogPost } from '@/types/blog';
+import defaultFeaturedImage from "@/assets/default-blog-featured.webp";
 
 const BLOG_CATEGORIES = [
   { id: 'all', label: 'All Posts' },
@@ -146,15 +147,13 @@ const Blogs = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredBlogs.map((blog) => (
             <Card key={blog.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-300 h-full flex flex-col">
-              {blog.featured_image && (
-                <div className="aspect-video overflow-hidden">
-                  <img
-                    src={blog.featured_image}
-                    alt={blog.title}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-              )}
+              <div className="aspect-video overflow-hidden">
+                <img
+                  src={blog.featured_image || defaultFeaturedImage}
+                  alt={blog.title}
+                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                />
+              </div>
               <div className="flex-1 flex flex-col">
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start mb-2">
