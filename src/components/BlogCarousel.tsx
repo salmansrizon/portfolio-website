@@ -7,6 +7,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { BlogPost } from '@/types/blog';
 import { format } from 'date-fns';
 import { Badge } from "@/components/ui/badge";
+import defaultFeaturedImage from "@/assets/default-blog-featured.webp";
 
 const BLOG_CATEGORIES = [
   { id: 'all', label: 'All' },
@@ -88,15 +89,13 @@ export function BlogCarousel({ blogs, title = 'Latest Blogs', maxItems = 6 }: Bl
                   <CarouselItem key={blog.id} className="pl-1 md:basis-1/2 lg:basis-1/3">
                     <div className="p-1">
                       <Card className="h-full overflow-hidden transition-all hover:shadow-lg">
-                        {blog.featured_image && (
-                          <div className="aspect-video overflow-hidden">
-                            <img
-                              src={blog.featured_image}
-                              alt={blog.title}
-                              className="h-full w-full object-cover"
-                            />
-                          </div>
-                        )}
+                        <div className="aspect-video overflow-hidden">
+                          <img
+                            src={blog.featured_image || defaultFeaturedImage}
+                            alt={blog.title}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
                         <CardContent className="p-6">
                           <div className="flex flex-wrap gap-2 mb-3">
                             {blog.categories?.slice(0, 2).map((category) => (
