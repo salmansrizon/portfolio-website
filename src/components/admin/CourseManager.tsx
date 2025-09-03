@@ -472,7 +472,7 @@ export default function CourseManager() {
           const c = contents[i];
           const payload: any = {
             course_id: courseId,
-            section_id: resolvedSectionId,
+            section_id: c.section_id === 'general' ? null : resolvedSectionId,
             title: c.title,
             description: c.description || null,
             content_type: c.content_type || 'lesson',
