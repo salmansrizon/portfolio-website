@@ -15,6 +15,8 @@ import {
   Users, 
   Clock
 } from "lucide-react";
+import { CourseCountdown } from "@/components/CourseCountdown";
+import { formatStartDate } from "@/utils/countdown";
 
 interface Course {
   id: string;
@@ -30,6 +32,7 @@ interface Course {
   technologies: string[];
   rating?: number;
   student_count?: number;
+  start_date?: string;
 }
 
 interface CourseContent {
@@ -79,7 +82,7 @@ function QuickView({ course, content, onEnroll, enrolling }: QuickViewProps) {
           <p className="text-muted-foreground mb-4">{course.description}</p>
           
           {/* Course Stats */}
-          <div className="flex items-center gap-6 mb-6">
+          <div className="flex flex-wrap items-center gap-6 mb-6">
             <div className="flex items-center gap-2">
               <Star className="w-5 h-5 text-yellow-500" />
               <span className="font-medium">{course.rating || 0}</span>
@@ -92,7 +95,21 @@ function QuickView({ course, content, onEnroll, enrolling }: QuickViewProps) {
               <Clock className="w-5 h-5 text-muted-foreground" />
               <span>{course.duration_hours || 0} hours</span>
             </div>
+            {course.start_date && (
+              <div className="flex items-center gap-2">
+                <CourseCountdown startDate={course.start_date} />
+              </div>
+            )}
           </div>
+          
+          {course.start_date && (
+            <div className="mb-6 p-4 bg-muted/50 rounded-lg">
+              <h4 className="font-medium mb-2">Course Schedule</h4>
+              <p className="text-sm text-muted-foreground">
+                This course starts on {formatStartDate(course.start_date)}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Pricing */}

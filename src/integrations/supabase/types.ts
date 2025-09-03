@@ -263,6 +263,7 @@ export type Database = {
           is_free: boolean
           price: number | null
           rating: number | null
+          start_date: string | null
           status: string
           student_count: number | null
           technologies: string[]
@@ -281,6 +282,7 @@ export type Database = {
           is_free?: boolean
           price?: number | null
           rating?: number | null
+          start_date?: string | null
           status?: string
           student_count?: number | null
           technologies?: string[]
@@ -299,6 +301,7 @@ export type Database = {
           is_free?: boolean
           price?: number | null
           rating?: number | null
+          start_date?: string | null
           status?: string
           student_count?: number | null
           technologies?: string[]

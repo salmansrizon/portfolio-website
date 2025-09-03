@@ -13,6 +13,7 @@ import { BookOpen, Clock, Play, Star, Users, ChevronDown, ChevronUp, Lock, Exter
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { CourseCountdown } from "@/components/CourseCountdown";
 
 interface Course {
   id: string;
@@ -32,6 +33,7 @@ interface Course {
   created_at: string;
   updated_at: string;
   status: string;
+  start_date?: string;
   course_content?: CourseContent[]; // Flat list of all content items
   sections?: CourseSection[]; // Grouped content by sections
 }
@@ -345,11 +347,16 @@ export default function Courses() {
                   <CardTitle className="text-xl group-hover:text-primary transition-colors">
                     {course.title}
                   </CardTitle>
-                  {course.difficulty_level && (
-                    <Badge className={getDifficultyColor(course.difficulty_level)}>
-                      {course.difficulty_level}
-                    </Badge>
-                  )}
+                  <div className="flex flex-col gap-2">
+                    {course.start_date && (
+                      <CourseCountdown startDate={course.start_date} showIcon={false} />
+                    )}
+                    {course.difficulty_level && (
+                      <Badge className={getDifficultyColor(course.difficulty_level)}>
+                        {course.difficulty_level}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 <CardDescription className="line-clamp-2">
                   {course.description}

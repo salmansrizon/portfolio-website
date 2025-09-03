@@ -144,6 +144,7 @@ interface FormData {
   technologies: string[];
   sections: CourseSection[];
   rating: number;
+  start_date?: string;
 }
 
 const initialFormData: FormData = {
@@ -160,6 +161,7 @@ const initialFormData: FormData = {
   technologies: [],
   sections: [],
   rating: 0,
+  start_date: undefined,
 };
 
 export default function CourseManager() {
@@ -210,6 +212,7 @@ export default function CourseManager() {
             duration_hours: formData.duration_hours,
             banner_image: formData.banner_image,
             technologies: formData.technologies,
+            start_date: formData.start_date ? new Date(formData.start_date).toISOString() : null,
           })
           .eq('id', courseId);
         if (courseError) throw courseError;
@@ -229,6 +232,7 @@ export default function CourseManager() {
             duration_hours: formData.duration_hours,
             banner_image: formData.banner_image,
             technologies: formData.technologies,
+            start_date: formData.start_date ? new Date(formData.start_date).toISOString() : null,
           })
           .select('id')
           .single();
@@ -552,6 +556,7 @@ export default function CourseManager() {
         technologies: courseData.technologies || [],
         sections: sections,
         rating: courseData.rating || 0,
+        start_date: courseData.start_date ? new Date(courseData.start_date).toISOString().slice(0, 16) : undefined,
       });
       setShowDialog(true);
     } catch (error) {
@@ -666,6 +671,16 @@ export default function CourseManager() {
                         value={formData.duration_hours || ''}
                         onChange={(e) => setFormData({ ...formData, duration_hours: parseInt(e.target.value) || null })}
                         placeholder="Course duration"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="start_date">Course Start Date</Label>
+                      <Input
+                        id="start_date"
+                        type="datetime-local"
+                        value={formData.start_date || ''}
+                        onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                        placeholder="Course start date"
                       />
                     </div>
                     <div className="md:col-span-2">
