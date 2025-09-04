@@ -57,17 +57,17 @@ function QuickView({ course, content, onEnroll, enrolling }: QuickViewProps) {
   if (!course) return null;
 
   return (
-    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto w-[calc(100vw-2rem)] sm:w-full">
-      <DialogHeader>
-        <DialogTitle>{course.title}</DialogTitle>
+    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto mx-2 sm:mx-4 md:mx-auto w-[calc(100vw-1rem)] sm:w-[calc(100vw-2rem)] md:w-full p-4 sm:p-6">
+      <DialogHeader className="space-y-2 pb-4">
+        <DialogTitle className="text-lg sm:text-xl leading-tight">{course.title}</DialogTitle>
       </DialogHeader>
       
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {course.banner_image && (
           <img 
             src={course.banner_image} 
             alt={course.title}
-            className="w-full h-48 object-cover rounded-lg"
+            className="w-full h-32 sm:h-48 object-cover rounded-lg"
           />
         )}
         
@@ -82,30 +82,30 @@ function QuickView({ course, content, onEnroll, enrolling }: QuickViewProps) {
           <p className="text-muted-foreground mb-4">{course.description}</p>
           
           {/* Course Stats */}
-          <div className="flex flex-wrap items-center gap-6 mb-6">
-            <div className="flex items-center gap-2">
-              <Star className="w-5 h-5 text-yellow-500" />
+          <div className="flex flex-wrap items-center gap-3 sm:gap-6 mb-4 sm:mb-6 text-sm sm:text-base">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Star className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500" />
               <span className="font-medium">{course.rating || 0}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-muted-foreground" />
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
               <span>{course.student_count || 0} students</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-muted-foreground" />
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
               <span>{course.duration_hours || 0} hours</span>
             </div>
             {course.start_date && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto">
                 <CourseCountdown startDate={course.start_date} />
               </div>
             )}
           </div>
           
           {course.start_date && (
-            <div className="mb-6 p-4 bg-muted/50 rounded-lg">
-              <h4 className="font-medium mb-2">Course Schedule</h4>
-              <p className="text-sm text-muted-foreground">
+            <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-muted/50 rounded-lg">
+              <h4 className="font-medium mb-2 text-sm sm:text-base">Course Schedule</h4>
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 This course starts on {formatStartDate(course.start_date)}
               </p>
             </div>
@@ -113,15 +113,15 @@ function QuickView({ course, content, onEnroll, enrolling }: QuickViewProps) {
         </div>
 
         {/* Pricing */}
-        <div className="bg-muted/20 p-4 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div>
+        <div className="bg-muted/20 p-3 sm:p-4 rounded-lg">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="w-full sm:w-auto">
               {course.discounted_price ? (
                 <div className="space-y-1">
-                  <div className="text-2xl font-bold text-primary">
+                  <div className="text-xl sm:text-2xl font-bold text-primary">
                     {course.is_free ? 'Free' : `৳${course.discounted_price}`}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm text-muted-foreground line-through">
                       ৳{course.price}
                     </span>
@@ -131,7 +131,7 @@ function QuickView({ course, content, onEnroll, enrolling }: QuickViewProps) {
                   </div>
                 </div>
               ) : (
-                <div className="text-2xl font-bold text-primary">
+                <div className="text-xl sm:text-2xl font-bold text-primary">
                   {course.is_free ? 'Free' : `৳${course.price}`}
                 </div>
               )}
@@ -140,6 +140,7 @@ function QuickView({ course, content, onEnroll, enrolling }: QuickViewProps) {
               size="lg"
               onClick={onEnroll}
               disabled={enrolling}
+              className="w-full sm:w-auto text-sm sm:text-base px-4 sm:px-6"
             >
               {enrolling ? 'Enrolling...' : 'Enroll Now'}
             </Button>
@@ -149,28 +150,30 @@ function QuickView({ course, content, onEnroll, enrolling }: QuickViewProps) {
         {/* Course Content */}
         {content.length > 0 && (
           <div>
-            <h3 className="text-lg font-semibold mb-4">Course Content</h3>
-            <div className="space-y-2 max-h-60 overflow-y-auto">
+            <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Course Content</h3>
+            <div className="space-y-2 max-h-48 sm:max-h-60 overflow-y-auto">
               {content.slice(0, 5).map((item, index) => (
-                <div key={item.id} className="flex items-center gap-3 p-2 border rounded">
-                  <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs">
+                <div key={item.id} className="flex items-center gap-2 sm:gap-3 p-2 border rounded text-sm">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs flex-shrink-0">
                     {index + 1}
                   </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-sm">{item.title}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-xs sm:text-sm truncate">{item.title}</div>
                     <div className="text-xs text-muted-foreground">
                       {item.content_type} {item.duration_minutes && `• ${item.duration_minutes} min`}
                     </div>
                   </div>
-                  {item.is_free ? (
-                    <Badge variant="outline" className="text-xs">Free</Badge>
-                  ) : (
-                    <Lock className="w-4 h-4 text-muted-foreground" />
-                  )}
+                  <div className="flex-shrink-0">
+                    {item.is_free ? (
+                      <Badge variant="outline" className="text-xs">Free</Badge>
+                    ) : (
+                      <Lock className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
+                    )}
+                  </div>
                 </div>
               ))}
               {content.length > 5 && (
-                <div className="text-center text-sm text-muted-foreground py-2">
+                <div className="text-center text-xs sm:text-sm text-muted-foreground py-2">
                   +{content.length - 5} more lessons
                 </div>
               )}
