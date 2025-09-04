@@ -90,8 +90,8 @@ const Testimonials = () => {
             <div ref={emblaRef} className="overflow-hidden pb-12 px-4">
               <div className="flex space-x-4">
                 {testimonials.map((testimonial) => (
-                  <div key={testimonial.id} className="flex-[0_0_calc(100%-2rem)] sm:flex-[0_0_calc(80%-1rem)] lg:flex-[0_0_calc(45%-1.5rem)] px-2 h-full">
-                    <Card className="shadow-card h-full flex flex-col w-full max-w-2xl mx-auto">
+                  <div key={testimonial.id} className="flex-[0_0_calc(100%-2rem)] sm:flex-[0_0_calc(80%-1rem)] lg:flex-[0_0_calc(45%-1.5rem)] px-2">
+                    <Card className="shadow-card h-[400px] sm:h-auto flex flex-col w-full max-w-2xl mx-auto">
                       <CardContent className="p-6 flex-1 flex flex-col">
                         <div className="flex-1">
                           <div className="flex items-start mb-4">

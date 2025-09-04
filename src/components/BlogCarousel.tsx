@@ -121,7 +121,7 @@ export function BlogCarousel({ blogs, title = 'Latest Blogs', maxItems = 6 }: Bl
                             <span className="text-xs text-gray-500 dark:text-gray-400">
                               {format(new Date(blog.created_at), 'MMM d, yyyy')}
                             </span>
-                            <Button variant="ghost" size="sm" className="group/btn relative overflow-hidden" asChild>
+                            <Button variant="ghost" size="sm" className="group/btn relative overflow-hidden mb-2 sm:mb-0" asChild>
                               <a href={`/blog/${blog.slug}`}>
                                 <span className="relative z-10">Read more</span>
                                 <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />

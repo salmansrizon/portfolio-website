@@ -57,7 +57,7 @@ function QuickView({ course, content, onEnroll, enrolling }: QuickViewProps) {
   if (!course) return null;
 
   return (
-    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto w-[calc(100vw-2rem)] sm:w-full">
       <DialogHeader>
         <DialogTitle>{course.title}</DialogTitle>
       </DialogHeader>
