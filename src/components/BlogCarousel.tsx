@@ -88,7 +88,7 @@ export function BlogCarousel({ blogs, title = 'Latest Blogs', maxItems = 6 }: Bl
                 {filteredBlogs.map((blog, index) => (
                   <CarouselItem key={blog.id} className="pl-1 md:basis-1/2 lg:basis-1/3">
                     <div className="p-0.5 h-full">
-                      <Card className="h-[420px] overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-2 hover:scale-[1.02] flex flex-col animate-slide-up group"
+                      <Card className="h-[450px] overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-2 hover:scale-[1.02] flex flex-col animate-slide-up group"
                         style={{ animationDelay: `${index * 150}ms` }}>
                         <div className="aspect-video overflow-hidden flex-shrink-0 relative">
                           <img
@@ -97,7 +97,7 @@ export function BlogCarousel({ blogs, title = 'Latest Blogs', maxItems = 6 }: Bl
                             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                           />
                         </div>
-                        <CardContent className="p-6 flex flex-col flex-1 relative">
+                        <CardContent className="p-4 flex flex-col flex-1 relative">
                           <div className="absolute inset-x-0 inset-t-0 bottom-[10px] bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg" />
                           <div className="relative z-10 flex flex-wrap gap-2 mb-3 min-h-[32px]">
                             {blog.categories?.slice(0, 2).map((category) => (
@@ -111,10 +111,10 @@ export function BlogCarousel({ blogs, title = 'Latest Blogs', maxItems = 6 }: Bl
                               </Badge>
                             )}
                           </div>
-                          <h3 className="relative z-10 text-xl font-bold mb-2 line-clamp-2 min-h-[56px] flex items-start transition-colors group-hover:text-primary">
+                          <h3 className="relative z-10 text-lg font-bold mb-2 line-clamp-2 min-h-[48px] flex items-start transition-colors group-hover:text-primary">
                             {blog.title}
                           </h3>
-                          <p className="relative z-10 text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-2 flex-1">
+                          <p className="relative z-10 text-sm text-gray-500 dark:text-gray-400 mb-3 line-clamp-2 flex-1">
                             {blog.excerpt}
                           </p>
                           <div className="relative z-10 flex items-center justify-between mt-auto pt-2">
