@@ -81,12 +81,18 @@ export function BlogCarousel({ blogs, title = 'Latest Blogs', maxItems = 6 }: Bl
             <Carousel
               opts={{
                 align: "start",
+                loop: false,
+                slidesToScroll: 1,
+                breakpoints: {
+                  '(min-width: 768px)': { slidesToScroll: 2 },
+                  '(min-width: 1024px)': { slidesToScroll: 3 }
+                }
               }}
               className="w-full"
             >
-              <CarouselContent className="-ml-1">
+              <CarouselContent className="-ml-2 md:-ml-4">
                 {filteredBlogs.map((blog, index) => (
-                  <CarouselItem key={blog.id} className="pl-1 md:basis-1/2 lg:basis-1/3">
+                  <CarouselItem key={blog.id} className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3">
                     <div className="p-0.5 h-full">
                       <Card className="h-[450px] overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-2 hover:scale-[1.02] flex flex-col animate-slide-up group"
                         style={{ animationDelay: `${index * 150}ms` }}>
