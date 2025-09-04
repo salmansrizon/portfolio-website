@@ -87,7 +87,7 @@ export function BlogCarousel({ blogs, title = 'Latest Blogs', maxItems = 6 }: Bl
               <CarouselContent className="-ml-1">
                 {filteredBlogs.map((blog, index) => (
                   <CarouselItem key={blog.id} className="pl-1 md:basis-1/2 lg:basis-1/3">
-                    <div className="p-1">
+                    <div className="p-0.5 h-full">
                       <Card className="h-[420px] overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-2 hover:scale-[1.02] flex flex-col animate-slide-up group"
                         style={{ animationDelay: `${index * 150}ms` }}>
                         <div className="aspect-video overflow-hidden flex-shrink-0 relative">
