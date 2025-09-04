@@ -98,7 +98,7 @@ export function BlogCarousel({ blogs, title = 'Latest Blogs', maxItems = 6 }: Bl
                           />
                         </div>
                         <CardContent className="p-6 flex flex-col flex-1 relative">
-                          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg" />
+                          <div className="absolute inset-x-0 inset-t-0 bottom-[10px] bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg" />
                           <div className="relative z-10 flex flex-wrap gap-2 mb-3 min-h-[32px]">
                             {blog.categories?.slice(0, 2).map((category) => (
                               <Badge key={category} variant="outline" className="text-xs">
