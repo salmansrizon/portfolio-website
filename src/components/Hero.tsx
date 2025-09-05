@@ -79,9 +79,9 @@ const Hero = () => {
           </div>
 
           {/* Location */}
-          <div className="flex items-center justify-center space-x-2 text-muted-foreground animate-fade-in-up delay-1200">
-            <MapPin className="h-5 w-5 text-primary animate-pulse" />
-            <span className="text-lg">Dhaka, Bangladesh • Available for global remote projects</span>
+          <div className="flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2 text-muted-foreground animate-fade-in-up delay-1200">
+            <span className="text-lg order-1 sm:order-2">Dhaka, Bangladesh • Available for global remote projects</span>
+            <MapPin className="h-5 w-5 text-primary animate-pulse order-2 sm:order-1" />
           </div>
         </div>
       </div>
