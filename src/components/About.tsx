@@ -32,7 +32,7 @@ const About = () => {
           {/* Left Content */}
           <div className="space-y-8">
             <div>
-              <h3 className="text-2xl font-bold text-foreground mb-4 text-center">Professional Journey</h3>
+              <h3 className="text-2xl font-bold text-foreground mb-4 text-center sm:text-left">Professional Journey</h3>
               <p className="text-muted-foreground leading-relaxed">
                 Currently serving as an Data analytics Manager at Wagely Bangladesh, I specialize in 
                 transforming complex Finantial and business data into actionable insights. 
