@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { BlogPost } from '@/types/blog';
 import { format } from 'date-fns';
@@ -25,6 +26,7 @@ interface BlogCarouselProps {
 }
 
 export function BlogCarousel({ blogs, title = 'Latest Blogs', maxItems = 6 }: BlogCarouselProps) {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('all');
 
   // Filter blogs by selected category
@@ -127,11 +129,31 @@ export function BlogCarousel({ blogs, title = 'Latest Blogs', maxItems = 6 }: Bl
                             <span className="text-xs text-gray-500 dark:text-gray-400">
                               {format(new Date(blog.created_at), 'MMM d, yyyy')}
                             </span>
-                            <Button variant="ghost" size="sm" className="group/btn relative overflow-hidden mb-2 sm:mb-0" asChild>
-                              <a href={`/blog/${blog.slug}`}>
-                                <span className="relative z-10">Read more</span>
-                                <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
-                              </a>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="group/btn relative overflow-hidden mb-2 sm:mb-0"
+                              onClick={() => {
+                                if (blog.source_type !== 'local' && blog.source_url) {
+                                  window.open(blog.source_url, '_blank');
+                                } else {
+                                  navigate(`/blog/${blog.slug}`);
+                                }
+                              }}
+                            >
+                              {blog.source_type !== 'local' ? (
+                                <>
+                                  <span className="relative z-10">
+                                    View on {blog.source_type.charAt(0).toUpperCase() + blog.source_type.slice(1)}
+                                  </span>
+                                  <ExternalLink className="ml-1 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                                </>
+                              ) : (
+                                <>
+                                  <span className="relative z-10">Read more</span>
+                                  <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                                </>
+                              )}
                             </Button>
                           </div>
                         </CardContent>
