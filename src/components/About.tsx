@@ -68,7 +68,7 @@ const About = () => {
         </div>
 
         {/* Teaching & Mentoring */}
-        <Card className="mb-16 shadow-card">
+        <Card className="mb-16 shadow-card hover:shadow-hover transition-all hover:border-primary/20">
           <CardContent className="p-8">
             <h3 className="text-2xl font-bold text-foreground mb-4">Teaching & Mentoring</h3>
             <p className="text-muted-foreground mb-6 leading-relaxed">
