@@ -242,7 +242,7 @@ Thank you!
 
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Contact & Booking Forms */}
-          <Card className="shadow-card">
+          <Card className="shadow-card hover:shadow-hover transition-all hover:border-primary/20">
             <CardContent className="p-0">
               <Tabs defaultValue="contact" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
@@ -465,7 +465,7 @@ Thank you!
           {/* Contact Info */}
           <div className="space-y-8">
             {/* Availability */}
-            <Card className="shadow-card">
+            <Card className="shadow-card hover:shadow-hover transition-all hover:border-primary/20">
               <CardHeader>
                 <CardTitle className="text-xl font-bold text-foreground flex items-center">
                   <Clock className="mr-3 h-5 w-5 text-primary" />
@@ -499,7 +499,7 @@ Thank you!
             </Card>
 
             {/* Connect Links */}
-            <Card className="shadow-card">
+            <Card className="shadow-card hover:shadow-hover transition-all hover:border-primary/20">
               <CardHeader>
                 <CardTitle className="text-xl font-bold text-foreground">
                   Connect With Me
@@ -542,7 +542,7 @@ Thank you!
             </Card>
 
             {/* Quick Response */}
-            <Card className="shadow-card bg-gradient-hero text-white">
+            <Card className="shadow-card bg-gradient-hero text-white border-primary/20 backdrop-blur-md hover:shadow-hover transition-all">
               <CardContent className="p-6">
                 <div className="flex items-start space-x-4">
                   <Zap className="h-8 w-8 flex-shrink-0 mt-1" />

@@ -50,7 +50,7 @@ const Certifications = () => {
 
         <div className="grid md:grid-cols-2 gap-8">
           {certifications.map((cert, index) => (
-            <Card key={index} className="shadow-card hover:shadow-hover transition-all duration-300">
+            <Card key={index} className="shadow-card hover:shadow-hover transition-all duration-300 hover:border-primary/30">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <Badge variant="secondary" className="text-primary font-bold text-lg px-3 py-1">

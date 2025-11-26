@@ -146,7 +146,7 @@ const Blogs = () => {
         {/* Blog Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredBlogs.map((blog) => (
-            <Card key={blog.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-300 h-full flex flex-col">
+            <Card key={blog.id} className="overflow-hidden hover:shadow-lg transition-all duration-300 h-full flex flex-col hover:scale-[1.02] hover:border-primary/30">
               <div className="aspect-video overflow-hidden">
                 <img
                   src={blog.featured_image || defaultFeaturedImage}

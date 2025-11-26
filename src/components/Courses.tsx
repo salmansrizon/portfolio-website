@@ -317,7 +317,7 @@ export default function Courses() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {courses.map((course) => (
-            <Card key={course.id} className="group hover:shadow-lg transition-all duration-300 cursor-pointer">
+            <Card key={course.id} className="group hover:shadow-lg transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:border-primary/30">
               <div 
                 className="relative justify-center overflow-hidden rounded-t-lg bg-gradient-to-br from-primary/10 to-primary/5 h-48"
                 onClick={() => handleCourseSelect(course)}
