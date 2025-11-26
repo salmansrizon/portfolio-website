@@ -80,7 +80,7 @@ const About = () => {
               {["Consultation","Corporate Training", "Data Analysis", "Growth Strategy"].map((item, index) => (
                 <div
                   key={index}
-                  className="bg-accent text-accent-foreground px-4 py-2 rounded-lg text-center text-primary  font-medium"
+                  className="bg-gradient-to-br from-primary/10 to-accent/20 border border-primary/20 text-foreground px-4 py-2 rounded-lg text-center font-medium shadow-sm hover:shadow-md transition-all"
                 >
                   {item}
                 </div>
