@@ -14,6 +14,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CourseCountdown } from "@/components/CourseCountdown";
+import ScrollReveal from "./ScrollReveal";
 
 interface Course {
   id: string;
@@ -306,18 +307,21 @@ export default function Courses() {
   return (
     <section id="courses" className="py-20 px-4 bg-muted/30">
       <div className="container mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Professional Courses
-          </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-primary font-semibold">
-            Master the latest technologies with our comprehensive courses designed for real-world success
-          </p>
-        </div>
+        <ScrollReveal direction="up">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Professional Courses
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-primary font-semibold">
+              Master the latest technologies with our comprehensive courses designed for real-world success
+            </p>
+          </div>
+        </ScrollReveal>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {courses.map((course) => (
-            <Card key={course.id} className="group hover:shadow-lg transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:border-primary/30">
+          {courses.map((course, index) => (
+            <ScrollReveal key={course.id} direction="up" delay={index * 0.1}>
+              <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:border-primary/30">
               <div 
                 className="relative justify-center overflow-hidden rounded-t-lg bg-gradient-to-br from-primary/10 to-primary/5 h-48"
                 onClick={() => handleCourseSelect(course)}
@@ -423,6 +427,7 @@ export default function Courses() {
                 </div>
               </CardContent>
             </Card>
+            </ScrollReveal>
           ))}
         </div>
 

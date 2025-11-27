@@ -25,6 +25,7 @@ import { format } from "date-fns";
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import ScrollReveal from "./ScrollReveal";
 
 const Contact = () => {
   const [currentTime, setCurrentTime] = useState('');
@@ -233,16 +234,19 @@ Thank you!
   return (
     <section id="contact" className="py-20 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-foreground mb-4">Let's Work Together</h2>
-          <p className="text-xl text-muted-foreground text-primary font-semibold">
-            Ready to transform your data into strategic insights?
-          </p>
-        </div>
+        <ScrollReveal direction="up">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-foreground mb-4">Let's Work Together</h2>
+            <p className="text-xl text-muted-foreground text-primary font-semibold">
+              Ready to transform your data into strategic insights?
+            </p>
+          </div>
+        </ScrollReveal>
 
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Contact & Booking Forms */}
-          <Card className="shadow-card hover:shadow-hover transition-all hover:border-primary/20">
+          <ScrollReveal direction="left">
+            <Card className="shadow-card hover:shadow-hover transition-all hover:border-primary/20">
             <CardContent className="p-0">
               <Tabs defaultValue="contact" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
@@ -461,9 +465,11 @@ Thank you!
               </Tabs>
             </CardContent>
           </Card>
+          </ScrollReveal>
 
           {/* Contact Info */}
-          <div className="space-y-8">
+          <ScrollReveal direction="right">
+            <div className="space-y-8">
             {/* Availability */}
             <Card className="shadow-card hover:shadow-hover transition-all hover:border-primary/20">
               <CardHeader>
@@ -557,6 +563,7 @@ Thank you!
               </CardContent>
             </Card>
           </div>
+          </ScrollReveal>
         </div>
       </div>
     </section>

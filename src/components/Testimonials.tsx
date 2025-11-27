@@ -4,6 +4,7 @@ import { Star, ExternalLink, Quote, ChevronLeft, ChevronRight } from "lucide-rea
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import useEmblaCarousel from 'embla-carousel-react';
+import ScrollReveal from "./ScrollReveal";
 
 interface Testimonial {
   id: string;
@@ -78,12 +79,14 @@ const Testimonials = () => {
   return (
     <section id="testimonials" className="py-12 md:py-20 bg-accent/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-foreground mb-4">Client Testimonials</h2>
-          <p className="text-xl text-muted-foreground text-primary font-semibold">
-            What clients say about working with me
-          </p>
-        </div>
+        <ScrollReveal direction="up">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-foreground mb-4">Client Testimonials</h2>
+            <p className="text-xl text-muted-foreground text-primary font-semibold">
+              What clients say about working with me
+            </p>
+          </div>
+        </ScrollReveal>
 
         <div className="max-w-6xl mx-auto">
           <div className="relative">
@@ -212,7 +215,8 @@ const Testimonials = () => {
           </div> */}
 
           {/* Fiverr CTA */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto">
+          <ScrollReveal direction="up" delay={0.2}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto">
             <Button
               size="lg"
               className="bg-primary hover:bg-primary-hover text-primary-foreground px-8 py-3"
@@ -243,6 +247,7 @@ const Testimonials = () => {
             </Button>
             {/* You can add a second button here if needed */}
           </div>
+          </ScrollReveal>
         </div>
       </div>
     </section>
