@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* E-Learning Platform Design System - Blue & Yellow Theme */
+/* E-Learning Platform Design System - Blue & Cyan Theme */
 @layer base {
   :root {
     --background: 210 100% 98%;
@@ -18,8 +18,8 @@
     --secondary-foreground: 222 47% 11%;
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
-    --accent: 54 91% 65%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 199 89% 58%;
+    --accent-foreground: 210 20% 98%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     --border: 214 32% 91%;
@@ -42,8 +42,8 @@
     --sidebar-foreground: 222 47% 11%;
     --sidebar-primary: 225 73% 57%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 54 91% 65%;
-    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-accent: 199 89% 58%;
+    --sidebar-accent-foreground: 210 20% 98%;
     --sidebar-border: 214 32% 91%;
     --sidebar-ring: 225 73% 57%;
   }
@@ -62,8 +62,8 @@
     --secondary-foreground: 0 0% 95%;
     --muted: 222 47% 16%;
     --muted-foreground: 215 16% 65%;
-    --accent: 54 91% 70%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 199 89% 65%;
+    --accent-foreground: 210 20% 98%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 95%;
     --border: 222 47% 16%;
@@ -75,8 +75,8 @@
     --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 225 73% 62%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 54 91% 70%;
-    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-accent: 199 89% 65%;
+    --sidebar-accent-foreground: 210 20% 98%;
     --sidebar-border: 222 47% 16%;
     --sidebar-ring: 225 73% 62%;
   }
