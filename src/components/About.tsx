@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import profileImage from "@/assets/formal.jpg";
+import ScrollReveal from "./ScrollReveal";
 
 const About = () => {
   const stats = [
@@ -21,16 +22,19 @@ const About = () => {
   return (
     <section id="about" className="py-20 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-foreground mb-4">About Me</h2>
-          <p className="text-xl text-primary font-semibold">
-            Turning complex data into clear, actionable insights
-          </p>
-        </div>
+        <ScrollReveal direction="up">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-foreground mb-4">About Me</h2>
+            <p className="text-xl text-primary font-semibold">
+              Turning complex data into clear, actionable insights
+            </p>
+          </div>
+        </ScrollReveal>
 
         <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
           {/* Left Content */}
-          <div className="space-y-8">
+          <ScrollReveal direction="left">
+            <div className="space-y-8">
             <div>
               <h3 className="text-2xl font-bold text-foreground mb-4 text-center sm:text-left">Professional Journey</h3>
               <p className="text-muted-foreground leading-relaxed">
@@ -52,9 +56,11 @@ const About = () => {
               ))}
             </div>
           </div>
+          </ScrollReveal>
 
           {/* Right Content - Image */}
-          <div className="flex justify-center">
+          <ScrollReveal direction="right">
+            <div className="flex justify-center">
             <div className="relative w-80 h-100 rounded-2xl shadow-card pt-8">
               <img
                 src={profileImage}
@@ -65,10 +71,12 @@ const About = () => {
               <div className="absolute inset-0 rounded-2xl bg-gradient-hero opacity-10 mt-8"></div>
             </div>
           </div>
+          </ScrollReveal>
         </div>
 
         {/* Teaching & Mentoring */}
-        <Card className="mb-16 shadow-card hover:shadow-hover transition-all hover:border-primary/20">
+        <ScrollReveal direction="up">
+          <Card className="mb-16 shadow-card hover:shadow-hover transition-all hover:border-primary/20">
           <CardContent className="p-8">
             <h3 className="text-2xl font-bold text-foreground mb-4">Teaching & Mentoring</h3>
             <p className="text-muted-foreground mb-6 leading-relaxed">
@@ -88,9 +96,11 @@ const About = () => {
             </div>
           </CardContent>
         </Card>
+        </ScrollReveal>
 
         {/* Technical Expertise */}
-        <div>
+        <ScrollReveal direction="up" delay={0.2}>
+          <div>
           <h3 className="text-2xl font-bold text-foreground mb-8 text-center">Technical Expertise</h3>
           <div className="max-w-3xl mx-auto space-y-6">
             {skills.map((skill, index) => (
@@ -109,6 +119,7 @@ const About = () => {
             ))}
           </div>
         </div>
+        </ScrollReveal>
       </div>
     </section>
   );
