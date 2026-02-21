@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, Settings, FileText, Award, Briefcase, MessageSquare, User, FolderKanban, CalendarX, GraduationCap } from 'lucide-react';
+import { LogOut, Settings, FileText, Award, Briefcase, MessageSquare, User, FolderKanban, CalendarX, GraduationCap, CalendarCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -15,6 +15,7 @@ import TestimonialsManager from '@/components/admin/TestimonialsManager';
 import ProjectManager from '@/components/admin/ProjectManager';
 import UnavailableSlotsManager from '@/components/admin/UnavailableSlotsManager';
 import CourseManager from '@/components/admin/CourseManager';
+import SessionBookingManager from '@/components/admin/SessionBookingManager';
 
 const Admin = () => {
   const { user, signOut } = useAuth();
@@ -59,7 +60,7 @@ const Admin = () => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="grid w-full grid-cols-9">
+          <TabsList className="grid w-full grid-cols-10">
             <TabsTrigger value="sections" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
               Sections
@@ -91,6 +92,10 @@ const Admin = () => {
             <TabsTrigger value="courses" className="flex items-center gap-2">
               <GraduationCap className="h-4 w-4" />
               Courses
+            </TabsTrigger>
+            <TabsTrigger value="sessions" className="flex items-center gap-2">
+              <CalendarCheck className="h-4 w-4" />
+              Sessions
             </TabsTrigger>
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
@@ -202,6 +207,20 @@ const Admin = () => {
               </CardHeader>
               <CardContent>
                 <CourseManager />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="sessions" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Session Booking Management</CardTitle>
+                <CardDescription>
+                  Manage session types, bookings, and payment settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <SessionBookingManager />
               </CardContent>
             </Card>
           </TabsContent>

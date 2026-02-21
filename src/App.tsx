@@ -12,6 +12,7 @@ import BlogPage from "./pages/BlogPage";
 import BlogPostPage from "./pages/BlogPostPage";
 import PortfolioPage from "./pages/PortfolioPage";
 import CourseDetails from "./pages/CourseDetails";
+import BookSession from "./pages/BookSession";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
               <Route path="/blog/:slug" element={<BlogPostPage />} />
               <Route path="/portfolio" element={<PortfolioPage />} />
               <Route path="/course/:courseId" element={<CourseDetails />} />
+              <Route path="/book-session" element={<BookSession />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
