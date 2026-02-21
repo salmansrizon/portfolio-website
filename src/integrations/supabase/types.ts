@@ -310,6 +310,33 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_settings: {
+        Row: {
+          additional_instructions: string | null
+          bkash_number: string | null
+          id: string
+          nagad_number: string | null
+          payment_window_minutes: number
+          updated_at: string
+        }
+        Insert: {
+          additional_instructions?: string | null
+          bkash_number?: string | null
+          id?: string
+          nagad_number?: string | null
+          payment_window_minutes?: number
+          updated_at?: string
+        }
+        Update: {
+          additional_instructions?: string | null
+          bkash_number?: string | null
+          id?: string
+          nagad_number?: string | null
+          payment_window_minutes?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       portfolio_sections: {
         Row: {
           content: Json
@@ -391,6 +418,104 @@ export type Database = {
           icon?: string | null
           id?: string
           title?: string
+        }
+        Relationships: []
+      }
+      session_bookings: {
+        Row: {
+          booking_date: string
+          booking_status: string
+          created_at: string
+          fee_amount: number
+          id: string
+          payment_deadline: string | null
+          payment_method: string
+          payment_status: string
+          phone_number: string | null
+          session_type_id: string
+          time_slot: string
+          transaction_id: string | null
+          updated_at: string
+          user_email: string
+          user_name: string
+          whatsapp_number: string | null
+        }
+        Insert: {
+          booking_date: string
+          booking_status?: string
+          created_at?: string
+          fee_amount?: number
+          id?: string
+          payment_deadline?: string | null
+          payment_method: string
+          payment_status?: string
+          phone_number?: string | null
+          session_type_id: string
+          time_slot: string
+          transaction_id?: string | null
+          updated_at?: string
+          user_email: string
+          user_name: string
+          whatsapp_number?: string | null
+        }
+        Update: {
+          booking_date?: string
+          booking_status?: string
+          created_at?: string
+          fee_amount?: number
+          id?: string
+          payment_deadline?: string | null
+          payment_method?: string
+          payment_status?: string
+          phone_number?: string | null
+          session_type_id?: string
+          time_slot?: string
+          transaction_id?: string | null
+          updated_at?: string
+          user_email?: string
+          user_name?: string
+          whatsapp_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_bookings_session_type_id_fkey"
+            columns: ["session_type_id"]
+            isOneToOne: false
+            referencedRelation: "session_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_types: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_minutes: number
+          fee: number
+          id: string
+          is_active: boolean
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          fee?: number
+          id?: string
+          is_active?: boolean
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          fee?: number
+          id?: string
+          is_active?: boolean
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }

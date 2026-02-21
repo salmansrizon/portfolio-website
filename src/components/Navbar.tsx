@@ -9,6 +9,7 @@ const Navbar = () => {
   const location = useLocation()
 
   const navItems = [
+    { name: "Book Session", href: "/book-session", highlight: true },
     { name: "Home", href: "/" },
     { name: "About", href: "/#about" },
     { name: "Services", href: "/#services" },
@@ -50,14 +51,26 @@ const Navbar = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
-              {navItems.map((item) => {
+              {navItems.map((item: any) => {
+                // Highlight button
+                if (item.highlight) {
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      className="px-4 py-2 text-sm font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-md animate-pulse hover:animate-none"
+                    >
+                      {item.name}
+                    </Link>
+                  )
+                }
+
                 // Handle hash links differently
                 if (item.href.startsWith("/#")) {
                   return (
                     <button
                       key={item.name}
                       onClick={() => {
-                        // If not on home page, navigate to home first
                         if (location.pathname !== "/") {
                           window.location.href = item.href
                         } else {
@@ -120,7 +133,21 @@ const Navbar = () => {
       {isOpen && (
         <div className="md:hidden">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-background/80 backdrop-blur-xl border-b border-primary/10">
-            {navItems.map((item) => {
+            {navItems.map((item: any) => {
+              // Highlight button for mobile
+              if (item.highlight) {
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className="block mx-3 my-2 px-4 py-2.5 text-center text-base font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                )
+              }
+
               // Handle hash links for mobile
               if (item.href.startsWith("/#")) {
                 return (
