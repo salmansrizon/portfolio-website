@@ -14,38 +14,16 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { CalendarIcon, Clock, Phone, Mail, User, CreditCard, CheckCircle2, Timer, ArrowRight, Smartphone } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useBookingData } from "@/hooks/useBookingData";
 
-interface SessionType {
-  id: string;
-  title: string;
-  description: string | null;
-  duration_minutes: number;
-  fee: number;
-  is_active: boolean;
-}
 
-interface PaymentSettings {
-  id: string;
-  bkash_number: string | null;
-  nagad_number: string | null;
-  payment_window_minutes: number;
-  additional_instructions: string | null;
-}
-
-const timeSlots = [
-  '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-  '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
-  '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'
-];
 
 type Step = 'details' | 'payment' | 'transaction' | 'confirmed';
 
 const BookSession = () => {
   const { toast } = useToast();
+  const { sessionTypes, paymentSettings, unavailableSlots, isDateUnavailable, getAvailableTimeSlots, availabilitySettings } = useBookingData();
   const [step, setStep] = useState<Step>('details');
-  const [sessionTypes, setSessionTypes] = useState<SessionType[]>([]);
-  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null);
-  const [unavailableSlots, setUnavailableSlots] = useState<any[]>([]);
   const [selectedSessionType, setSelectedSessionType] = useState<string>('');
   const [paymentDeadline, setPaymentDeadline] = useState<Date | null>(null);
   const [timeLeft, setTimeLeft] = useState<string>('');
@@ -61,20 +39,6 @@ const BookSession = () => {
     paymentMethod: '' as 'bkash' | 'nagad' | '',
     transactionId: '',
   });
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const [sessRes, payRes, slotsRes] = await Promise.all([
-        supabase.from('session_types').select('*').eq('is_active', true),
-        supabase.from('payment_settings').select('*').limit(1).single(),
-        supabase.from('unavailable_slots').select('*'),
-      ]);
-      if (sessRes.data) setSessionTypes(sessRes.data as SessionType[]);
-      if (payRes.data) setPaymentSettings(payRes.data as PaymentSettings);
-      if (slotsRes.data) setUnavailableSlots(slotsRes.data);
-    };
-    fetchData();
-  }, []);
 
   // Countdown timer for payment window
   useEffect(() => {
@@ -95,17 +59,6 @@ const BookSession = () => {
   }, [paymentDeadline]);
 
   const selectedSession = sessionTypes.find(s => s.id === selectedSessionType);
-
-  const isDateUnavailable = (date: Date) => {
-    const dateString = format(date, 'yyyy-MM-dd');
-    return unavailableSlots.some(slot => slot.date === dateString && slot.time_slot === null);
-  };
-
-  const getAvailableTimeSlots = (date: Date | undefined) => {
-    if (!date) return timeSlots;
-    const dateString = format(date, 'yyyy-MM-dd');
-    return timeSlots.filter(t => !unavailableSlots.some(s => s.date === dateString && s.time_slot === t));
-  };
 
   const handleDetailsSubmit = () => {
     if (!formData.name || !formData.email || !formData.date || !formData.time || !selectedSessionType || !formData.paymentMethod) {
@@ -277,7 +230,7 @@ const BookSession = () => {
                             mode="single"
                             selected={formData.date}
                             onSelect={date => setFormData(p => ({ ...p, date, time: '' }))}
-                            disabled={date => date < new Date() || date.getDay() === 0 || date.getDay() === 6 || isDateUnavailable(date)}
+                            disabled={date => date < new Date() || !availabilitySettings.available_weekdays.includes(date.getDay()) || isDateUnavailable(date)}
                             initialFocus
                             className="p-3 pointer-events-auto"
                           />

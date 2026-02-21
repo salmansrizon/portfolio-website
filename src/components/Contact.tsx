@@ -19,13 +19,23 @@ import {
   Shield,
   Zap,
   Calendar as CalendarIcon,
-  Video
+  Video,
+  CheckCircle2,
+  ArrowRight,
+  CreditCard,
+  Timer,
+  Smartphone,
+  Phone
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, addMinutes } from "date-fns";
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 import ScrollReveal from "./ScrollReveal";
+import { useBookingData } from "@/hooks/useBookingData";
+
+type BookingStep = 'form' | 'payment' | 'transaction' | 'confirmed';
 
 const Contact = () => {
   const [currentTime, setCurrentTime] = useState('');
@@ -36,35 +46,38 @@ const Contact = () => {
     service: '',
     message: ''
   });
-  
-  const [bookingData, setBookingData] = useState({
+
+  // ── Booking state ──────────────────────────────────────────
+  const {
+    sessionTypes,
+    paymentSettings,
+    isDateUnavailable,
+    getAvailableTimeSlots,
+    isLoading: bookingDataLoading,
+    availabilitySettings,
+  } = useBookingData();
+
+  const [bookingStep, setBookingStep] = useState<BookingStep>('form');
+  const [quickBook, setQuickBook] = useState({
     name: '',
     email: '',
+    whatsapp: '',
+    phone: '',
+    sessionTypeId: '',
     date: undefined as Date | undefined,
     time: '',
-    duration: '30',
-    message: ''
+    message: '',
+    paymentMethod: '' as 'bkash' | 'nagad' | '',
+    transactionId: '',
   });
-  
-  const [unavailableSlots, setUnavailableSlots] = useState<any[]>([]);
-  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [bookingId, setBookingId] = useState('');
+  const [paymentDeadline, setPaymentDeadline] = useState<Date | null>(null);
+  const [timeLeft, setTimeLeft] = useState('');
+
   const { toast } = useToast();
 
-  // Available time slots
-  const timeSlots = [
-    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-    '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
-    '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'
-  ];
-
-  const durations = [
-    { value: '30', label: '30 minutes' },
-    { value: '45', label: '45 minutes' },
-    { value: '60', label: '1 hour' },
-    { value: '90', label: '1.5 hours' },
-    { value: '120', label: '2 hours' }
-  ];
-
+  // ── Contact form submit (unchanged mailto) ─────────────────
   const handleSubmit = () => {
     if (!formData.name || !formData.email || !formData.message) {
       toast({
@@ -86,18 +99,10 @@ ${formData.message}
     `.trim();
 
     const mailtoUrl = `mailto:salmansrizon2016@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    
     window.location.href = mailtoUrl;
 
-    // Reset form after small delay to ensure mailto opens
     setTimeout(() => {
-      setFormData({
-        name: '',
-        email: '',
-        service: '',
-        message: ''
-      });
-      
+      setFormData({ name: '', email: '', service: '', message: '' });
       toast({
         title: "Success",
         description: "Email client opened with your message. Please send the email to complete.",
@@ -105,109 +110,101 @@ ${formData.message}
     }, 1000);
   };
 
-  const handleBookingSubmit = () => {
-    if (!bookingData.name || !bookingData.email || !bookingData.date || !bookingData.time) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields for booking",
-        variant: "destructive"
-      });
+  // ── Step 1 → 2: Validate details, move to payment ─────────
+  const handleDetailsSubmit = () => {
+    if (!quickBook.name || !quickBook.email || !quickBook.sessionTypeId || !quickBook.date || !quickBook.time || !quickBook.paymentMethod) {
+      toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
       return;
     }
-
-    const selectedDuration = durations.find(d => d.value === bookingData.duration);
-    const formattedDate = format(bookingData.date, 'EEEE, MMMM dd, yyyy');
-    
-    const subject = `Private Session Booking Request - ${bookingData.name}`;
-    const body = `
-I would like to book a private consultation session with the following details:
-
-Name: ${bookingData.name}
-Email: ${bookingData.email}
-Date: ${formattedDate}
-Time: ${bookingData.time} (Bangladesh Time GMT+6)
-Duration: ${selectedDuration?.label}
-
-${bookingData.message ? `Additional Message:\n${bookingData.message}` : ''}
-
-Please confirm the appointment and send me the Google Meet/online meeting link.
-
-Thank you!
-    `.trim();
-
-    const mailtoUrl = `mailto:salmansrizon2016@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    
-    window.location.href = mailtoUrl;
-
-    // Reset form after small delay to ensure mailto opens
-    setTimeout(() => {
-      setBookingData({
-        name: '',
-        email: '',
-        date: undefined,
-        time: '',
-        duration: '30',
-        message: ''
-      });
-      
-      toast({
-        title: "Success",
-        description: "Booking request sent! I'll send you a meeting link confirmation.",
-      });
-    }, 1000);
+    setBookingStep('payment');
   };
 
-  // Fetch unavailable slots
+  // ── Step 2 → 3: Confirm payment sent, create booking ──────
+  const handlePaymentConfirm = async () => {
+    if (!selectedSession || !quickBook.date) return;
+    const windowMins = paymentSettings?.payment_window_minutes || 30;
+    const deadline = addMinutes(new Date(), windowMins);
+    setPaymentDeadline(deadline);
+
+    setIsSubmitting(true);
+    try {
+      const { data, error } = await supabase.from('session_bookings').insert({
+        session_type_id: quickBook.sessionTypeId,
+        user_name: quickBook.name,
+        user_email: quickBook.email,
+        whatsapp_number: quickBook.whatsapp,
+        phone_number: quickBook.phone,
+        booking_date: format(quickBook.date, 'yyyy-MM-dd'),
+        time_slot: quickBook.time,
+        payment_method: quickBook.paymentMethod,
+        fee_amount: selectedSession.fee,
+        payment_status: 'pending',
+        booking_status: 'pending',
+        payment_deadline: deadline.toISOString(),
+      }).select().single();
+
+      if (error) throw error;
+      if (data) setBookingId(data.id);
+      setBookingStep('transaction');
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message || "Failed to create booking", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // ── Step 3 → 4: Submit transaction ID ──────────────────────
+  const handleTransactionSubmit = async () => {
+    if (!quickBook.transactionId.trim()) {
+      toast({ title: "Error", description: "Please enter your transaction ID", variant: "destructive" });
+      return;
+    }
+    try {
+      const { error } = await supabase.from('session_bookings').update({
+        transaction_id: quickBook.transactionId,
+        payment_status: 'submitted',
+      }).eq('id', bookingId);
+
+      if (error) throw error;
+      setBookingStep('confirmed');
+      toast({ title: "Booking Submitted!", description: "Your session booking has been submitted. We'll verify your payment and confirm shortly." });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message || "Failed to submit transaction", variant: "destructive" });
+    }
+  };
+
+  const resetBooking = () => {
+    setQuickBook({ name: '', email: '', whatsapp: '', phone: '', sessionTypeId: '', date: undefined, time: '', message: '', paymentMethod: '', transactionId: '' });
+    setBookingStep('form');
+    setBookingId('');
+    setPaymentDeadline(null);
+    setTimeLeft('');
+  };
+
+  // ── Countdown timer ────────────────────────────────────────
   useEffect(() => {
-    const fetchUnavailableSlots = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('unavailable_slots')
-          .select('*');
-        
-        if (error) throw error;
-        setUnavailableSlots(data || []);
-      } catch (error) {
-        console.error('Error fetching unavailable slots:', error);
+    if (!paymentDeadline) return;
+    const interval = setInterval(() => {
+      const now = new Date();
+      const diff = paymentDeadline.getTime() - now.getTime();
+      if (diff <= 0) {
+        setTimeLeft('Expired');
+        clearInterval(interval);
+        return;
       }
-    };
+      const mins = Math.floor(diff / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
+      setTimeLeft(`${mins}:${secs.toString().padStart(2, '0')}`);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [paymentDeadline]);
 
-    fetchUnavailableSlots();
-  }, []);
-
-  // Check if a date is unavailable (full day)
-  const isDateUnavailable = (date: Date) => {
-    const dateString = format(date, 'yyyy-MM-dd');
-    return unavailableSlots.some(slot => 
-      slot.date === dateString && slot.time_slot === null
-    );
-  };
-
-  // Check if a time slot is unavailable for a specific date
-  const isTimeSlotUnavailable = (timeSlot: string, date: Date) => {
-    if (!date) return false;
-    const dateString = format(date, 'yyyy-MM-dd');
-    return unavailableSlots.some(slot => 
-      slot.date === dateString && slot.time_slot === timeSlot
-    );
-  };
-
-  // Get available time slots for a specific date
-  const getAvailableTimeSlots = (date: Date | undefined) => {
-    if (!date) return timeSlots;
-    
-    return timeSlots.filter(timeSlot => 
-      !isTimeSlotUnavailable(timeSlot, date)
-    );
-  };
-
+  // ── Clock ──────────────────────────────────────────────────
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
-      // Convert to GMT+6
       const gmt6Time = new Date(now.getTime() + (6 * 60 * 60 * 1000));
-      
-      // Format time as HH:MM AM/PM
+
       const timeString = gmt6Time.toLocaleTimeString('en-US', {
         hour: '2-digit',
         minute: '2-digit',
@@ -216,20 +213,20 @@ Thank you!
       });
 
       setCurrentTime(timeString);
-
-      // Check if current time is within business hours (9 AM - 6 PM)
       const hour = gmt6Time.getUTCHours();
       setIsBusinessHours(hour >= 9 && hour < 18);
     };
 
-    // Update immediately
     updateTime();
-
-    // Update every minute
     const interval = setInterval(updateTime, 60000);
-
     return () => clearInterval(interval);
   }, []);
+
+  const selectedSession = sessionTypes.find(s => s.id === quickBook.sessionTypeId);
+
+  // Step labels for the mini progress bar
+  const steps: BookingStep[] = ['form', 'payment', 'transaction', 'confirmed'];
+  const currentStepIdx = steps.indexOf(bookingStep);
 
   return (
     <section id="contact" className="py-20 bg-background">
@@ -254,13 +251,13 @@ Thank you!
                     <Mail className="h-4 w-4" />
                     Send Message
                   </TabsTrigger>
-                  <TabsTrigger value="booking" className="flex items-center gap-2">
+                  <TabsTrigger value="booking" className="flex items-center gap-2" onClick={() => bookingStep === 'confirmed' && resetBooking()}>
                     <Video className="h-4 w-4" />
                     Book Session
                   </TabsTrigger>
                 </TabsList>
 
-                {/* Contact Form Tab */}
+                {/* ─── Contact Form Tab (unchanged) ─── */}
                 <TabsContent value="contact" className="p-6 space-y-6">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -330,137 +327,299 @@ Thank you!
                   </div>
                 </TabsContent>
 
-                {/* Booking Form Tab */}
-                <TabsContent value="booking" className="p-6 space-y-6">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="booking-name">Name *</Label>
-                      <Input 
-                        id="booking-name" 
-                        placeholder="Your name" 
-                        value={bookingData.name}
-                        onChange={(e) => setBookingData(prev => ({ ...prev, name: e.target.value }))}
-                      />
+                {/* ─── Booking Tab (full flow) ─── */}
+                <TabsContent value="booking" className="p-6 space-y-5">
+                  {/* Mini progress bar */}
+                  {bookingStep !== 'confirmed' && (
+                    <div className="flex items-center justify-center gap-1.5 mb-2">
+                      {steps.slice(0, -1).map((s, i) => (
+                        <div key={s} className="flex items-center gap-1.5">
+                          <div className={cn(
+                            "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all",
+                            currentStepIdx >= i
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-muted-foreground"
+                          )}>
+                            {currentStepIdx > i ? <CheckCircle2 className="h-4 w-4" /> : i + 1}
+                          </div>
+                          {i < 2 && <ArrowRight className="h-3 w-3 text-muted-foreground" />}
+                        </div>
+                      ))}
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="booking-email">Email *</Label>
-                      <Input 
-                        id="booking-email" 
-                        type="email" 
-                        placeholder="your@email.com" 
-                        value={bookingData.email}
-                        onChange={(e) => setBookingData(prev => ({ ...prev, email: e.target.value }))}
-                      />
-                    </div>
-                  </div>
+                  )}
 
-                  <div className="space-y-2">
-                    <Label>Select Date *</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start text-left font-normal"
+                  {/* ── Step 1: Details form ── */}
+                  {bookingStep === 'form' && (
+                    <>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="qb-name">Name *</Label>
+                          <Input
+                            id="qb-name"
+                            placeholder="Your name"
+                            value={quickBook.name}
+                            onChange={e => setQuickBook(p => ({ ...p, name: e.target.value }))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="qb-email">Email *</Label>
+                          <Input
+                            id="qb-email"
+                            type="email"
+                            placeholder="your@email.com"
+                            value={quickBook.email}
+                            onChange={e => setQuickBook(p => ({ ...p, email: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+
+                      {/* WhatsApp & Phone */}
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>WhatsApp Number</Label>
+                          <div className="relative">
+                            <Smartphone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              className="pl-9"
+                              placeholder="01XXXXXXXXX"
+                              value={quickBook.whatsapp}
+                              onChange={e => setQuickBook(p => ({ ...p, whatsapp: e.target.value }))}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Phone Number</Label>
+                          <div className="relative">
+                            <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              className="pl-9"
+                              placeholder="01XXXXXXXXX"
+                              value={quickBook.phone}
+                              onChange={e => setQuickBook(p => ({ ...p, phone: e.target.value }))}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Session Type */}
+                      <div className="space-y-2">
+                        <Label>Session Type *</Label>
+                        <Select
+                          value={quickBook.sessionTypeId}
+                          onValueChange={v => setQuickBook(p => ({ ...p, sessionTypeId: v }))}
+                          disabled={bookingDataLoading}
                         >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {bookingData.date ? format(bookingData.date, "PPP") : "Pick a date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={bookingData.date}
-                          onSelect={(date) => {
-                            setBookingData(prev => ({ ...prev, date, time: '' })); // Reset time when date changes
-                          }}
-                          disabled={(date) => 
-                            date < new Date() || 
-                            date.getDay() === 0 || 
-                            date.getDay() === 6 ||
-                            isDateUnavailable(date)
-                          }
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <div className="text-xs text-muted-foreground">
-                      Available Monday to Friday only
-                    </div>
-                  </div>
+                          <SelectTrigger>
+                            <SelectValue placeholder={bookingDataLoading ? "Loading…" : "Select session type"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {sessionTypes.map(st => (
+                              <SelectItem key={st.id} value={st.id}>
+                                {st.title} — {st.duration_minutes} min (৳{st.fee})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {selectedSession?.description && (
+                          <p className="text-xs text-muted-foreground">{selectedSession.description}</p>
+                        )}
+                      </div>
 
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="time">Time Slot *</Label>
-                      <Select value={bookingData.time} onValueChange={(value) => setBookingData(prev => ({ ...prev, time: value }))}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select time" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {getAvailableTimeSlots(bookingData.date).map((time) => (
-                            <SelectItem key={time} value={time}>
-                              {time} (GMT+6)
-                            </SelectItem>
+                      {/* Date & Time */}
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Date *</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {quickBook.date ? format(quickBook.date, "PPP") : "Pick a date"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={quickBook.date}
+                                onSelect={date => setQuickBook(p => ({ ...p, date, time: '' }))}
+                                disabled={date =>
+                                  date < new Date() ||
+                                  !availabilitySettings.available_weekdays.includes(date.getDay()) ||
+                                  isDateUnavailable(date)
+                                }
+                                initialFocus
+                                className="pointer-events-auto"
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Time Slot *</Label>
+                          <Select value={quickBook.time} onValueChange={v => setQuickBook(p => ({ ...p, time: v }))}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select time" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {getAvailableTimeSlots(quickBook.date).map(t => (
+                                <SelectItem key={t} value={t}>{t} (GMT+6)</SelectItem>
+                              ))}
+                              {getAvailableTimeSlots(quickBook.date).length === 0 && (
+                                <SelectItem value="" disabled>No available slots</SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Payment Method */}
+                      <div className="space-y-2">
+                        <Label>Payment Method *</Label>
+                        <div className="grid grid-cols-2 gap-3">
+                          {(['bkash', 'nagad'] as const).map(method => (
+                            <Button
+                              key={method}
+                              type="button"
+                              variant="outline"
+                              className={cn(
+                                "h-12 text-sm font-semibold transition-all",
+                                quickBook.paymentMethod === method
+                                  ? method === 'bkash'
+                                    ? "border-pink-500 bg-pink-50 text-pink-700 dark:bg-pink-950 dark:text-pink-300"
+                                    : "border-orange-500 bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300"
+                                  : "hover:border-primary/40"
+                              )}
+                              onClick={() => setQuickBook(p => ({ ...p, paymentMethod: method }))}
+                            >
+                              <CreditCard className="h-4 w-4 mr-2" />
+                              {method === 'bkash' ? 'bKash' : 'Nagad'}
+                            </Button>
                           ))}
-                          {getAvailableTimeSlots(bookingData.date).length === 0 && (
-                            <SelectItem value="" disabled>
-                              No available time slots for this date
-                            </SelectItem>
+                        </div>
+                      </div>
+
+                      <Button
+                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                        onClick={handleDetailsSubmit}
+                        disabled={
+                          !quickBook.name ||
+                          !quickBook.email ||
+                          !quickBook.sessionTypeId ||
+                          !quickBook.date ||
+                          !quickBook.time ||
+                          !quickBook.paymentMethod
+                        }
+                      >
+                        Continue to Payment <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+
+                  {/* ── Step 2: Payment instructions ── */}
+                  {bookingStep === 'payment' && selectedSession && (
+                    <div className="space-y-5">
+                      <div className="bg-muted rounded-lg p-4 space-y-2 text-sm">
+                        <div className="flex justify-between"><span className="text-muted-foreground">Session</span><span className="font-semibold text-foreground">{selectedSession.title}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Duration</span><span className="font-semibold text-foreground">{selectedSession.duration_minutes} min</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Date</span><span className="font-semibold text-foreground">{quickBook.date ? format(quickBook.date, 'PPP') : ''}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Time</span><span className="font-semibold text-foreground">{quickBook.time} (GMT+6)</span></div>
+                        <hr className="border-border" />
+                        <div className="flex justify-between text-base"><span className="font-semibold text-foreground">Total Fee</span><span className="font-bold text-primary">৳{selectedSession.fee}</span></div>
+                      </div>
+
+                      <div className={cn(
+                        "rounded-lg p-4 border-2",
+                        quickBook.paymentMethod === 'bkash' ? "border-pink-400 bg-pink-50 dark:bg-pink-950/30" : "border-orange-400 bg-orange-50 dark:bg-orange-950/30"
+                      )}>
+                        <h4 className="font-semibold text-foreground mb-1 text-sm">
+                          Send ৳{selectedSession.fee} to {quickBook.paymentMethod === 'bkash' ? 'bKash' : 'Nagad'}
+                        </h4>
+                        <p className="text-xl font-mono font-bold text-foreground mb-1">
+                          {quickBook.paymentMethod === 'bkash' ? paymentSettings?.bkash_number : paymentSettings?.nagad_number}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {paymentSettings?.additional_instructions}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground bg-accent/10 rounded-lg p-3">
+                        <Timer className="h-4 w-4 flex-shrink-0" />
+                        <span>You'll have <strong>{paymentSettings?.payment_window_minutes || 30} minutes</strong> to enter your transaction ID after clicking confirm.</span>
+                      </div>
+
+                      <div className="flex gap-3">
+                        <Button variant="outline" className="flex-1" onClick={() => setBookingStep('form')}>Back</Button>
+                        <Button
+                          className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+                          onClick={handlePaymentConfirm}
+                          disabled={isSubmitting}
+                        >
+                          {isSubmitting ? "Submitting…" : (
+                            <>I've Sent the Payment <ArrowRight className="ml-2 h-4 w-4" /></>
                           )}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="duration">Duration</Label>
-                      <Select value={bookingData.duration} onValueChange={(value) => setBookingData(prev => ({ ...prev, duration: value }))}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select duration" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {durations.map((duration) => (
-                            <SelectItem key={duration.value} value={duration.value}>
-                              {duration.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="booking-message">Additional Message</Label>
-                    <Textarea 
-                      id="booking-message" 
-                      placeholder="Any specific topics or questions you'd like to discuss..."
-                      className="min-h-[80px]"
-                      value={bookingData.message}
-                      onChange={(e) => setBookingData(prev => ({ ...prev, message: e.target.value }))}
-                    />
-                  </div>
-
-                  <Button 
-                    className="w-full bg-primary hover:bg-primary-hover text-primary-foreground"
-                    onClick={handleBookingSubmit}
-                    disabled={!bookingData.name || !bookingData.email || !bookingData.date || !bookingData.time}
-                  >
-                    <Video className="mr-2 h-4 w-4" />
-                    Request Private Session
-                  </Button>
-
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-start space-x-3">
-                      <CalendarIcon className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                      <div className="text-sm text-blue-800">
-                        <p className="font-medium mb-1">How it works:</p>
-                        <ul className="space-y-1 text-xs">
-                          <li>• Select your preferred date and time</li>
-                          <li>• I'll confirm availability and send a Google Meet link</li>
-                          <li>• Sessions are conducted online via video call</li>
-                          <li>• Cancellation allowed up to 24 hours in advance</li>
-                        </ul>
+                        </Button>
                       </div>
                     </div>
-                  </div>
+                  )}
+
+                  {/* ── Step 3: Transaction ID ── */}
+                  {bookingStep === 'transaction' && (
+                    <div className="space-y-5">
+                      <h3 className="text-lg font-semibold text-foreground text-center">Enter Transaction ID</h3>
+                      <p className="text-sm text-muted-foreground text-center">
+                        Submit your {quickBook.paymentMethod === 'bkash' ? 'bKash' : 'Nagad'} transaction ID
+                      </p>
+
+                      {timeLeft && timeLeft !== 'Expired' && (
+                        <div className="text-center bg-destructive/10 rounded-lg p-3">
+                          <p className="text-xs text-muted-foreground mb-1">Time remaining</p>
+                          <p className="text-2xl font-mono font-bold text-destructive">{timeLeft}</p>
+                        </div>
+                      )}
+                      {timeLeft === 'Expired' && (
+                        <div className="text-center bg-destructive/10 rounded-lg p-3">
+                          <p className="text-destructive font-semibold text-sm">Payment window expired. Please try booking again.</p>
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <Label>Transaction ID *</Label>
+                        <Input
+                          placeholder="e.g., TXN123456789"
+                          value={quickBook.transactionId}
+                          onChange={e => setQuickBook(p => ({ ...p, transactionId: e.target.value }))}
+                          className="text-center text-lg font-mono"
+                        />
+                      </div>
+
+                      <Button
+                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                        onClick={handleTransactionSubmit}
+                        disabled={!quickBook.transactionId.trim() || timeLeft === 'Expired'}
+                      >
+                        <CheckCircle2 className="mr-2 h-4 w-4" /> Confirm Booking
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* ── Step 4: Confirmed ── */}
+                  {bookingStep === 'confirmed' && (
+                    <div className="text-center space-y-5 py-2">
+                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                        <CheckCircle2 className="h-8 w-8 text-primary" />
+                      </div>
+                      <h3 className="text-xl font-bold text-foreground">Booking Submitted!</h3>
+                      <p className="text-muted-foreground text-sm leading-relaxed">
+                        We'll verify your payment and send a confirmation to <strong>{quickBook.email}</strong>.
+                      </p>
+                      <div className="bg-muted rounded-lg p-3 text-sm text-left space-y-2">
+                        <div className="flex justify-between"><span className="text-muted-foreground">Booking ID</span><span className="font-mono text-foreground">{bookingId.slice(0, 8)}…</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Transaction ID</span><span className="font-mono text-foreground">{quickBook.transactionId}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Status</span><Badge className="bg-primary/10 text-primary">Pending Verification</Badge></div>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={resetBooking}>
+                        Book Another Session
+                      </Button>
+                    </div>
+                  )}
                 </TabsContent>
               </Tabs>
             </CardContent>
