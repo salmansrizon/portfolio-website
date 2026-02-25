@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { CalendarCheck, BookOpen, FileText, FolderKanban, Activity } from "lucide-react";
+import { CalendarCheck, BookOpen, FileText, FolderKanban, Activity, Eye, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface DashboardStats {
@@ -10,6 +10,9 @@ interface DashboardStats {
   activeCourses: number;
   publishedBlogs: number;
   totalProjects: number;
+  totalPageViews: number;
+  uniqueVisitors: number;
+  todayViews: number;
 }
 
 interface ActivityItem {
@@ -27,7 +30,10 @@ export default function DashboardOverview() {
     pendingBookings: 0,
     activeCourses: 0,
     publishedBlogs: 0,
-    totalProjects: 0
+    totalProjects: 0,
+    totalPageViews: 0,
+    uniqueVisitors: 0,
+    todayViews: 0
   });
   const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +48,10 @@ export default function DashboardOverview() {
           { count: blogsCount, error: blogsError },
           { count: projectsCount, error: projectsError },
           { data: recentBookings },
-          { data: recentBlogs }
+          { data: recentBlogs },
+          { count: pageViewsCount },
+          { data: visitorData },
+          { count: todayViewsCount },
         ] = await Promise.all([
           supabase.from('session_bookings').select('*', { count: 'exact', head: true }),
           supabase.from('session_bookings').select('*', { count: 'exact', head: true }).eq('booking_status', 'pending'),
@@ -50,8 +59,13 @@ export default function DashboardOverview() {
           supabase.from('blogs').select('*', { count: 'exact', head: true }).eq('published', true),
           supabase.from('projects').select('*', { count: 'exact', head: true }),
           supabase.from('session_bookings').select('id, user_name, created_at, booking_status').order('created_at', { ascending: false }).limit(3),
-          supabase.from('blogs').select('id, title, created_at').order('created_at', { ascending: false }).limit(3)
+          supabase.from('blogs').select('id, title, created_at').order('created_at', { ascending: false }).limit(3),
+          supabase.from('page_views').select('*', { count: 'exact', head: true }),
+          supabase.from('page_views').select('visitor_id'),
+          supabase.from('page_views').select('*', { count: 'exact', head: true }).gte('created_at', new Date(new Date().setHours(0,0,0,0)).toISOString()),
         ]);
+
+        const uniqueVisitors = new Set((visitorData || []).map((r: any) => r.visitor_id)).size;
 
         if (bookingsError) throw bookingsError;
         if (pendingError) throw pendingError;
@@ -65,6 +79,9 @@ export default function DashboardOverview() {
           activeCourses: coursesCount || 0,
           publishedBlogs: blogsCount || 0,
           totalProjects: projectsCount || 0,
+          totalPageViews: pageViewsCount || 0,
+          uniqueVisitors,
+          todayViews: todayViewsCount || 0,
         });
 
         // Map and sort recent activity
@@ -122,7 +139,7 @@ export default function DashboardOverview() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
@@ -171,6 +188,32 @@ export default function DashboardOverview() {
             <div className="text-2xl font-bold">{stats.totalProjects}</div>
             <p className="text-xs text-muted-foreground">
               In portfolio
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Page Views</CardTitle>
+            <Eye className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalPageViews}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.todayViews} today
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Unique Visitors</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.uniqueVisitors}</div>
+            <p className="text-xs text-muted-foreground">
+              All time
             </p>
           </CardContent>
         </Card>
