@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { CalendarCheck, BookOpen, FileText, FolderKanban, Activity, Eye, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 interface DashboardStats {
   totalBookings: number;
@@ -36,6 +37,7 @@ export default function DashboardOverview() {
     todayViews: 0
   });
   const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
+  const [dailyViews, setDailyViews] = useState<{ date: string; views: number; visitors: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -52,6 +54,7 @@ export default function DashboardOverview() {
           { count: pageViewsCount },
           { data: visitorData },
           { count: todayViewsCount },
+          { data: chartData },
         ] = await Promise.all([
           supabase.from('session_bookings').select('*', { count: 'exact', head: true }),
           supabase.from('session_bookings').select('*', { count: 'exact', head: true }).eq('booking_status', 'pending'),
@@ -63,9 +66,33 @@ export default function DashboardOverview() {
           supabase.from('page_views').select('*', { count: 'exact', head: true }),
           supabase.from('page_views').select('visitor_id'),
           supabase.from('page_views').select('*', { count: 'exact', head: true }).gte('created_at', new Date(new Date().setHours(0,0,0,0)).toISOString()),
+          supabase.from('page_views').select('created_at, visitor_id').gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
         ]);
 
         const uniqueVisitors = new Set((visitorData || []).map((r: any) => r.visitor_id)).size;
+
+        // Build daily chart data for last 30 days
+        const dailyMap = new Map<string, { views: number; visitorSet: Set<string> }>();
+        for (let i = 29; i >= 0; i--) {
+          const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+          const key = d.toISOString().split('T')[0];
+          dailyMap.set(key, { views: 0, visitorSet: new Set() });
+        }
+        (chartData || []).forEach((row: any) => {
+          const key = new Date(row.created_at).toISOString().split('T')[0];
+          const entry = dailyMap.get(key);
+          if (entry) {
+            entry.views++;
+            entry.visitorSet.add(row.visitor_id);
+          }
+        });
+        setDailyViews(
+          Array.from(dailyMap.entries()).map(([date, { views, visitorSet }]) => ({
+            date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            views,
+            visitors: visitorSet.size,
+          }))
+        );
 
         if (bookingsError) throw bookingsError;
         if (pendingError) throw pendingError;
@@ -218,6 +245,43 @@ export default function DashboardOverview() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Daily Page Views — Last 30 Days</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={dailyViews} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                <defs>
+                  <linearGradient id="viewsGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="visitorsGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="date" tick={{ fontSize: 11 }} className="text-muted-foreground" interval="preserveStartEnd" />
+                <YAxis tick={{ fontSize: 11 }} className="text-muted-foreground" allowDecimals={false} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    color: 'hsl(var(--card-foreground))',
+                  }}
+                />
+                <Area type="monotone" dataKey="views" name="Page Views" stroke="hsl(var(--primary))" fill="url(#viewsGradient)" strokeWidth={2} />
+                <Area type="monotone" dataKey="visitors" name="Unique Visitors" stroke="hsl(var(--accent-foreground))" fill="url(#visitorsGradient)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 mt-6">
         <Card className="col-span-4">
