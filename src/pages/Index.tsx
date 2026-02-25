@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { usePageView } from "@/hooks/usePageView";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
@@ -16,6 +17,7 @@ import { BlogPost } from "@/types/blog";
 
 const Index = () => {
   const location = useLocation();
+  usePageView("/");
   const [featuredBlogs, setFeaturedBlogs] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
 
