@@ -518,6 +518,7 @@ export type Database = {
           fee: number
           id: string
           is_active: boolean
+          is_paid: boolean
           title: string
           updated_at: string
         }
@@ -528,6 +529,7 @@ export type Database = {
           fee?: number
           id?: string
           is_active?: boolean
+          is_paid?: boolean
           title: string
           updated_at?: string
         }
@@ -538,6 +540,7 @@ export type Database = {
           fee?: number
           id?: string
           is_active?: boolean
+          is_paid?: boolean
           title?: string
           updated_at?: string
         }
