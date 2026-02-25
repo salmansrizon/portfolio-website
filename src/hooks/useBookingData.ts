@@ -10,6 +10,7 @@ export interface SessionType {
     duration_minutes: number;
     fee: number;
     is_active: boolean;
+    is_paid: boolean;
 }
 
 export interface PaymentSettings {
@@ -24,6 +25,14 @@ export interface UnavailableSlot {
     id: string;
     date: string;
     time_slot: string | null;
+}
+
+// A lightweight view of existing bookings used to block already-taken slots
+export interface BookedSlot {
+    booking_date: string;
+    time_slot: string;
+    booking_status: string;
+    payment_status: string;
 }
 
 // ── Constants & Fallbacks ─────────────────────────────────────
@@ -60,6 +69,7 @@ export function useBookingData() {
     const [sessionTypes, setSessionTypes] = useState<SessionType[]>([]);
     const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null);
     const [unavailableSlots, setUnavailableSlots] = useState<UnavailableSlot[]>([]);
+    const [bookedSlots, setBookedSlots] = useState<BookedSlot[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const [availabilitySettings, setAvailabilitySettings] = useState<AvailabilitySettings>({
@@ -70,15 +80,23 @@ export function useBookingData() {
     useEffect(() => {
         const fetchData = async () => {
             setIsLoading(true);
-            const [sessRes, payRes, slotsRes, settingsRes] = await Promise.all([
+            const [sessRes, payRes, slotsRes, settingsRes, bookingsRes] = await Promise.all([
                 supabase.from('session_types').select('*').eq('is_active', true),
                 supabase.from('payment_settings').select('*').limit(1).single(),
                 supabase.from('unavailable_slots').select('*'),
-                supabase.from('availability_settings').select('*').limit(1).single()
+                supabase.from('availability_settings').select('*').limit(1).single(),
+                // Fetch active bookings to prevent double-booking
+                // Exclude cancelled/rejected — those slots become free again
+                supabase
+                    .from('session_bookings')
+                    .select('booking_date, time_slot, booking_status, payment_status')
+                    .in('booking_status', ['pending', 'confirmed'])
+                    .neq('payment_status', 'rejected'),
             ]);
             if (sessRes.data) setSessionTypes(sessRes.data as SessionType[]);
             if (payRes.data) setPaymentSettings(payRes.data as PaymentSettings);
             if (slotsRes.data) setUnavailableSlots(slotsRes.data as UnavailableSlot[]);
+            if (bookingsRes.data) setBookedSlots(bookingsRes.data as BookedSlot[]);
 
             // Availability settings
             if (settingsRes.data) {
@@ -91,17 +109,32 @@ export function useBookingData() {
     }, []);
 
     // Helpers ────────────────────────────────────────────────────
+
+    /** Returns true if a specific date+time is already taken by an active booking */
+    const isSlotBooked = (dateString: string, timeSlot: string) =>
+        bookedSlots.some(b => b.booking_date === dateString && b.time_slot === timeSlot);
+
     const isDateUnavailable = (date: Date) => {
         const dateString = format(date, 'yyyy-MM-dd');
-        return unavailableSlots.some(slot => slot.date === dateString && slot.time_slot === null);
+        // Admin-blocked full day
+        if (unavailableSlots.some(slot => slot.date === dateString && slot.time_slot === null)) return true;
+        // All available slots on this day are already booked
+        const daySlots = availabilitySettings.time_slots.filter(
+            t => !unavailableSlots.some(s => s.date === dateString && s.time_slot === t)
+        );
+        return daySlots.length > 0 && daySlots.every(t => isSlotBooked(dateString, t));
     };
 
     const getAvailableTimeSlots = (date: Date | undefined) => {
         if (!date) return availabilitySettings.time_slots;
         const dateString = format(date, 'yyyy-MM-dd');
-        return availabilitySettings.time_slots.filter(
-            t => !unavailableSlots.some(s => s.date === dateString && s.time_slot === t),
-        );
+        return availabilitySettings.time_slots.filter(t => {
+            // Remove admin-blocked slots
+            if (unavailableSlots.some(s => s.date === dateString && s.time_slot === t)) return false;
+            // Remove already-booked slots
+            if (isSlotBooked(dateString, t)) return false;
+            return true;
+        });
     };
 
     // Quick-book submission (used by Contact component) ─────────

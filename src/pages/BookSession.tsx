@@ -12,13 +12,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { CalendarIcon, Clock, Phone, Mail, User, CreditCard, CheckCircle2, Timer, ArrowRight, Smartphone } from "lucide-react";
+import { CalendarIcon, Clock, Phone, Mail, User, CreditCard, CheckCircle2, Timer, ArrowRight, Smartphone, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBookingData } from "@/hooks/useBookingData";
 
 
 
 type Step = 'details' | 'payment' | 'transaction' | 'confirmed';
+
+// Steps visible to the user differ between free and paid sessions
+const PAID_STEPS: Step[] = ['details', 'payment', 'transaction', 'confirmed'];
+const FREE_STEPS: Step[] = ['details', 'confirmed'];
 
 const BookSession = () => {
   const { toast } = useToast();
@@ -59,12 +63,43 @@ const BookSession = () => {
   }, [paymentDeadline]);
 
   const selectedSession = sessionTypes.find(s => s.id === selectedSessionType);
+  const isFree = selectedSession ? !selectedSession.is_paid : false;
 
-  const handleDetailsSubmit = () => {
-    if (!formData.name || !formData.email || !formData.date || !formData.time || !selectedSessionType || !formData.paymentMethod) {
+  const handleDetailsSubmit = async () => {
+    const paymentMethodRequired = !isFree;
+    if (!formData.name || !formData.email || !formData.date || !formData.time || !selectedSessionType || (paymentMethodRequired && !formData.paymentMethod)) {
       toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
       return;
     }
+
+    // Free session: skip payment, insert directly as confirmed
+    if (isFree) {
+      if (!formData.date) return;
+      try {
+        const { data, error } = await supabase.from('session_bookings').insert({
+          session_type_id: selectedSessionType,
+          user_name: formData.name,
+          user_email: formData.email,
+          whatsapp_number: formData.whatsapp,
+          phone_number: formData.phone,
+          booking_date: format(formData.date, 'yyyy-MM-dd'),
+          time_slot: formData.time,
+          payment_method: 'free',
+          fee_amount: 0,
+          payment_status: 'not_required',
+          booking_status: 'confirmed',
+        }).select().single();
+        if (error) throw error;
+        if (data) setBookingId(data.id);
+        setStep('confirmed');
+        toast({ title: "Booking Confirmed!", description: "Your free session has been booked successfully." });
+      } catch (error: any) {
+        toast({ title: "Error", description: error.message || "Failed to create booking", variant: "destructive" });
+      }
+      return;
+    }
+
+    // Paid session: go to payment step
     setStep('payment');
   };
 
@@ -130,21 +165,26 @@ const BookSession = () => {
 
         {/* Progress Steps */}
         <ScrollReveal direction="up" delay={0.1}>
-          <div className="flex items-center justify-center gap-2 mb-10">
-            {(['details', 'payment', 'transaction', 'confirmed'] as Step[]).map((s, i) => (
-              <div key={s} className="flex items-center gap-2">
-                <div className={cn(
-                  "w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold transition-all",
-                  step === s || (['details', 'payment', 'transaction', 'confirmed'].indexOf(step) > i)
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground"
-                )}>
-                  {['details', 'payment', 'transaction', 'confirmed'].indexOf(step) > i ? <CheckCircle2 className="h-5 w-5" /> : i + 1}
-                </div>
-                {i < 3 && <ArrowRight className="h-4 w-4 text-muted-foreground" />}
+          {(() => {
+            const steps = isFree ? FREE_STEPS : PAID_STEPS;
+            return (
+              <div className="flex items-center justify-center gap-2 mb-10">
+                {steps.map((s, i) => (
+                  <div key={s} className="flex items-center gap-2">
+                    <div className={cn(
+                      "w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold transition-all",
+                      step === s || steps.indexOf(step) > i
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground"
+                    )}>
+                      {steps.indexOf(step) > i ? <CheckCircle2 className="h-5 w-5" /> : i + 1}
+                    </div>
+                    {i < steps.length - 1 && <ArrowRight className="h-4 w-4 text-muted-foreground" />}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            );
+          })()}
         </ScrollReveal>
 
         {/* Step 1: Details */}
@@ -161,14 +201,24 @@ const BookSession = () => {
                       "cursor-pointer transition-all border-2",
                       selectedSessionType === st.id ? "border-primary shadow-hover" : "border-border hover:border-primary/40"
                     )}
-                    onClick={() => setSelectedSessionType(st.id)}
+                    onClick={() => {
+                      setSelectedSessionType(st.id);
+                      // Reset payment method when switching session type
+                      setFormData(p => ({ ...p, paymentMethod: '' }));
+                    }}
                   >
                     <CardContent className="p-4">
                       <h4 className="font-semibold text-foreground">{st.title}</h4>
                       <p className="text-sm text-muted-foreground mt-1">{st.description}</p>
                       <div className="flex items-center gap-3 mt-3">
                         <Badge variant="secondary"><Clock className="h-3 w-3 mr-1" />{st.duration_minutes} min</Badge>
-                        <Badge className="bg-primary/10 text-primary hover:bg-primary/20">৳{st.fee}</Badge>
+                        {st.is_paid ? (
+                          <Badge className="bg-primary/10 text-primary hover:bg-primary/20">৳{st.fee}</Badge>
+                        ) : (
+                          <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 hover:bg-green-200">
+                            <Tag className="h-3 w-3 mr-1" />Free
+                          </Badge>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -250,36 +300,57 @@ const BookSession = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Payment Method *</Label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {(['bkash', 'nagad'] as const).map(method => (
-                        <Button
-                          key={method}
-                          type="button"
-                          variant="outline"
-                          className={cn(
-                            "h-14 text-base font-semibold transition-all",
-                            formData.paymentMethod === method
-                              ? method === 'bkash' ? "border-pink-500 bg-pink-50 text-pink-700 dark:bg-pink-950 dark:text-pink-300" : "border-orange-500 bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300"
-                              : "hover:border-primary/40"
-                          )}
-                          onClick={() => setFormData(p => ({ ...p, paymentMethod: method }))}
-                        >
-                          <CreditCard className="h-5 w-5 mr-2" />
-                          {method === 'bkash' ? 'bKash' : 'Nagad'}
-                        </Button>
-                      ))}
+                  {/* Only show payment method selector for paid sessions */}
+                  {selectedSession && !isFree && (
+                    <div className="space-y-2">
+                      <Label>Payment Method *</Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {(['bkash', 'nagad'] as const).map(method => (
+                          <Button
+                            key={method}
+                            type="button"
+                            variant="outline"
+                            className={cn(
+                              "h-14 text-base font-semibold transition-all",
+                              formData.paymentMethod === method
+                                ? method === 'bkash' ? "border-pink-500 bg-pink-50 text-pink-700 dark:bg-pink-950 dark:text-pink-300" : "border-orange-500 bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300"
+                                : "hover:border-primary/40"
+                            )}
+                            onClick={() => setFormData(p => ({ ...p, paymentMethod: method }))}
+                          >
+                            <CreditCard className="h-5 w-5 mr-2" />
+                            {method === 'bkash' ? 'bKash' : 'Nagad'}
+                          </Button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
+
+                  {/* Free session info banner */}
+                  {selectedSession && isFree && (
+                    <div className="flex items-center gap-3 rounded-lg border border-green-300 bg-green-50 dark:bg-green-950/30 dark:border-green-800 p-4">
+                      <Tag className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                      <div>
+                        <p className="font-semibold text-green-700 dark:text-green-300 text-sm">This is a Free Session</p>
+                        <p className="text-xs text-green-600/80 dark:text-green-400/80 mt-0.5">No payment required. Your booking will be confirmed immediately.</p>
+                      </div>
+                    </div>
+                  )}
 
                   <Button
                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                     size="lg"
                     onClick={handleDetailsSubmit}
-                    disabled={!formData.name || !formData.email || !formData.date || !formData.time || !selectedSessionType || !formData.paymentMethod}
+                    disabled={
+                      !formData.name || !formData.email || !formData.date || !formData.time || !selectedSessionType ||
+                      (!isFree && !formData.paymentMethod)
+                    }
                   >
-                    Continue to Payment <ArrowRight className="ml-2 h-4 w-4" />
+                    {isFree ? (
+                      <><CheckCircle2 className="mr-2 h-4 w-4" />Confirm Free Booking</>
+                    ) : (
+                      <>Continue to Payment <ArrowRight className="ml-2 h-4 w-4" /></>
+                    )}
                   </Button>
                 </CardContent>
               </Card>
@@ -385,17 +456,33 @@ const BookSession = () => {
           <ScrollReveal direction="up">
             <Card className="max-w-lg mx-auto text-center">
               <CardContent className="p-10 space-y-6">
-                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="h-10 w-10 text-primary" />
+                <div className={cn(
+                  "w-20 h-20 rounded-full flex items-center justify-center mx-auto",
+                  isFree ? "bg-green-100 dark:bg-green-900/40" : "bg-primary/10"
+                )}>
+                  <CheckCircle2 className={cn("h-10 w-10", isFree ? "text-green-600 dark:text-green-400" : "text-primary")} />
                 </div>
-                <h2 className="text-2xl font-bold text-foreground">Booking Submitted!</h2>
+                <h2 className="text-2xl font-bold text-foreground">
+                  {isFree ? 'Session Confirmed!' : 'Booking Submitted!'}
+                </h2>
                 <p className="text-muted-foreground">
-                  Your session booking has been submitted successfully. We'll verify your payment and send a confirmation to <strong>{formData.email}</strong>.
+                  {isFree
+                    ? <>Your free session has been booked and confirmed. We'll send a reminder to <strong>{formData.email}</strong>.</>
+                    : <>Your session booking has been submitted. We'll verify your payment and send a confirmation to <strong>{formData.email}</strong>.</>
+                  }
                 </p>
                 <div className="bg-muted rounded-lg p-4 text-sm text-left space-y-2">
                   <div className="flex justify-between"><span className="text-muted-foreground">Booking ID</span><span className="font-mono text-foreground">{bookingId.slice(0, 8)}...</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Transaction ID</span><span className="font-mono text-foreground">{formData.transactionId}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Status</span><Badge className="bg-primary/10 text-primary">Pending Verification</Badge></div>
+                  {!isFree && formData.transactionId && (
+                    <div className="flex justify-between"><span className="text-muted-foreground">Transaction ID</span><span className="font-mono text-foreground">{formData.transactionId}</span></div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Status</span>
+                    {isFree
+                      ? <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">Confirmed</Badge>
+                      : <Badge className="bg-primary/10 text-primary">Pending Verification</Badge>
+                    }
+                  </div>
                 </div>
                 <Button variant="outline" onClick={() => window.location.href = '/'}>
                   Back to Home

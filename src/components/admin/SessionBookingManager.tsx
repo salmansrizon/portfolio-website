@@ -32,6 +32,7 @@ interface SessionType {
   duration_minutes: number;
   fee: number;
   is_active: boolean;
+  is_paid: boolean;
 }
 
 interface SessionBooking {
@@ -97,7 +98,7 @@ const SessionBookingManager = () => {
   // ── Edit state ─────────────────────────────────────────────
   const [editingBooking, setEditingBooking] = useState<SessionBooking | null>(null);
   const [editingType, setEditingType] = useState<SessionType | null>(null);
-  const [newType, setNewType] = useState({ title: '', description: '', duration_minutes: 60, fee: 0 });
+  const [newType, setNewType] = useState({ title: '', description: '', duration_minutes: 60, fee: 0, is_paid: true });
   const [showNewTypeForm, setShowNewTypeForm] = useState(false);
 
   // ── Unavailable slot form ──────────────────────────────────
@@ -134,14 +135,14 @@ const SessionBookingManager = () => {
     const { error } = await supabase.from('session_types').insert(newType);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Session type added" });
-    setNewType({ title: '', description: '', duration_minutes: 60, fee: 0 });
+    setNewType({ title: '', description: '', duration_minutes: 60, fee: 0, is_paid: true });
     setShowNewTypeForm(false);
     fetchAll();
   };
 
   const handleUpdateSessionType = async (st: SessionType) => {
     const { error } = await supabase.from('session_types').update({
-      title: st.title, description: st.description, duration_minutes: st.duration_minutes, fee: st.fee, is_active: st.is_active
+      title: st.title, description: st.description, duration_minutes: st.duration_minutes, fee: st.fee, is_active: st.is_active, is_paid: st.is_paid
     }).eq('id', st.id);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Session type updated" });
@@ -354,7 +355,7 @@ const SessionBookingManager = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>Fee (৳)</Label>
-                    <Input type="number" value={newType.fee} onChange={e => setNewType(p => ({ ...p, fee: Number(e.target.value) }))} />
+                    <Input type="number" value={newType.fee} onChange={e => setNewType(p => ({ ...p, fee: Number(e.target.value) }))} disabled={!newType.is_paid} />
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -365,6 +366,25 @@ const SessionBookingManager = () => {
                   <Label>Duration (minutes)</Label>
                   <Input type="number" value={newType.duration_minutes} onChange={e => setNewType(p => ({ ...p, duration_minutes: Number(e.target.value) }))} />
                 </div>
+                <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="new-type-is-paid"
+                      checked={newType.is_paid}
+                      onCheckedChange={checked => setNewType(p => ({ ...p, is_paid: checked }))}
+                    />
+                    <Label htmlFor="new-type-is-paid" className="cursor-pointer">
+                      {newType.is_paid ? (
+                        <span className="text-primary font-medium">Paid Session</span>
+                      ) : (
+                        <span className="text-green-600 dark:text-green-400 font-medium">Free Session</span>
+                      )}
+                    </Label>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {newType.is_paid ? 'Customer will be asked to pay before confirming.' : 'No payment required — booking confirms immediately.'}
+                  </span>
+                </div>
                 <Button onClick={handleAddSessionType}>Save</Button>
               </CardContent>
             </Card>
@@ -374,14 +394,25 @@ const SessionBookingManager = () => {
             <Card key={st.id}>
               <CardContent className="p-4 flex items-center justify-between">
                 <div>
-                  <h4 className="font-semibold">{st.title}</h4>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-semibold">{st.title}</h4>
+                    {st.is_paid ? (
+                      <Badge className="bg-primary/10 text-primary text-xs">Paid — ৳{st.fee}</Badge>
+                    ) : (
+                      <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-xs">Free</Badge>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground">{st.description}</p>
-                  <p className="text-sm text-muted-foreground">{st.duration_minutes} min — ৳{st.fee}</p>
+                  <p className="text-sm text-muted-foreground">{st.duration_minutes} min</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">
                     <Label className="text-xs">Active</Label>
                     <Switch checked={st.is_active} onCheckedChange={checked => handleUpdateSessionType({ ...st, is_active: checked })} />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs">{st.is_paid ? 'Paid' : 'Free'}</Label>
+                    <Switch checked={st.is_paid} onCheckedChange={checked => handleUpdateSessionType({ ...st, is_paid: checked })} />
                   </div>
                   <Button size="sm" variant="outline" onClick={() => setEditingType({ ...st })}>
                     <Edit className="h-4 w-4" />
@@ -778,7 +809,29 @@ const SessionBookingManager = () => {
                 </div>
                 <div className="space-y-2">
                   <Label>Fee (৳)</Label>
-                  <Input type="number" value={editingType.fee} onChange={e => setEditingType(p => p ? { ...p, fee: Number(e.target.value) } : p)} />
+                  <Input type="number" value={editingType.fee} onChange={e => setEditingType(p => p ? { ...p, fee: Number(e.target.value) } : p)} disabled={!editingType.is_paid} />
+                </div>
+              </div>
+              {/* Session pricing type */}
+              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                <Switch
+                  id="edit-type-is-paid"
+                  checked={editingType.is_paid}
+                  onCheckedChange={checked => setEditingType(p => p ? { ...p, is_paid: checked } : p)}
+                />
+                <div>
+                  <Label htmlFor="edit-type-is-paid" className="cursor-pointer font-medium">
+                    {editingType.is_paid ? (
+                      <span className="text-primary">Paid Session</span>
+                    ) : (
+                      <span className="text-green-600 dark:text-green-400">Free Session</span>
+                    )}
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {editingType.is_paid
+                      ? 'Customer must complete payment (bKash/Nagad) to confirm.'
+                      : 'No payment required — booking is confirmed without payment.'}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
