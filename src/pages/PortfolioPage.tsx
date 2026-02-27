@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ExternalLink, Github } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from "@/components/Navbar";
+import { usePageView } from "@/hooks/usePageView";
 
 interface Project {
   id: string;
@@ -18,6 +19,7 @@ interface Project {
 }
 
 const PortfolioPage = () => {
+  usePageView("/portfolio");
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 

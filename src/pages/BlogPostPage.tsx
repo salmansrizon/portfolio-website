@@ -7,9 +7,11 @@ import { supabase } from '@/integrations/supabase/client';
 import Navbar from "@/components/Navbar";
 import { BlogPost } from '@/types/blog';
 import { CodeBlock, dracula } from 'react-code-blocks';
+import { usePageView } from "@/hooks/usePageView";
 
 const BlogPostPage = () => {
   const { slug } = useParams();
+  usePageView(`/blog/${slug}`);
   const navigate = useNavigate();
   const [blog, setBlog] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);

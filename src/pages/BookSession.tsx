@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CalendarIcon, Clock, Phone, Mail, User, CreditCard, CheckCircle2, Timer, ArrowRight, Smartphone, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBookingData } from "@/hooks/useBookingData";
+import { usePageView } from "@/hooks/usePageView";
 
 
 
@@ -25,6 +26,7 @@ const PAID_STEPS: Step[] = ['details', 'payment', 'transaction', 'confirmed'];
 const FREE_STEPS: Step[] = ['details', 'confirmed'];
 
 const BookSession = () => {
+  usePageView("/book-session");
   const { toast } = useToast();
   const { sessionTypes, paymentSettings, unavailableSlots, isDateUnavailable, getAvailableTimeSlots, availabilitySettings } = useBookingData();
   const [step, setStep] = useState<Step>('details');
