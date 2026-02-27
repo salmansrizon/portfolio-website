@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { usePageView } from "@/hooks/usePageView";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -187,6 +188,7 @@ function QuickView({ course, content, onEnroll, enrolling }: QuickViewProps) {
 
 export default function CourseDetails() {
   const { courseId } = useParams();
+  usePageView(`/course/${courseId}`);
   const { toast } = useToast();
   const [course, setCourse] = useState<Course | null>(null);
   const [content, setContent] = useState<CourseContent[]>([]);
