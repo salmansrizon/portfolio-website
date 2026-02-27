@@ -110,12 +110,46 @@ ${formData.message}
     }, 1000);
   };
 
-  // ── Step 1 → 2: Validate details, move to payment ─────────
-  const handleDetailsSubmit = () => {
-    if (!quickBook.name || !quickBook.email || !quickBook.sessionTypeId || !quickBook.date || !quickBook.time || !quickBook.paymentMethod) {
+  const selectedSession = sessionTypes.find(s => s.id === quickBook.sessionTypeId);
+  const isFreeSession = selectedSession ? !selectedSession.is_paid : false;
+
+  // ── Step 1 → 2: Validate details, move to payment (or confirm for free) ─
+  const handleDetailsSubmit = async () => {
+    const paymentRequired = !isFreeSession;
+    if (!quickBook.name || !quickBook.email || !quickBook.sessionTypeId || !quickBook.date || !quickBook.time || (paymentRequired && !quickBook.paymentMethod)) {
       toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
       return;
     }
+
+    // Free session: skip payment, insert directly as confirmed
+    if (isFreeSession) {
+      setIsSubmitting(true);
+      try {
+        const { data, error } = await supabase.from('session_bookings').insert({
+          session_type_id: quickBook.sessionTypeId,
+          user_name: quickBook.name,
+          user_email: quickBook.email,
+          whatsapp_number: quickBook.whatsapp,
+          phone_number: quickBook.phone,
+          booking_date: format(quickBook.date!, 'yyyy-MM-dd'),
+          time_slot: quickBook.time,
+          payment_method: 'free',
+          fee_amount: 0,
+          payment_status: 'not_required',
+          booking_status: 'confirmed',
+        }).select().single();
+        if (error) throw error;
+        if (data) setBookingId(data.id);
+        setBookingStep('confirmed');
+        toast({ title: "Booking Confirmed!", description: "Your free session has been booked successfully." });
+      } catch (error: any) {
+        toast({ title: "Error", description: error.message || "Failed to create booking", variant: "destructive" });
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
     setBookingStep('payment');
   };
 
@@ -222,7 +256,7 @@ ${formData.message}
     return () => clearInterval(interval);
   }, []);
 
-  const selectedSession = sessionTypes.find(s => s.id === quickBook.sessionTypeId);
+  // selectedSession is declared above near line 113
 
   // Step labels for the mini progress bar
   const steps: BookingStep[] = ['form', 'payment', 'transaction', 'confirmed'];
@@ -470,45 +504,63 @@ ${formData.message}
                         </div>
                       </div>
 
-                      {/* Payment Method */}
-                      <div className="space-y-2">
-                        <Label>Payment Method *</Label>
-                        <div className="grid grid-cols-2 gap-3">
-                          {(['bkash', 'nagad'] as const).map(method => (
-                            <Button
-                              key={method}
-                              type="button"
-                              variant="outline"
-                              className={cn(
-                                "h-12 text-sm font-semibold transition-all",
-                                quickBook.paymentMethod === method
-                                  ? method === 'bkash'
-                                    ? "border-pink-500 bg-pink-50 text-pink-700 dark:bg-pink-950 dark:text-pink-300"
-                                    : "border-orange-500 bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300"
-                                  : "hover:border-primary/40"
-                              )}
-                              onClick={() => setQuickBook(p => ({ ...p, paymentMethod: method }))}
-                            >
-                              <CreditCard className="h-4 w-4 mr-2" />
-                              {method === 'bkash' ? 'bKash' : 'Nagad'}
-                            </Button>
-                          ))}
+                      {/* Payment Method - only for paid sessions */}
+                      {selectedSession && !isFreeSession && (
+                        <div className="space-y-2">
+                          <Label>Payment Method *</Label>
+                          <div className="grid grid-cols-2 gap-3">
+                            {(['bkash', 'nagad'] as const).map(method => (
+                              <Button
+                                key={method}
+                                type="button"
+                                variant="outline"
+                                className={cn(
+                                  "h-12 text-sm font-semibold transition-all",
+                                  quickBook.paymentMethod === method
+                                    ? method === 'bkash'
+                                      ? "border-pink-500 bg-pink-50 text-pink-700 dark:bg-pink-950 dark:text-pink-300"
+                                      : "border-orange-500 bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300"
+                                    : "hover:border-primary/40"
+                                )}
+                                onClick={() => setQuickBook(p => ({ ...p, paymentMethod: method }))}
+                              >
+                                <CreditCard className="h-4 w-4 mr-2" />
+                                {method === 'bkash' ? 'bKash' : 'Nagad'}
+                              </Button>
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                      )}
+
+                      {/* Free session info banner */}
+                      {selectedSession && isFreeSession && (
+                        <div className="flex items-center gap-3 rounded-lg border border-green-300 bg-green-50 dark:bg-green-950/30 dark:border-green-800 p-3">
+                          <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                          <div>
+                            <p className="font-semibold text-green-700 dark:text-green-300 text-sm">This is a Free Session</p>
+                            <p className="text-xs text-green-600/80 dark:text-green-400/80 mt-0.5">No payment required. Your booking will be confirmed immediately.</p>
+                          </div>
+                        </div>
+                      )}
 
                       <Button
                         className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                         onClick={handleDetailsSubmit}
                         disabled={
+                          isSubmitting ||
                           !quickBook.name ||
                           !quickBook.email ||
                           !quickBook.sessionTypeId ||
                           !quickBook.date ||
                           !quickBook.time ||
-                          !quickBook.paymentMethod
+                          (!isFreeSession && !quickBook.paymentMethod)
                         }
                       >
-                        Continue to Payment <ArrowRight className="ml-2 h-4 w-4" />
+                        {isFreeSession ? (
+                          <><CheckCircle2 className="mr-2 h-4 w-4" />{isSubmitting ? "Booking…" : "Confirm Free Booking"}</>
+                        ) : (
+                          <>{isSubmitting ? "Processing…" : <>Continue to Payment <ArrowRight className="ml-2 h-4 w-4" /></>}</>
+                        )}
                       </Button>
                     </>
                   )}
@@ -606,14 +658,25 @@ ${formData.message}
                       <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
                         <CheckCircle2 className="h-8 w-8 text-primary" />
                       </div>
-                      <h3 className="text-xl font-bold text-foreground">Booking Submitted!</h3>
+                      <h3 className="text-xl font-bold text-foreground">
+                        {isFreeSession ? "Booking Confirmed!" : "Booking Submitted!"}
+                      </h3>
                       <p className="text-muted-foreground text-sm leading-relaxed">
-                        We'll verify your payment and send a confirmation to <strong>{quickBook.email}</strong>.
+                        {isFreeSession
+                          ? <>Your free session has been confirmed! A confirmation will be sent to <strong>{quickBook.email}</strong>.</>
+                          : <>We'll verify your payment and send a confirmation to <strong>{quickBook.email}</strong>.</>
+                        }
                       </p>
                       <div className="bg-muted rounded-lg p-3 text-sm text-left space-y-2">
                         <div className="flex justify-between"><span className="text-muted-foreground">Booking ID</span><span className="font-mono text-foreground">{bookingId.slice(0, 8)}…</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Transaction ID</span><span className="font-mono text-foreground">{quickBook.transactionId}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Status</span><Badge className="bg-primary/10 text-primary">Pending Verification</Badge></div>
+                        {!isFreeSession && quickBook.transactionId && (
+                          <div className="flex justify-between"><span className="text-muted-foreground">Transaction ID</span><span className="font-mono text-foreground">{quickBook.transactionId}</span></div>
+                        )}
+                        <div className="flex justify-between"><span className="text-muted-foreground">Status</span>
+                          <Badge className="bg-primary/10 text-primary">
+                            {isFreeSession ? "Confirmed" : "Pending Verification"}
+                          </Badge>
+                        </div>
                       </div>
                       <Button variant="ghost" size="sm" onClick={resetBooking}>
                         Book Another Session
