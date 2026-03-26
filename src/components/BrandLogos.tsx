@@ -31,15 +31,7 @@ const BrandLogos = () => {
   return (
     <section className="relative py-16 bg-background/50 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center text-sm text-muted-foreground mb-10 uppercase tracking-widest font-medium"
-        >
-          Trusted by leading brands
-        </motion.p>
-        <div className="flex flex-wrap items-center justify-center gap-8 md:gap-14">
+        <div className="flex flex-wrap items-center justify-center gap-10 md:gap-16">
           {logos.map((logo, i) => (
             <motion.div
               key={logo.id}
@@ -60,7 +52,7 @@ const BrandLogos = () => {
                   <img
                     src={logo.logo_url}
                     alt={logo.name}
-                    className="h-10 md:h-12 w-auto object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
+                    className="h-14 md:h-16 w-auto object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
                   />
                   {logo.hover_text && (
                     <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
@@ -73,7 +65,7 @@ const BrandLogos = () => {
                   <img
                     src={logo.logo_url}
                     alt={logo.name}
-                    className="h-10 md:h-12 w-auto object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
+                    className="h-14 md:h-16 w-auto object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
                   />
                   {logo.hover_text && (
                     <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
