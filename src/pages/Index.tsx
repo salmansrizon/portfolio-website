@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { usePageView } from "@/hooks/usePageView";
 import Navbar from "@/components/Navbar";
+import BrandLogos from "@/components/BrandLogos";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
 import Certifications from "@/components/Certifications";
@@ -59,6 +60,7 @@ const Index = () => {
     <div className="min-h-screen">
       <Navbar />
       <Hero />
+      <BrandLogos />
       <About />
       {/* <Certifications /> */}
       <Services />

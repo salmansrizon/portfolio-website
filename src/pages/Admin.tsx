@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, Settings, FileText, Award, Briefcase, MessageSquare, User, FolderKanban, GraduationCap, CalendarCheck, LayoutDashboard, Menu } from 'lucide-react';
+import { LogOut, Settings, FileText, Award, Briefcase, MessageSquare, User, FolderKanban, GraduationCap, CalendarCheck, LayoutDashboard, Menu, Image } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -18,6 +18,7 @@ import TestimonialsManager from '@/components/admin/TestimonialsManager';
 import ProjectManager from '@/components/admin/ProjectManager';
 import CourseManager from '@/components/admin/CourseManager';
 import SessionBookingManager from '@/components/admin/SessionBookingManager';
+import BrandLogosManager from '@/components/admin/BrandLogosManager';
 
 const navigation = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -29,6 +30,7 @@ const navigation = [
   { id: 'testimonials', label: 'Testimonials', icon: MessageSquare },
   { id: 'courses', label: 'Courses', icon: GraduationCap },
   { id: 'sessions', label: 'Sessions', icon: CalendarCheck },
+  { id: 'brand-logos', label: 'Brand Logos', icon: Image },
   { id: 'profile', label: 'Profile', icon: User },
 ];
 
@@ -73,6 +75,8 @@ const Admin = () => {
         return <CourseManager />;
       case 'sessions':
         return <SessionBookingManager />;
+      case 'brand-logos':
+        return <BrandLogosManager />;
       case 'profile':
         return (
           <Card>
