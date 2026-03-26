@@ -105,18 +105,10 @@ const Navbar = () => {
           {/* Actions */}
           <div className="hidden md:flex items-center space-x-4">
             <ThemeToggle />
-            <Button className="bg-primary hover:bg-primary-hover text-primary-foreground" asChild>
-              <button
-                onClick={() => {
-                  if (location.pathname !== "/") {
-                    window.location.href = "/#contact"
-                  } else {
-                    handleHashLink("/#contact")
-                  }
-                }}
-              >
-                Hire Me
-              </button>
+            <Button className="bg-primary hover:bg-primary-hover text-primary-foreground animate-pulse hover:animate-none font-semibold" asChild>
+              <Link to="/book-session">
+                Book Session
+              </Link>
             </Button>
           </div>
 
@@ -186,18 +178,10 @@ const Navbar = () => {
               <div className="flex justify-center">
                 <ThemeToggle />
               </div>
-              <Button
-                className="w-full bg-primary hover:bg-primary-hover text-primary-foreground"
-                onClick={() => {
-                  setIsOpen(false)
-                  if (location.pathname !== "/") {
-                    window.location.href = "/#contact"
-                  } else {
-                    handleHashLink("/#contact")
-                  }
-                }}
-              >
-                Hire Me
+              <Button className="w-full bg-primary hover:bg-primary-hover text-primary-foreground font-semibold" asChild>
+                <Link to="/book-session" onClick={() => setIsOpen(false)}>
+                  Book Session
+                </Link>
               </Button>
             </div>
           </div>
