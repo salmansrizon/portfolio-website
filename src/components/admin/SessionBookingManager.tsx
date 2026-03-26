@@ -58,6 +58,8 @@ interface PaymentSettings {
   nagad_number: string | null;
   payment_window_minutes: number;
   additional_instructions: string | null;
+  bkash_qr_code?: string | null;
+  nagad_qr_code?: string | null;
 }
 
 interface AvailabilitySettings {
@@ -205,6 +207,8 @@ const SessionBookingManager = () => {
     const { error } = await supabase.from('payment_settings').update({
       bkash_number: paymentSettings.bkash_number,
       nagad_number: paymentSettings.nagad_number,
+      bkash_qr_code: paymentSettings.bkash_qr_code,
+      nagad_qr_code: paymentSettings.nagad_qr_code,
       payment_window_minutes: paymentSettings.payment_window_minutes,
       additional_instructions: paymentSettings.additional_instructions,
     }).eq('id', paymentSettings.id);
@@ -665,6 +669,14 @@ const SessionBookingManager = () => {
                   <div className="space-y-2">
                     <Label>Nagad Number</Label>
                     <Input value={paymentSettings.nagad_number || ''} onChange={e => setPaymentSettings(p => p ? { ...p, nagad_number: e.target.value } : p)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>bKash QR Code (Image URL)</Label>
+                    <Input placeholder="https://..." value={paymentSettings.bkash_qr_code || ''} onChange={e => setPaymentSettings(p => p ? { ...p, bkash_qr_code: e.target.value } : p)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Nagad QR Code (Image URL)</Label>
+                    <Input placeholder="https://..." value={paymentSettings.nagad_qr_code || ''} onChange={e => setPaymentSettings(p => p ? { ...p, nagad_qr_code: e.target.value } : p)} />
                   </div>
                 </div>
                 <div className="space-y-2">

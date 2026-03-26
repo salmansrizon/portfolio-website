@@ -35,7 +35,7 @@ import { cn } from "@/lib/utils";
 import ScrollReveal from "./ScrollReveal";
 import { useBookingData } from "@/hooks/useBookingData";
 
-type BookingStep = 'form' | 'payment' | 'transaction' | 'confirmed';
+type BookingStep = 'form' | 'confirmed';
 
 const Contact = () => {
   const [currentTime, setCurrentTime] = useState('');
@@ -52,7 +52,7 @@ const Contact = () => {
     sessionTypes,
     paymentSettings,
     isDateUnavailable,
-    getAvailableTimeSlots,
+    getAllTimeSlotsWithAvailability,
     isLoading: bookingDataLoading,
     availabilitySettings,
   } = useBookingData();
@@ -113,52 +113,18 @@ ${formData.message}
   const selectedSession = sessionTypes.find(s => s.id === quickBook.sessionTypeId);
   const isFreeSession = selectedSession ? !selectedSession.is_paid : false;
 
-  // ── Step 1 → 2: Validate details, move to payment (or confirm for free) ─
-  const handleDetailsSubmit = async () => {
+  // ── Step 1 → 2: Validate details, save booking (or confirm for free) ─
+  const handleBookingSubmit = async () => {
     const paymentRequired = !isFreeSession;
     if (!quickBook.name || !quickBook.email || !quickBook.sessionTypeId || !quickBook.date || !quickBook.time || (paymentRequired && !quickBook.paymentMethod)) {
       toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
       return;
     }
 
-    // Free session: skip payment, insert directly as confirmed
-    if (isFreeSession) {
-      setIsSubmitting(true);
-      try {
-        const { data, error } = await supabase.from('session_bookings').insert({
-          session_type_id: quickBook.sessionTypeId,
-          user_name: quickBook.name,
-          user_email: quickBook.email,
-          whatsapp_number: quickBook.whatsapp,
-          phone_number: quickBook.phone,
-          booking_date: format(quickBook.date!, 'yyyy-MM-dd'),
-          time_slot: quickBook.time,
-          payment_method: 'free',
-          fee_amount: 0,
-          payment_status: 'not_required',
-          booking_status: 'confirmed',
-        }).select().single();
-        if (error) throw error;
-        if (data) setBookingId(data.id);
-        setBookingStep('confirmed');
-        toast({ title: "Booking Confirmed!", description: "Your free session has been booked successfully." });
-      } catch (error: any) {
-        toast({ title: "Error", description: error.message || "Failed to create booking", variant: "destructive" });
-      } finally {
-        setIsSubmitting(false);
-      }
+    if (!isFreeSession && !quickBook.transactionId.trim()) {
+      toast({ title: "Error", description: "Please enter your transaction ID", variant: "destructive" });
       return;
     }
-
-    setBookingStep('payment');
-  };
-
-  // ── Step 2 → 3: Confirm payment sent, create booking ──────
-  const handlePaymentConfirm = async () => {
-    if (!selectedSession || !quickBook.date) return;
-    const windowMins = paymentSettings?.payment_window_minutes || 30;
-    const deadline = addMinutes(new Date(), windowMins);
-    setPaymentDeadline(deadline);
 
     setIsSubmitting(true);
     try {
@@ -168,18 +134,20 @@ ${formData.message}
         user_email: quickBook.email,
         whatsapp_number: quickBook.whatsapp,
         phone_number: quickBook.phone,
-        booking_date: format(quickBook.date, 'yyyy-MM-dd'),
+        booking_date: format(quickBook.date!, 'yyyy-MM-dd'),
         time_slot: quickBook.time,
-        payment_method: quickBook.paymentMethod,
-        fee_amount: selectedSession.fee,
-        payment_status: 'pending',
-        booking_status: 'pending',
-        payment_deadline: deadline.toISOString(),
+        payment_method: isFreeSession ? 'free' : quickBook.paymentMethod,
+        fee_amount: isFreeSession ? 0 : selectedSession.fee,
+        payment_status: isFreeSession ? 'not_required' : 'submitted',
+        booking_status: isFreeSession ? 'confirmed' : 'pending',
+        transaction_id: isFreeSession ? null : quickBook.transactionId,
+        payment_deadline: paymentDeadline?.toISOString(),
       }).select().single();
 
       if (error) throw error;
       if (data) setBookingId(data.id);
-      setBookingStep('transaction');
+      setBookingStep('confirmed');
+      toast({ title: "Booking Confirmed!", description: isFreeSession ? "Your free session has been booked successfully." : "Your session booking has been submitted. We'll verify your payment and confirm shortly." });
     } catch (error: any) {
       toast({ title: "Error", description: error.message || "Failed to create booking", variant: "destructive" });
     } finally {
@@ -187,23 +155,11 @@ ${formData.message}
     }
   };
 
-  // ── Step 3 → 4: Submit transaction ID ──────────────────────
-  const handleTransactionSubmit = async () => {
-    if (!quickBook.transactionId.trim()) {
-      toast({ title: "Error", description: "Please enter your transaction ID", variant: "destructive" });
-      return;
-    }
-    try {
-      const { error } = await supabase.from('session_bookings').update({
-        transaction_id: quickBook.transactionId,
-        payment_status: 'submitted',
-      }).eq('id', bookingId);
-
-      if (error) throw error;
-      setBookingStep('confirmed');
-      toast({ title: "Booking Submitted!", description: "Your session booking has been submitted. We'll verify your payment and confirm shortly." });
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to submit transaction", variant: "destructive" });
+  const handleSelectPaymentMethod = (method: 'bkash' | 'nagad') => {
+    setQuickBook(p => ({ ...p, paymentMethod: method }));
+    if (!paymentDeadline) {
+      const windowMins = paymentSettings?.payment_window_minutes || 30;
+      setPaymentDeadline(addMinutes(new Date(), windowMins));
     }
   };
 
@@ -259,8 +215,7 @@ ${formData.message}
   // selectedSession is declared above near line 113
 
   // Step labels for the mini progress bar
-  const steps: BookingStep[] = ['form', 'payment', 'transaction', 'confirmed'];
-  const currentStepIdx = steps.indexOf(bookingStep);
+  // Removed because it's a single form now
 
   return (
     <section id="contact" className="py-20 bg-background">
@@ -363,24 +318,7 @@ ${formData.message}
 
                 {/* ─── Booking Tab (full flow) ─── */}
                 <TabsContent value="booking" className="p-6 space-y-5">
-                  {/* Mini progress bar */}
-                  {bookingStep !== 'confirmed' && (
-                    <div className="flex items-center justify-center gap-1.5 mb-2">
-                      {steps.slice(0, -1).map((s, i) => (
-                        <div key={s} className="flex items-center gap-1.5">
-                          <div className={cn(
-                            "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all",
-                            currentStepIdx >= i
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted text-muted-foreground"
-                          )}>
-                            {currentStepIdx > i ? <CheckCircle2 className="h-4 w-4" /> : i + 1}
-                          </div>
-                          {i < 2 && <ArrowRight className="h-3 w-3 text-muted-foreground" />}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  {/* Progress bar removed as it's a single form now */}
 
                   {/* ── Step 1: Details form ── */}
                   {bookingStep === 'form' && (
@@ -493,10 +431,12 @@ ${formData.message}
                               <SelectValue placeholder="Select time" />
                             </SelectTrigger>
                             <SelectContent>
-                              {getAvailableTimeSlots(quickBook.date).map(t => (
-                                <SelectItem key={t} value={t}>{t} (GMT+6)</SelectItem>
+                              {getAllTimeSlotsWithAvailability(quickBook.date).map(t => (
+                                <SelectItem key={t.time} value={t.time} disabled={!t.available}>
+                                  {t.time} (GMT+6) {!t.available && "(Booked)"}
+                                </SelectItem>
                               ))}
-                              {getAvailableTimeSlots(quickBook.date).length === 0 && (
+                              {getAllTimeSlotsWithAvailability(quickBook.date).length === 0 && (
                                 <SelectItem value="" disabled>No available slots</SelectItem>
                               )}
                             </SelectContent>
@@ -522,13 +462,73 @@ ${formData.message}
                                       : "border-orange-500 bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300"
                                     : "hover:border-primary/40"
                                 )}
-                                onClick={() => setQuickBook(p => ({ ...p, paymentMethod: method }))}
+                                onClick={() => handleSelectPaymentMethod(method)}
                               >
                                 <CreditCard className="h-4 w-4 mr-2" />
                                 {method === 'bkash' ? 'bKash' : 'Nagad'}
                               </Button>
                             ))}
                           </div>
+
+                          {/* Display QR & transaction input inline if selected and not expired */}
+                          {quickBook.paymentMethod && timeLeft !== 'Expired' && (
+                            <div className={cn(
+                              "rounded-xl p-5 border-2 text-center space-y-4 mt-4 animate-in fade-in slide-in-from-top-4",
+                              quickBook.paymentMethod === 'bkash' ? "border-pink-400 bg-pink-50 dark:bg-pink-950/20" : "border-orange-400 bg-orange-50 dark:bg-orange-950/20"
+                            )}>
+                              <div className="flex justify-between items-center bg-background/60 p-2 rounded-lg backdrop-blur-sm">
+                                 <div className="flex items-center gap-2 text-sm font-semibold text-destructive">
+                                    <Timer className="h-4 w-4" /> 
+                                    {timeLeft} left to pay
+                                 </div>
+                                 <h4 className="font-semibold text-foreground text-sm">
+                                   Fee: <span className="font-bold text-lg text-primary">৳{selectedSession.fee}</span>
+                                 </h4>
+                              </div>
+                              
+                              <p className="text-2xl font-mono font-bold text-foreground">
+                                {quickBook.paymentMethod === 'bkash' ? paymentSettings?.bkash_number : paymentSettings?.nagad_number}
+                              </p>
+
+                              {(quickBook.paymentMethod === 'bkash' ? paymentSettings?.bkash_qr_code : paymentSettings?.nagad_qr_code) && (
+                                <div className="mx-auto w-44 h-44 bg-white p-2 rounded-xl shadow-sm my-4">
+                                  <img 
+                                    src={quickBook.paymentMethod === 'bkash' ? paymentSettings?.bkash_qr_code! : paymentSettings?.nagad_qr_code!} 
+                                    alt={`${quickBook.paymentMethod} QR Code`} 
+                                    className="w-full h-full object-contain"
+                                  />
+                                </div>
+                              )}
+                              
+                              <p className="text-sm font-medium opacity-80 max-w-[280px] mx-auto">
+                                Scan the QR code or send money directly with proper details as a reference.
+                              </p>
+
+                              {paymentSettings?.additional_instructions && (
+                                <p className="text-sm text-muted-foreground pt-2 border-t border-black/10 dark:border-white/10">
+                                  {paymentSettings.additional_instructions}
+                                </p>
+                              )}
+
+                              <div className="space-y-1.5 pt-4 text-left">
+                                <Label htmlFor="txnId" className="font-semibold text-sm">Enter Transaction ID <span className="text-red-500">*</span></Label>
+                                <Input
+                                  id="txnId"
+                                  value={quickBook.transactionId}
+                                  onChange={e => setQuickBook(p => ({ ...p, transactionId: e.target.value }))}
+                                  placeholder="e.g., 9F8G7H6A5B"
+                                  className="font-mono h-11 uppercase bg-background"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {!isFreeSession && timeLeft === 'Expired' && selectedSession && (
+                        <div className="bg-destructive/10 rounded-lg p-4 text-center">
+                          <p className="text-destructive font-semibold">Payment window expired.</p>
+                          <Button className="mt-2" variant="outline" onClick={() => window.location.reload()}>Reload Page to Try Again</Button>
                         </div>
                       )}
 
@@ -545,111 +545,21 @@ ${formData.message}
 
                       <Button
                         className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                        onClick={handleDetailsSubmit}
+                        onClick={handleBookingSubmit}
                         disabled={
+                          timeLeft === 'Expired' ||
                           isSubmitting ||
                           !quickBook.name ||
                           !quickBook.email ||
                           !quickBook.sessionTypeId ||
                           !quickBook.date ||
                           !quickBook.time ||
-                          (!isFreeSession && !quickBook.paymentMethod)
+                          (!isFreeSession && (!quickBook.paymentMethod || !quickBook.transactionId.trim()))
                         }
                       >
-                        {isFreeSession ? (
-                          <><CheckCircle2 className="mr-2 h-4 w-4" />{isSubmitting ? "Booking…" : "Confirm Free Booking"}</>
-                        ) : (
-                          <>{isSubmitting ? "Processing…" : <>Continue to Payment <ArrowRight className="ml-2 h-4 w-4" /></>}</>
-                        )}
+                        <CheckCircle2 className="mr-2 h-4 w-4" />{isFreeSession ? (isSubmitting ? "Booking…" : "Confirm Free Booking") : (isSubmitting ? "Processing…" : "Confirm Booking")}
                       </Button>
                     </>
-                  )}
-
-                  {/* ── Step 2: Payment instructions ── */}
-                  {bookingStep === 'payment' && selectedSession && (
-                    <div className="space-y-5">
-                      <div className="bg-muted rounded-lg p-4 space-y-2 text-sm">
-                        <div className="flex justify-between"><span className="text-muted-foreground">Session</span><span className="font-semibold text-foreground">{selectedSession.title}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Duration</span><span className="font-semibold text-foreground">{selectedSession.duration_minutes} min</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Date</span><span className="font-semibold text-foreground">{quickBook.date ? format(quickBook.date, 'PPP') : ''}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Time</span><span className="font-semibold text-foreground">{quickBook.time} (GMT+6)</span></div>
-                        <hr className="border-border" />
-                        <div className="flex justify-between text-base"><span className="font-semibold text-foreground">Total Fee</span><span className="font-bold text-primary">৳{selectedSession.fee}</span></div>
-                      </div>
-
-                      <div className={cn(
-                        "rounded-lg p-4 border-2",
-                        quickBook.paymentMethod === 'bkash' ? "border-pink-400 bg-pink-50 dark:bg-pink-950/30" : "border-orange-400 bg-orange-50 dark:bg-orange-950/30"
-                      )}>
-                        <h4 className="font-semibold text-foreground mb-1 text-sm">
-                          Send ৳{selectedSession.fee} to {quickBook.paymentMethod === 'bkash' ? 'bKash' : 'Nagad'}
-                        </h4>
-                        <p className="text-xl font-mono font-bold text-foreground mb-1">
-                          {quickBook.paymentMethod === 'bkash' ? paymentSettings?.bkash_number : paymentSettings?.nagad_number}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {paymentSettings?.additional_instructions}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground bg-accent/10 rounded-lg p-3">
-                        <Timer className="h-4 w-4 flex-shrink-0" />
-                        <span>You'll have <strong>{paymentSettings?.payment_window_minutes || 30} minutes</strong> to enter your transaction ID after clicking confirm.</span>
-                      </div>
-
-                      <div className="flex gap-3">
-                        <Button variant="outline" className="flex-1" onClick={() => setBookingStep('form')}>Back</Button>
-                        <Button
-                          className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
-                          onClick={handlePaymentConfirm}
-                          disabled={isSubmitting}
-                        >
-                          {isSubmitting ? "Submitting…" : (
-                            <>I've Sent the Payment <ArrowRight className="ml-2 h-4 w-4" /></>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ── Step 3: Transaction ID ── */}
-                  {bookingStep === 'transaction' && (
-                    <div className="space-y-5">
-                      <h3 className="text-lg font-semibold text-foreground text-center">Enter Transaction ID</h3>
-                      <p className="text-sm text-muted-foreground text-center">
-                        Submit your {quickBook.paymentMethod === 'bkash' ? 'bKash' : 'Nagad'} transaction ID
-                      </p>
-
-                      {timeLeft && timeLeft !== 'Expired' && (
-                        <div className="text-center bg-destructive/10 rounded-lg p-3">
-                          <p className="text-xs text-muted-foreground mb-1">Time remaining</p>
-                          <p className="text-2xl font-mono font-bold text-destructive">{timeLeft}</p>
-                        </div>
-                      )}
-                      {timeLeft === 'Expired' && (
-                        <div className="text-center bg-destructive/10 rounded-lg p-3">
-                          <p className="text-destructive font-semibold text-sm">Payment window expired. Please try booking again.</p>
-                        </div>
-                      )}
-
-                      <div className="space-y-2">
-                        <Label>Transaction ID *</Label>
-                        <Input
-                          placeholder="e.g., TXN123456789"
-                          value={quickBook.transactionId}
-                          onChange={e => setQuickBook(p => ({ ...p, transactionId: e.target.value }))}
-                          className="text-center text-lg font-mono"
-                        />
-                      </div>
-
-                      <Button
-                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                        onClick={handleTransactionSubmit}
-                        disabled={!quickBook.transactionId.trim() || timeLeft === 'Expired'}
-                      >
-                        <CheckCircle2 className="mr-2 h-4 w-4" /> Confirm Booking
-                      </Button>
-                    </div>
                   )}
 
                   {/* ── Step 4: Confirmed ── */}

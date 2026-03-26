@@ -9,11 +9,10 @@ const Navbar = () => {
   const location = useLocation()
 
   const navItems = [
-    { name: "Book Session", href: "/book-session", highlight: true },
     { name: "Home", href: "/" },
     { name: "About", href: "/#about" },
     { name: "Services", href: "/#services" },
-    { name: "Courses", href: "/#courses" },
+    { name: "All Courses", href: "/courses" },
     { name: "Portfolio", href: "/portfolio" },
     { name: "Blog", href: "/blog" },
     { name: "Contact", href: "/#contact" },
@@ -105,7 +104,7 @@ const Navbar = () => {
           {/* Actions */}
           <div className="hidden md:flex items-center space-x-4">
             <ThemeToggle />
-            <Button className="bg-primary hover:bg-primary-hover text-primary-foreground animate-pulse hover:animate-none font-semibold" asChild>
+            <Button className="bg-primary hover:bg-primary-hover text-primary-foreground animate-pulse [animation-duration:3s] hover:animate-none font-semibold transition-all duration-500" asChild>
               <Link to="/book-session">
                 Book Session
               </Link>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, Settings, FileText, Award, Briefcase, MessageSquare, User, FolderKanban, GraduationCap, CalendarCheck, LayoutDashboard, Menu, Image } from 'lucide-react';
+import { LogOut, Settings, FileText, Award, Briefcase, MessageSquare, User, FolderKanban, GraduationCap, CalendarCheck, LayoutDashboard, Menu, Image, UserCheck, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -17,8 +17,11 @@ import CertificationsManager from '@/components/admin/CertificationsManager';
 import TestimonialsManager from '@/components/admin/TestimonialsManager';
 import ProjectManager from '@/components/admin/ProjectManager';
 import CourseManager from '@/components/admin/CourseManager';
+import CourseCategoryManager from '@/components/admin/CourseCategoryManager';
 import SessionBookingManager from '@/components/admin/SessionBookingManager';
 import BrandLogosManager from '@/components/admin/BrandLogosManager';
+import InstructorManager from '@/components/admin/InstructorManager';
+import StudentManager from '@/components/admin/StudentManager';
 
 const navigation = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -29,6 +32,8 @@ const navigation = [
   { id: 'projects', label: 'Projects', icon: FolderKanban },
   { id: 'testimonials', label: 'Testimonials', icon: MessageSquare },
   { id: 'courses', label: 'Courses', icon: GraduationCap },
+  { id: 'instructors', label: 'Instructors', icon: UserCheck },
+  { id: 'students', label: 'Students', icon: Users },
   { id: 'sessions', label: 'Sessions', icon: CalendarCheck },
   { id: 'brand-logos', label: 'Brand Logos', icon: Image },
   { id: 'profile', label: 'Profile', icon: User },
@@ -73,6 +78,10 @@ const Admin = () => {
         return <TestimonialsManager />;
       case 'courses':
         return <CourseManager />;
+      case 'instructors':
+        return <InstructorManager />;
+      case 'students':
+        return <StudentManager />;
       case 'sessions':
         return <SessionBookingManager />;
       case 'brand-logos':

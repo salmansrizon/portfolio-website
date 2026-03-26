@@ -17,6 +17,8 @@ export interface PaymentSettings {
     id: string;
     bkash_number: string | null;
     nagad_number: string | null;
+    bkash_qr_code?: string | null;
+    nagad_qr_code?: string | null;
     payment_window_minutes: number;
     additional_instructions: string | null;
 }
@@ -137,6 +139,19 @@ export function useBookingData() {
         });
     };
 
+    const getAllTimeSlotsWithAvailability = (date: Date | undefined) => {
+        if (!date) return availabilitySettings.time_slots.map(t => ({ time: t, available: true }));
+        const dateString = format(date, 'yyyy-MM-dd');
+        return availabilitySettings.time_slots.map(t => {
+            const isBlocked = unavailableSlots.some(s => s.date === dateString && s.time_slot === t);
+            const isBooked = isSlotBooked(dateString, t);
+            return {
+                time: t,
+                available: !isBlocked && !isBooked
+            };
+        });
+    };
+
     // Quick-book submission (used by Contact component) ─────────
     const submitQuickBooking = async (payload: QuickBookingPayload) => {
         const session = sessionTypes.find(s => s.id === payload.sessionTypeId);
@@ -166,6 +181,7 @@ export function useBookingData() {
         isLoading,
         isDateUnavailable,
         getAvailableTimeSlots,
+        getAllTimeSlotsWithAvailability,
         submitQuickBooking,
     };
 }

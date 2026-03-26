@@ -31,30 +31,20 @@ WITH CHECK (auth.jwt() ->> 'email' = user_email);
 -- and replace it with admin-only access for full management
 DROP POLICY IF EXISTS "Authenticated users can manage enrollments" ON public.course_enrollments;
 
--- Policy 5: Only allow admins to have full access to all enrollment data
--- Note: This assumes you have an admin role system in place
--- For now, we'll create a basic admin check that can be enhanced later
+-- Policy 5: Admin full access using auth.email() (avoids querying auth.users which is restricted)
 CREATE POLICY "Admin full access to enrollments" 
 ON public.course_enrollments 
 FOR ALL 
 TO authenticated
 USING (
-  EXISTS (
-    SELECT 1 FROM auth.users 
-    WHERE auth.users.id = auth.uid() 
-    AND auth.users.email IN (
-      'admin@example.com',  -- Replace with actual admin emails
-      'salmansrizon2016@gmail.com'  -- Based on the auth logs, this appears to be an admin
-    )
+  auth.email() IN (
+    'admin@example.com',
+    'salmansrizon2016@gmail.com'
   )
 )
 WITH CHECK (
-  EXISTS (
-    SELECT 1 FROM auth.users 
-    WHERE auth.users.id = auth.uid() 
-    AND auth.users.email IN (
-      'admin@example.com',  -- Replace with actual admin emails  
-      'salmansrizon2016@gmail.com'  -- Based on the auth logs, this appears to be an admin
-    )
+  auth.email() IN (
+    'admin@example.com',
+    'salmansrizon2016@gmail.com'
   )
 );

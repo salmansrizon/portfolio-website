@@ -11,6 +11,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, X } from "lucide-react";
 import { PostgrestError } from '@supabase/supabase-js';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import CourseEnrollmentManager from "./CourseEnrollmentManager";
+import CourseCategoryManager from "./CourseCategoryManager";
 
 // Using the exact variant types that the toast component expects
 type ToastVariant = 'default' | 'destructive';
@@ -79,7 +82,11 @@ interface Course {
   difficulty_level?: string;
   duration_hours?: number;
   banner_image?: string;
+  category_id?: string | null;
   technologies: string[];
+  learning_outcomes?: string[];
+  requirements?: string[];
+  target_audience?: string[];
   sections?: CourseSection[];
   student_count?: number;
   rating?: number;
@@ -100,9 +107,10 @@ interface DBCourseContent {
   content_data: any;
   is_free: boolean;
   order_index: number;
-  duration_minutes: number | null;
-  created_at: string;
-  updated_at: string;
+  duration_minutes?: number;
+  topics?: string[];
+  created_at?: string;
+  updated_at?: string;
   content_category?: string; // Some DB schemas might use this
 }
 
@@ -118,6 +126,7 @@ interface CourseContent {
   is_free: boolean;
   order_index: number;
   duration_minutes?: number;
+  topics?: string[];
   created_at?: string;
   updated_at?: string;
 }
@@ -141,10 +150,17 @@ interface FormData {
   difficulty_level: string // Changed to string to handle form input more flexibly;
   duration_hours: number | null;
   banner_image: string;
+  category_id: string | null;
   technologies: string[];
+  learning_outcomes: string[];
+  requirements: string[];
+  target_audience: string[];
   sections: CourseSection[];
   rating: number;
+  student_count: number;
   start_date?: string;
+  course_includes: string[];
+  instructor_id: string | null;
 }
 
 const initialFormData: FormData = {
@@ -158,36 +174,56 @@ const initialFormData: FormData = {
   difficulty_level: 'beginner',
   duration_hours: null,
   banner_image: "",
+  category_id: null,
   technologies: [],
+  learning_outcomes: [],
+  requirements: [],
+  target_audience: [],
   sections: [],
   rating: 0,
+  student_count: 0,
   start_date: undefined,
+  course_includes: [],
+  instructor_id: null,
 };
 
 export default function CourseManager() {
   const { toast, error: showError, success: showSuccess } = useTypedToast();
   const [courses, setCourses] = useState<Course[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [showDialog, setShowDialog] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [newTechnology, setNewTechnology] = useState("");
   const [isLoadingSections, setIsLoadingSections] = useState(false);
+  const [instructorsList, setInstructorsList] = useState<any[]>([]);
 
   useEffect(() => {
     fetchCourses();
+    fetchInstructorsList();
   }, []);
+
+  const fetchInstructorsList = async () => {
+    try {
+      const { data } = await (supabase.from("instructors" as any).select("id, name").eq("is_active", true).order("name") as any);
+      setInstructorsList(data || []);
+    } catch (e) { console.error(e); }
+  };
 
   const fetchCourses = async () => {
     try {
+      const { data: cats } = await supabase.from("course_categories" as any).select("*").order("name");
+      setCategories(cats || []);
+
       const { data, error } = await supabase
         .from("courses")
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
       setCourses(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching courses:", error);
-      showError("Failed to load courses");
+      showError(error?.message || "Failed to load courses");
     }
   };
 
@@ -211,8 +247,16 @@ export default function CourseManager() {
             difficulty_level: formData.difficulty_level,
             duration_hours: formData.duration_hours,
             banner_image: formData.banner_image,
+            category_id: formData.category_id || null,
             technologies: formData.technologies,
+            learning_outcomes: formData.learning_outcomes,
+            requirements: formData.requirements,
+            target_audience: formData.target_audience,
+            rating: formData.rating,
+            student_count: formData.student_count,
             start_date: formData.start_date ? new Date(formData.start_date).toISOString() : null,
+            course_includes: formData.course_includes,
+            instructor_id: formData.instructor_id || null,
           })
           .eq('id', courseId);
         if (courseError) throw courseError;
@@ -231,8 +275,16 @@ export default function CourseManager() {
             difficulty_level: formData.difficulty_level,
             duration_hours: formData.duration_hours,
             banner_image: formData.banner_image,
+            category_id: formData.category_id || null,
             technologies: formData.technologies,
+            learning_outcomes: formData.learning_outcomes,
+            requirements: formData.requirements,
+            target_audience: formData.target_audience,
+            rating: formData.rating,
+            student_count: formData.student_count,
             start_date: formData.start_date ? new Date(formData.start_date).toISOString() : null,
+            course_includes: formData.course_includes,
+            instructor_id: formData.instructor_id || null,
           })
           .select('id')
           .single();
@@ -249,9 +301,9 @@ export default function CourseManager() {
       fetchCourses();
       setShowDialog(false);
       resetForm();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving course:", error);
-      showError("Failed to save course");
+      showError(error?.message || "Failed to save course");
     }
   };
 
@@ -323,6 +375,7 @@ export default function CourseManager() {
               is_free: Boolean(content.is_free),
               order_index: Number(content.order_index) || 0,
               duration_minutes: content.duration_minutes ? Number(content.duration_minutes) : undefined,
+              topics: content.topics || [],
               created_at: content.created_at,
               updated_at: content.updated_at
             };
@@ -363,6 +416,7 @@ export default function CourseManager() {
               is_free: Boolean(content.is_free),
               order_index: Number(content.order_index) || 0,
               duration_minutes: content.duration_minutes ? Number(content.duration_minutes) : undefined,
+              topics: (content as any).topics || [],
               created_at: content.created_at,
               updated_at: content.updated_at
             };
@@ -424,6 +478,11 @@ export default function CourseManager() {
       const sectionIdMap: Record<string, string> = {};
       for (let index = 0; index < currentSections.length; index++) {
         const s = currentSections[index];
+        if (String(s.id) === 'general') {
+          sectionIdMap['general'] = 'general';
+          continue;
+        }
+
         const payload: any = {
           course_id: courseId,
           title: s.title,
@@ -454,11 +513,21 @@ export default function CourseManager() {
 
       // Sync contents for each section
       for (const s of currentSections) {
+        const isGeneral = String(s.id) === 'general';
         const resolvedSectionId = sectionIdMap[String(s.id)] || String(s.id);
-        const { data: existingContents } = await supabase
+        
+        let existingContentsQuery = supabase
           .from('course_content')
           .select('id')
-          .eq('section_id', resolvedSectionId);
+          .eq('course_id', courseId);
+          
+        if (isGeneral) {
+          existingContentsQuery = existingContentsQuery.is('section_id', null);
+        } else {
+          existingContentsQuery = existingContentsQuery.eq('section_id', resolvedSectionId);
+        }
+        
+        const { data: existingContents } = await existingContentsQuery;
         const existingContentIds = (existingContents || []).map((c: any) => String(c.id));
 
         const contents = (s.contents || []).map((c, idx) => ({ ...c, order_index: idx + 1 }));
@@ -480,6 +549,7 @@ export default function CourseManager() {
             is_free: !!c.is_free,
             order_index: i + 1,
             duration_minutes: c.duration_minutes ?? null,
+            topics: c.topics || [],
           };
           if (!c.id || String(c.id).startsWith('content-')) {
             const { error } = await supabase.from('course_content').insert(payload);
@@ -553,10 +623,17 @@ export default function CourseManager() {
         difficulty_level: courseData.difficulty_level || 'beginner',
         duration_hours: courseData.duration_hours || null,
         banner_image: courseData.banner_image || "",
+        category_id: courseData.category_id || null,
         technologies: courseData.technologies || [],
+        learning_outcomes: courseData.learning_outcomes || [],
+        requirements: courseData.requirements || [],
+        target_audience: courseData.target_audience || [],
         sections: sections,
         rating: courseData.rating || 0,
+        student_count: courseData.student_count || 0,
         start_date: courseData.start_date ? new Date(courseData.start_date).toISOString().slice(0, 16) : undefined,
+        course_includes: courseData.course_includes || [],
+        instructor_id: courseData.instructor_id || null,
       });
       setShowDialog(true);
     } catch (error) {
@@ -585,14 +662,29 @@ export default function CourseManager() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Course Management</h2>
-        <Dialog open={showDialog} onOpenChange={setShowDialog}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add New Course
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-5xl max-h-[95vh] overflow-hidden flex flex-col">
+      </div>
+
+      <Tabs defaultValue="courses" onValueChange={(val) => {
+        if (val === 'courses') {
+          fetchCourses();
+        }
+      }}>
+        <TabsList className="grid w-full grid-cols-3 sm:w-[400px] mb-6">
+          <TabsTrigger value="courses">Courses</TabsTrigger>
+          <TabsTrigger value="enrollments">Enrollments</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="courses" className="space-y-6 mt-0">
+          <div className="flex justify-end">
+            <Dialog open={showDialog} onOpenChange={setShowDialog}>
+              <DialogTrigger asChild>
+                <Button onClick={resetForm}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add New Course
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-5xl max-h-[95vh] overflow-hidden flex flex-col">
             <DialogHeader className="border-b pb-4">
               <DialogTitle>{editingCourse ? `Edit Course: ${editingCourse.title}` : "Create New Course"}</DialogTitle>
               <DialogDescription>
@@ -683,6 +775,29 @@ export default function CourseManager() {
                         placeholder="Course start date"
                       />
                     </div>
+                    <div>
+                      <Label htmlFor="student_count">Student Count</Label>
+                      <Input
+                        id="student_count"
+                        type="number"
+                        value={formData.student_count || 0}
+                        onChange={(e) => setFormData({ ...formData, student_count: parseInt(e.target.value) || 0 })}
+                        placeholder="e.g. 150"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="rating">Rating (0-5)</Label>
+                      <Input
+                        id="rating"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="5"
+                        value={formData.rating || 0}
+                        onChange={(e) => setFormData({ ...formData, rating: parseFloat(e.target.value) || 0 })}
+                        placeholder="e.g. 4.8"
+                      />
+                    </div>
                     <div className="md:col-span-2">
                       <Label htmlFor="banner_image">Banner Image URL</Label>
                       <Input
@@ -712,6 +827,59 @@ export default function CourseManager() {
                         ))}
                       </div>
                     </div>
+                    <div className="md:col-span-2">
+                       <Label>Learning Outcomes (one per line)</Label>
+                       <Textarea 
+                         placeholder="Enter what students will learn..."
+                         value={formData.learning_outcomes?.join('\n') || ''}
+                         onChange={(e) => setFormData({...formData, learning_outcomes: e.target.value.split('\n').filter(l => l.trim() !== '')})}
+                         rows={4}
+                       />
+                    </div>
+                    <div className="md:col-span-2">
+                       <Label>Requirements (one per line)</Label>
+                       <Textarea 
+                         placeholder="What are the prerequisites..."
+                         value={formData.requirements?.join('\n') || ''}
+                         onChange={(e) => setFormData({...formData, requirements: e.target.value.split('\n').filter(l => l.trim() !== '')})}
+                         rows={3}
+                       />
+                    </div>
+                    <div className="md:col-span-2">
+                       <Label>Target Audience (one per line)</Label>
+                       <Textarea 
+                         placeholder="Who should take this course..."
+                         value={formData.target_audience?.join('\n') || ''}
+                         onChange={(e) => setFormData({...formData, target_audience: e.target.value.split('\n').filter(l => l.trim() !== '')})}
+                         rows={2}
+                       />
+                    </div>
+                    <div className="md:col-span-2">
+                       <Label>Course Includes (one per line - shown in sidebar)</Label>
+                       <Textarea 
+                         placeholder="38 hours on-demand video&#10;24 articles and reading materials&#10;Full lifetime access&#10;Certificate of completion"
+                         value={formData.course_includes?.join('\n') || ''}
+                         onChange={(e) => setFormData({...formData, course_includes: e.target.value.split('\n').filter(l => l.trim() !== '')})}
+                         rows={4}
+                       />
+                    </div>
+                    <div>
+                      <Label htmlFor="instructor_id">Assign Instructor</Label>
+                      <Select
+                        value={formData.instructor_id || "none"}
+                        onValueChange={(value) => setFormData({ ...formData, instructor_id: value === "none" ? null : value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Instructor" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">-- No Instructor --</SelectItem>
+                          {instructorsList.map(instr => (
+                            <SelectItem key={instr.id} value={instr.id}>{instr.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="flex items-center space-x-2">
                       <Switch
                         id="is_free"
@@ -719,6 +887,23 @@ export default function CourseManager() {
                         onCheckedChange={(checked) => setFormData({ ...formData, is_free: checked })}
                       />
                       <Label htmlFor="is_free">Free Course</Label>
+                    </div>
+                    <div>
+                      <Label htmlFor="category_id">Category</Label>
+                      <Select
+                        value={formData.category_id || "none"}
+                        onValueChange={(value) => setFormData({ ...formData, category_id: value === "none" ? null : value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">-- Uncategorized --</SelectItem>
+                          {categories.map(c => (
+                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <Label htmlFor="status">Status</Label>
@@ -844,6 +1029,7 @@ export default function CourseManager() {
                                     duration_minutes: 0,
                                     order_index: (section.contents?.length || 0) + 1,
                                     content_data: {},
+                                    topics: [],
                                     course_id: editingCourse?.id || ''
                                   };
                                   newSections[sectionIndex] = {
@@ -1014,6 +1200,21 @@ export default function CourseManager() {
                                           <Label htmlFor={`is-free-${content.id}`} className="text-xs">Free Preview</Label>
                                         </div>
                                         
+                                        <div className="md:col-span-2">
+                                          <Label className="text-xs">Topics (one per line, will be shown as expandable list)</Label>
+                                          <Textarea
+                                            value={content.topics?.join('\n') || ''}
+                                            onChange={(e) => {
+                                              const newSections = [...(formData.sections || [])];
+                                              const contents = [...(section.contents || [])];
+                                              contents[contentIndex] = { ...content, topics: e.target.value.split('\n').filter(t => t.trim() !== '') };
+                                              newSections[sectionIndex] = { ...section, contents };
+                                              setFormData({ ...formData, sections: newSections });
+                                            }}
+                                            placeholder="Topic 1&#10;Topic 2&#10;Topic 3"
+                                            className="min-h-[80px] text-xs"
+                                          />
+                                        </div>
                                         <div className="flex items-center gap-2">
                                           <Badge variant={content.content_type === 'video' ? 'default' : 'secondary'} className="text-xs">
                                             {content.content_type}
@@ -1163,6 +1364,16 @@ export default function CourseManager() {
           )}
         </div>
       </div>
+    </TabsContent>
+
+        <TabsContent value="enrollments" className="space-y-6 mt-0">
+          <CourseEnrollmentManager />
+        </TabsContent>
+
+        <TabsContent value="settings" className="space-y-6 mt-0">
+          <CourseCategoryManager />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

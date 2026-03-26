@@ -59,9 +59,12 @@ const Hero = () => {
               size="lg"
               className="bg-primary hover:bg-primary-hover text-primary-foreground px-8 py-3 text-lg font-semibold shadow-card hover:shadow-hover transition-all hover:scale-105 group"
             >
-              <Link to="/portfolio">
-                <ExternalLink className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
-                View Portfolio
+              <Link to="/book-session" className="flex items-center">
+                <div className="relative flex h-3 w-3 mr-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white/80 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"></span>
+                </div>
+                Book 1-1 Session
               </Link>
             </Button>
             <Button
