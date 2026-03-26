@@ -83,6 +83,42 @@ export type Database = {
         }
         Relationships: []
       }
+      brand_logos: {
+        Row: {
+          created_at: string
+          hover_text: string | null
+          id: string
+          is_visible: boolean
+          logo_url: string
+          name: string
+          order_index: number
+          updated_at: string
+          website_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          hover_text?: string | null
+          id?: string
+          is_visible?: boolean
+          logo_url: string
+          name: string
+          order_index?: number
+          updated_at?: string
+          website_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          hover_text?: string | null
+          id?: string
+          is_visible?: boolean
+          logo_url?: string
+          name?: string
+          order_index?: number
+          updated_at?: string
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       certifications: {
         Row: {
           created_at: string
