@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import profileImage from "@/assets/formal.jpg";
 import ScrollReveal from "./ScrollReveal";
+import BrandLogos from "./BrandLogos";
 
 const About = () => {
   const stats = [
@@ -73,6 +74,14 @@ const About = () => {
           </div>
           </ScrollReveal>
         </div>
+
+        {/* Helped to Grow - Brand Logos */}
+        <ScrollReveal direction="up">
+          <div className="mb-16">
+            <h3 className="text-2xl font-bold text-foreground mb-6 text-center sm:text-left">Helped to Grow</h3>
+            <BrandLogos />
+          </div>
+        </ScrollReveal>
 
         {/* Teaching & Mentoring */}
         <ScrollReveal direction="up">
