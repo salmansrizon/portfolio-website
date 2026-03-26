@@ -60,8 +60,8 @@ const Index = () => {
     <div className="min-h-screen">
       <Navbar />
       <Hero />
-      <BrandLogos />
       <About />
+      <BrandLogos />
       {/* <Certifications /> */}
       <Services />
       <BlogCarousel 
