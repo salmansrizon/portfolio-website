@@ -525,7 +525,7 @@ export default function CourseDetails() {
                           <p className="text-xs sm:text-sm text-muted-foreground font-medium mt-1.5 flex items-center gap-2">
                             <span>{section.contents?.length || 0} modules</span>
                             <span className="w-1 h-1 rounded-full bg-muted-foreground/40"></span>
-                            <span>{section.contents?.reduce((acc, c) => acc + (c.duration_minutes || 0), 0) || 0} min total</span>
+                            <span>{(() => { const mins = section.contents?.reduce((acc, c) => acc + (c.duration_minutes || 0), 0) || 0; const hrs = Math.floor(mins / 60); const rem = mins % 60; return hrs > 0 ? `${hrs}h ${rem > 0 ? `${rem}m` : ''} total` : `${mins} min total`; })()}</span>
                           </p>
                         </div>
                         <div className="p-2 sm:p-4">
