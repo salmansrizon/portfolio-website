@@ -9,7 +9,7 @@ import Navbar from "@/components/Navbar";
 import { 
   Play, Lock, Star, ChevronRight, Share2, 
   CheckCircle2, Video, FileText, MonitorPlay, Award, 
-  Info
+  Info, Loader2
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
