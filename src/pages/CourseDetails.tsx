@@ -9,7 +9,7 @@ import Navbar from "@/components/Navbar";
 import { 
   Play, Lock, Star, ChevronRight, Share2, 
   CheckCircle2, Video, FileText, MonitorPlay, Award, 
-  Info
+  Info, Loader2
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -337,7 +337,10 @@ export default function CourseDetails() {
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="flex items-center justify-center h-screen">
-          <div className="text-xl font-medium animate-pulse text-muted-foreground">Loading Course Details...</div>
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <p className="text-lg font-medium text-muted-foreground">Loading Course Details...</p>
+          </div>
         </div>
       </div>
     );
