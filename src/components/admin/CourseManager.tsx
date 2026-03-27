@@ -142,6 +142,7 @@ function toContentType(type: string): ContentType {
 interface FormData {
   title: string;
   description: string;
+  short_description: string;
   price: number | null;
   discounted_price: number | null;
   discount_percentage: number | null;
@@ -166,6 +167,7 @@ interface FormData {
 const initialFormData: FormData = {
   title: "",
   description: "",
+  short_description: "",
   price: 0,
   discounted_price: null,
   discount_percentage: null,
@@ -239,6 +241,7 @@ export default function CourseManager() {
           .update({
             title: formData.title,
             description: formData.description,
+            short_description: formData.short_description,
             price: formData.price,
             discounted_price: formData.discounted_price,
             discount_percentage: formData.discount_percentage,
@@ -267,6 +270,7 @@ export default function CourseManager() {
           .insert({
             title: formData.title,
             description: formData.description,
+            short_description: formData.short_description,
             price: formData.price,
             discounted_price: formData.discounted_price,
             discount_percentage: formData.discount_percentage,
@@ -642,6 +646,7 @@ export default function CourseManager() {
       setFormData({
         title: courseData.title || '',
         description: courseData.description || '',
+        short_description: courseData.short_description || '',
         price: courseData.price || 0,
         discounted_price: courseData.discounted_price || null,
         discount_percentage: courseData.discount_percentage || null,
@@ -740,8 +745,18 @@ export default function CourseManager() {
                         id="description"
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        placeholder="Enter course description"
+                        placeholder="Enter full course description"
                         rows={3}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="short_description">Short Description (for course header)</Label>
+                      <Textarea
+                        id="short_description"
+                        value={formData.short_description}
+                        onChange={(e) => setFormData({ ...formData, short_description: e.target.value })}
+                        placeholder="Enter short marketing summary"
+                        rows={2}
                       />
                     </div>
                     <div>

@@ -36,6 +36,7 @@ interface Course {
   id: string;
   title: string;
   description: string;
+  short_description?: string;
   banner_image?: string;
   price?: number;
   discounted_price?: number;
@@ -436,7 +437,7 @@ export default function CourseDetails() {
             
             {/* Short Description */}
             <p className="text-lg text-muted-foreground mb-8 leading-relaxed max-w-3xl">
-              Learn the core responsibilities and technical workflows. Master the intricacies of tools and processes for real-world application building. {course.description.substring(0, 100)}...
+              {course.short_description || `${course.description.substring(0, 160)}...`}
             </p>
             
             {/* Instructor & Date Info */}
@@ -840,7 +841,7 @@ export default function CourseDetails() {
                  <div className="flex gap-3 mb-6">
                     <Button 
                       size="lg" 
-                      className="flex-1 bg-[#d91d79] hover:bg-[#b0145e] text-white font-bold text-base h-14 rounded-xl shadow-md transition-all active:scale-[0.98]"
+                      className="flex-1 bg-[#d91d79] hover:bg-[#b0145e] text-white font-bold text-base h-14 rounded-xl shadow-md transition-all active:scale-[0.98] animate-pulse [animation-duration:3s] hover:animate-none"
                       onClick={() => setShowEnrollmentModal(true)}
                     >
                       Start course

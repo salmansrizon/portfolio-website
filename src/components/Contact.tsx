@@ -617,11 +617,19 @@ ${formData.message}
                     <span className="font-medium text-foreground">Dhaka, Bangladesh</span>
                   </div>
                   <Badge 
-                    className={isBusinessHours 
-                      ? "bg-green-100 text-green-800 border-green-200"
-                      : "bg-yellow-100 text-yellow-800 border-yellow-200"
-                    }
+                    className={cn(
+                      "flex items-center gap-1.5 transition-all duration-500",
+                      isBusinessHours 
+                        ? "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800"
+                        : "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800"
+                    )}
                   >
+                    {isBusinessHours && (
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </span>
+                    )}
                     {isBusinessHours ? "Available" : "Away"}
                   </Badge>
                 </div>
