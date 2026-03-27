@@ -68,6 +68,8 @@ const About = () => {
                 alt="Salman Sakib - Data Analyst"
                 className="w-80 h-80 object-cover rounded-2xl shadow-card object-top"
                 style={{ objectPosition: 'center 20%' }}
+                loading="lazy"
+                decoding="async"
               />
               <div className="absolute inset-0 rounded-2xl bg-gradient-hero opacity-10 mt-8"></div>
             </div>

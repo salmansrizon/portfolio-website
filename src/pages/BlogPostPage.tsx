@@ -76,6 +76,8 @@ const BlogPostPage = () => {
                 src={blog.featured_image}
                 alt={blog.title}
                 className="w-full h-full object-cover"
+                loading="lazy"
+                decoding="async"
               />
             </div>
           )}
@@ -108,6 +110,8 @@ const BlogPostPage = () => {
                           src={item.url}
                           alt={item.alt}
                           className="rounded-lg w-full"
+                          loading="lazy"
+                          decoding="async"
                         />
                         {item.caption && (
                           <figcaption className="text-center text-muted-foreground mt-2">

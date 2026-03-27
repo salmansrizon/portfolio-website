@@ -102,8 +102,17 @@ export default function Courses() {
                   <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full -translate-x-8 translate-y-8"></div>
                   
                   {/* Title & Badge */}
-                  <h3 className="font-bold text-2xl z-10 uppercase tracking-wide leading-tight px-4">
+                  <h3 className="font-bold text-2xl z-10 uppercase tracking-wide leading-tight px-4 flex items-center justify-center gap-2">
                     {course.title}
+                    {course.is_free && (
+                      <span className="bg-red-500 text-white text-[10px] h-5 px-2 rounded-full flex items-center gap-1.5 font-black border border-white/20 animate-pulse">
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
+                        </span>
+                        FREE
+                      </span>
+                    )}
                   </h3>
                   {course.start_date && (
                     <div className="mt-4 z-10 bg-[#0042a5] text-white text-[10px] font-bold px-4 py-1.5 rounded-full tracking-wider border border-white/10 shadow-sm">
@@ -116,7 +125,18 @@ export default function Courses() {
                 {/* Body */}
                 <div className="p-6 flex flex-col flex-grow gap-5">
                   <div className="flex justify-between items-start gap-4">
-                    <h4 className="font-bold text-lg text-gray-900 dark:text-foreground leading-snug">{course.title}</h4>
+                    <h4 className="font-bold text-lg text-gray-900 dark:text-foreground leading-snug flex items-center gap-2">
+                       {course.title}
+                       {course.is_free && (
+                         <span className="bg-red-500 text-white text-[9px] h-4 px-1.5 rounded-full flex items-center gap-1 font-black animate-pulse shrink-0">
+                           <span className="relative flex h-1 w-1">
+                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                             <span className="relative inline-flex rounded-full h-1 w-1 bg-white"></span>
+                           </span>
+                           FREE
+                         </span>
+                       )}
+                    </h4>
                     <div className="flex flex-col gap-1 items-end shrink-0">
                       {course.start_date && (
                         <div className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 text-[10px] font-bold px-2 py-0.5 rounded-full">
@@ -157,8 +177,18 @@ export default function Courses() {
                           <span>৳ {course.discounted_price}</span>
                           <span className="text-xs text-gray-400 line-through font-normal">৳ {course.price}</span>
                         </>
+                      ) : course.is_free ? (
+                        <div className="flex items-center gap-2">
+                           <span className="text-red-600 font-black flex items-center gap-1.5 animate-pulse">
+                              <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+                              </span>
+                              FREE
+                           </span>
+                        </div>
                       ) : (
-                        <span>{course.is_free ? "Free" : `৳ ${course.price}`}</span>
+                        <span>৳ {course.price}</span>
                       )}
                     </div>
                   </div>

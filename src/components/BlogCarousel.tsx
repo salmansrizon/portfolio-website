@@ -48,8 +48,8 @@ export function BlogCarousel({ blogs, title = 'Latest Blogs', maxItems = 6 }: Bl
   }
 
   return (
-    <section className="w-full py-20 bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="w-full py-20 bg-background overflow-hidden">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-foreground mb-4">{title}</h2>
           <p className="text-xl text-muted-foreground text-primary font-semibold">
@@ -57,27 +57,30 @@ export function BlogCarousel({ blogs, title = 'Latest Blogs', maxItems = 6 }: Bl
           </p>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-8 flex flex-col items-center">
           <Tabs 
             value={selectedCategory} 
             onValueChange={setSelectedCategory}
-            className="flex flex-col items-center"
+            className="w-full"
           >
-            <TabsList className="mb-8 flex-wrap h-auto">
-              {categories.map((category) => (
-                <TabsTrigger 
-                  key={category.id} 
-                  value={category.id}
-                  className="relative px-4 py-2 text-sm"
-                >
-                  {category.label}
-                  <span className="ml-2 text-xs bg-muted rounded-full px-2 py-0.5">
-                    {category.count}
-                  </span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
+            <div className="flex justify-center w-full">
+              <TabsList className="mb-8 flex-wrap justify-center h-auto bg-transparent border-none gap-2">
+                {categories.map((category) => (
+                  <TabsTrigger 
+                    key={category.id} 
+                    value={category.id}
+                    className="relative px-6 py-2.5 text-sm rounded-full border border-border/50 bg-background/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all shadow-sm"
+                  >
+                    {category.label}
+                    <span className="ml-2 text-[10px] bg-muted/50 rounded-full px-2 py-0.5 font-bold">
+                      {category.count}
+                    </span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
           </Tabs>
+
 
           {filteredBlogs.length > 0 ? (
             <Carousel
@@ -103,6 +106,8 @@ export function BlogCarousel({ blogs, title = 'Latest Blogs', maxItems = 6 }: Bl
                             src={blog.featured_image || defaultFeaturedImage}
                             alt={blog.title}
                             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            loading="lazy"
+                            decoding="async"
                           />
                         </div>
                         <CardContent className="p-4 flex flex-col flex-1 relative">

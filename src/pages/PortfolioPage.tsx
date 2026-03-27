@@ -92,6 +92,8 @@ const PortfolioPage = () => {
                         src={project.image_url}
                         alt={project.title}
                         className="w-full h-full object-cover"
+                        loading="lazy"
+                        decoding="async"
                       />
                     </div>
                   )}

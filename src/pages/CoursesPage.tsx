@@ -194,7 +194,13 @@ export default function CoursesPage() {
                       {/* Image top curve design */}
                       <div className="relative bg-gradient-to-br from-primary to-blue-500 text-white p-6 pb-8 flex flex-col items-center justify-center text-center overflow-hidden h-[180px] shrink-0">
                         {course.banner_image && (
-                          <img src={course.banner_image} className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:scale-110 transition-transform duration-700" alt="" />
+                          <img 
+                            src={course.banner_image} 
+                            className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:scale-110 transition-transform duration-700" 
+                            alt={course.title} 
+                            loading="lazy"
+                            decoding="async"
+                          />
                         )}
                         <h3 className="font-bold text-xl z-10 uppercase tracking-wide leading-tight px-4">
                           {course.title}

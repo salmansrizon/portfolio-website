@@ -9,7 +9,8 @@ import Navbar from "@/components/Navbar";
 import { 
   Play, Lock, Star, ChevronRight, Share2, 
   CheckCircle2, Video, FileText, MonitorPlay, Award, 
-  Info, Loader2
+  Info, Loader2, Pin, CheckSquare, ListChecks, Clock as ClockIcon,
+  ChevronDown, Send, UserCircle, Mail, Timer, CreditCard
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -25,7 +26,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Clock as ClockIcon, ChevronDown, ListChecks, Send, UserCircle, Mail, Timer, CreditCard } from "lucide-react";
+
 import { Textarea } from "@/components/ui/textarea";
 import { addMinutes } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -421,7 +422,13 @@ export default function CourseDetails() {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold overflow-hidden">
                   {instructor?.avatar_url ? (
-                    <img src={instructor.avatar_url} alt={instructor.name} className="w-full h-full object-cover" />
+                    <img 
+                      src={instructor.avatar_url} 
+                      alt={instructor.name} 
+                      className="w-full h-full object-cover" 
+                      loading="lazy"
+                      decoding="async"
+                    />
                   ) : (
                     <UserCircle className="w-6 h-6" />
                   )}
@@ -517,96 +524,111 @@ export default function CourseDetails() {
                   <h3 className="text-xl font-bold">Course Content</h3>
                   <p className="text-sm text-muted-foreground">{sections.length} sections • {sections.reduce((acc, s) => acc + (s.contents?.length || 0), 0)} lectures</p>
                 </div>
-                
-                <div className="w-full space-y-8">
-                   {sections.length > 0 ? sections.map((section, sIndex) => (
-                      <div key={section.id} className="border border-border/60 rounded-2xl overflow-hidden bg-card shadow-sm">
-                        <div className="px-5 py-4 sm:px-6 sm:py-5 border-b border-border/60 bg-muted/10">
-                          <h4 className="font-bold text-gray-900 dark:text-foreground text-base sm:text-lg">
-                            {section.title}
-                          </h4>
-                          <p className="text-xs sm:text-sm text-muted-foreground font-medium mt-1.5 flex items-center gap-2">
-                            <span>{section.contents?.length || 0} modules</span>
-                            <span className="w-1 h-1 rounded-full bg-muted-foreground/40"></span>
-                            <span>{(() => { const mins = section.contents?.reduce((acc, c) => acc + (c.duration_minutes || 0), 0) || 0; const hrs = Math.floor(mins / 60); const rem = mins % 60; return hrs > 0 ? `${hrs}h ${rem > 0 ? `${rem}m` : ''} total` : `${mins} min total`; })()}</span>
-                          </p>
-                        </div>
-                        <div className="p-2 sm:p-4">
-                          <div className="space-y-2">
-                            <Accordion type="single" collapsible className="w-full space-y-2">
-                              {section.contents?.map((item, cIndex) => (
-                                <AccordionItem key={item.id} value={item.id} className="bg-background border border-border/40 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all group/item data-[state=open]:border-primary/20">
-                                  <AccordionTrigger className="w-full hover:no-underline px-3.5 py-3.5 sm:px-4 sm:py-4 transition-all">
-                                    <div className="flex items-center gap-3.5 sm:gap-4 flex-1 text-left pr-2">
-                                      <div className="text-muted-foreground/50 font-bold text-sm w-4 sm:w-6 text-center">{cIndex + 1}</div>
-                                      <div className="flex-1 select-none pr-4">
-                                        <div className="flex items-center gap-2">
-                                          <p className="font-semibold text-foreground text-sm sm:text-base flex items-center gap-2 group-hover/item:text-primary transition-colors">
-                                            {item.content_type === 'video' ? <MonitorPlay className="w-4 h-4 text-primary shrink-0" /> : <FileText className="w-4 h-4 text-orange-500 shrink-0" />}
-                                            <span className="line-clamp-1">{item.title}</span>
-                                          </p>
+                        <div className="w-full relative pl-0 sm:pl-6 overflow-hidden">
+                    {/* Vertical Timeline Line */}
+                    <div className="absolute left-[31px] sm:left-[39px] top-4 bottom-4 w-[2px] bg-primary/10 z-0 hidden sm:block"></div>
+                    
+                    <div className="space-y-6 relative z-10">
+                    {sections.length > 0 ? (
+                      sections.map((section, sIndex) => (
+                        <div key={section.id} className="space-y-4">
+                          <div className="flex items-center gap-3 mb-2">
+                             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 shadow-sm border border-primary/20">
+                                <Pin className="w-4 h-4 rotate-45" />
+                             </div>
+                             <div>
+                               <h4 className="font-bold text-gray-900 dark:text-foreground text-base sm:text-lg leading-tight">
+                                 {section.title}
+                               </h4>
+                               <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-bold mt-0.5">
+                                 Section {sIndex + 1} • {(() => { const mins = section.contents?.reduce((acc, c) => acc + (c.duration_minutes || 0), 0) || 0; const hrs = Math.floor(mins / 60); const rem = mins % 60; return hrs > 0 ? `${hrs}h ${rem > 0 ? `${rem}m` : ''}` : `${mins} min`; })()}
+                               </p>
+                             </div>
+                          </div>
+
+                          <div className="space-y-3">
+                              <Accordion type="single" collapsible className="w-full space-y-3">
+                                {section.contents?.map((item, cIndex) => (
+                                  <AccordionItem key={item.id} value={item.id} className="bg-background border border-border/40 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all group/item data-[state=open]:border-primary/20">
+                                    <AccordionTrigger className="w-full hover:no-underline px-3.5 py-3.5 sm:px-4 sm:py-4 transition-all">
+                                      <div className="flex items-center gap-3.5 sm:gap-4 flex-1 text-left pr-2">
+                                        <div className="hidden sm:flex relative items-center justify-center w-6 shrink-0">
+                                           <div className="w-3 h-3 rounded-full border-2 border-primary bg-background z-10 group-hover/item:scale-110 transition-transform shadow-[0_0_8px_rgba(var(--primary),0.3)]" />
                                         </div>
-                                        <div className="flex items-center flex-wrap gap-2.5 sm:gap-4 mt-1.5">
-                                          {item.is_free && <span className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Preview</span>}
-                                          <span className="text-xs text-muted-foreground flex items-center gap-1.5 font-medium">
-                                            <ClockIcon className="w-3.5 h-3.5" />
-                                            {item.duration_minutes || 5} min
-                                          </span>
-                                          {(item.topics?.length || 0) > 0 && (
-                                            <span className="text-xs text-primary/80 font-medium flex items-center gap-1.5 bg-primary/5 px-2 py-0.5 rounded-full">
-                                              <ListChecks className="w-3.5 h-3.5" />
-                                              {item.topics!.length} topics
+
+                                        <div className="flex-1 select-none pr-4">
+                                          <div className="flex items-center gap-2">
+                                            <p className="font-semibold text-foreground text-sm sm:text-base flex items-center gap-2 group-hover/item:text-primary transition-colors">
+                                              {item.content_type === 'video' ? <MonitorPlay className="w-4 h-4 text-primary shrink-0" /> : <FileText className="w-4 h-4 text-orange-500 shrink-0" />}
+                                              <span className="line-clamp-1">{item.title}</span>
+                                            </p>
+                                          </div>
+                                          <div className="flex items-center flex-wrap gap-2.5 sm:gap-4 mt-1.5">
+                                            {item.is_free && <span className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Preview</span>}
+                                            <span className="text-xs text-muted-foreground flex items-center gap-1.5 font-medium">
+                                              <ClockIcon className="w-3.5 h-3.5" />
+                                              {item.duration_minutes || 5} min
                                             </span>
+                                            {(item.topics?.length || 0) > 0 && (
+                                              <span className="text-xs text-primary/80 font-medium flex items-center gap-1.5 bg-primary/5 px-2 py-0.5 rounded-full">
+                                                <ListChecks className="w-3.5 h-3.5" />
+                                                {item.topics!.length} topics
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center gap-3 pl-4 shrink-0 mr-4">
+                                          {item.is_free ? (
+                                            <div className="relative w-8 h-8 flex items-center justify-center overflow-visible">
+                                              <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping opacity-40"></div>
+                                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 hover:bg-primary/20 transition-colors group/play">
+                                                <Play className="w-3.5 h-3.5 text-primary fill-current group-hover/play:scale-110 transition-transform" />
+                                              </div>
+                                            </div>
+                                          ) : (
+                                            <Lock className="w-4 h-4 text-muted-foreground/40 shrink-0" />
                                           )}
                                         </div>
                                       </div>
-                                      <div className="flex items-center gap-3 pl-4 shrink-0 mr-4">
-                                        {item.is_free ? (
-                                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 hover:bg-primary/20 transition-colors group/play">
-                                            <Play className="w-3.5 h-3.5 text-primary fill-current group-hover/play:scale-110 transition-transform" />
+                                    </AccordionTrigger>
+                                    
+                                    <AccordionContent className="px-4 sm:px-14 pb-4 pt-0 ml-0 sm:ml-4">
+                                      <div className="space-y-3 border-l-2 border-primary/20 pl-6 py-2 mt-2 bg-muted/5 rounded-r-lg relative">
+                                        {item.description && (
+                                          <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{item.description}</p>
+                                        )}
+                                        {item.topics && item.topics.length > 0 && (
+                                          <div className="space-y-1 mt-3">
+                                            {item.topics.map((topic, tIdx) => (
+                                              <div key={tIdx} className="flex items-start gap-4 text-sm text-foreground/80 py-2 hover:text-foreground transition-colors group/topic">
+                                                <CheckSquare className="w-4 h-4 text-green-500 shrink-0 mt-0.5 group-hover/topic:scale-110 transition-transform" />
+                                                <span className="leading-relaxed font-medium">{topic}</span>
+                                              </div>
+                                            ))}
                                           </div>
-                                        ) : (
-                                          <Lock className="w-4 h-4 text-muted-foreground/40 shrink-0" />
+                                        )}
+                                        {!item.description && (!item.topics || item.topics.length === 0) && (
+                                          <div className="flex items-start gap-3 text-sm text-muted-foreground/60 py-2">
+                                            <Info className="w-4 h-4 shrink-0 mt-0.5" />
+                                            <span className="leading-relaxed">No additional details for this module.</span>
+                                          </div>
                                         )}
                                       </div>
-                                    </div>
-                                  </AccordionTrigger>
-                                  
-                                  <AccordionContent className="px-4 sm:px-14 pb-4 pt-0">
-                                    <div className="space-y-3 border-l-2 border-primary/20 pl-4 py-2 mt-2 bg-muted/20 rounded-r-lg">
-                                      {item.description && (
-                                        <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{item.description}</p>
-                                      )}
-                                      {(item.topics && item.topics.length > 0) && (
-                                        <div className="space-y-0.5">
-                                          {item.topics.map((topic, tIdx) => (
-                                            <div key={tIdx} className="flex items-start gap-3 text-sm text-foreground/80 py-1.5 hover:text-foreground transition-colors group/topic">
-                                              <div className="w-1.5 h-1.5 rounded-full bg-primary/40 shrink-0 mt-1.5 group-hover/topic:bg-primary transition-colors" />
-                                              <span className="leading-relaxed">{topic}</span>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      )}
-                                      {!item.description && (!item.topics || item.topics.length === 0) && (
-                                        <div className="flex items-start gap-3 text-sm text-muted-foreground/60 py-2">
-                                          <Info className="w-4 h-4 shrink-0 mt-0.5" />
-                                          <span className="leading-relaxed">No additional details for this module.</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </AccordionContent>
-                                </AccordionItem>
-                              ))}
-                            </Accordion>
+                                    </AccordionContent>
+                                  </AccordionItem>
+                                ))}
+                              </Accordion>
                           </div>
                         </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-12 bg-muted/20 rounded-2xl border-2 border-dashed border-border/50">
+                        <MonitorPlay className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                        <h4 className="text-lg font-bold text-foreground mb-1">No content available</h4>
+                        <p className="text-muted-foreground">This course doesn't have any lessons posted yet.</p>
                       </div>
-                   )) : (
-                     <div className="text-center py-16 border-2 border-dashed border-border/60 rounded-2xl bg-muted/5">
-                        <Info className="w-10 h-10 text-muted-foreground/50 mx-auto mb-4" />
-                        <p className="text-muted-foreground font-medium">No course modules available yet.</p>
-                     </div>
-                   )}
+                    )}
+                    </div>
                 </div>
                </div>
             )}
@@ -618,7 +640,13 @@ export default function CourseDetails() {
                     <div className="flex items-center gap-5">
                       <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-2xl overflow-hidden shrink-0">
                         {instructor.avatar_url ? (
-                          <img src={instructor.avatar_url} alt={instructor.name} className="w-full h-full object-cover" />
+                          <img 
+                            src={instructor.avatar_url} 
+                            alt={instructor.name} 
+                            className="w-full h-full object-cover" 
+                            loading="lazy"
+                            decoding="async"
+                          />
                         ) : (
                           instructor.name.charAt(0).toUpperCase()
                         )}
@@ -750,7 +778,13 @@ export default function CourseDetails() {
                {/* Preview Image/Video Area */}
                <div className="relative h-60 bg-muted flex items-center justify-center overflow-hidden group cursor-pointer border-b border-border/40">
                  {course.banner_image ? (
-                   <img src={course.banner_image} alt={course.title} className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700" />
+                   <img 
+                     src={course.banner_image} 
+                     alt={course.title} 
+                     className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700" 
+                     loading="lazy"
+                     decoding="async"
+                   />
                  ) : (
                     <div className="w-full h-full bg-gradient-to-br from-primary to-blue-500"></div>
                  )}

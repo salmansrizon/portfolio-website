@@ -321,6 +321,8 @@ const BookSession = () => {
                                 src={formData.paymentMethod === 'bkash' ? paymentSettings?.bkash_qr_code! : paymentSettings?.nagad_qr_code!} 
                                 alt={`${formData.paymentMethod} QR Code`} 
                                 className="w-full h-full object-contain"
+                                loading="lazy"
+                                decoding="async"
                               />
                             </div>
                           )}

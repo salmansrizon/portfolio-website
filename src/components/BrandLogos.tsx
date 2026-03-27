@@ -52,6 +52,8 @@ const BrandLogos = () => {
                     src={logo.logo_url}
                     alt={logo.name}
                     className="h-14 md:h-16 w-auto object-contain transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_hsl(var(--primary)/0.4)]"
+                    loading="lazy"
+                    decoding="async"
                   />
                   {logo.hover_text && (
                     <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
@@ -65,6 +67,8 @@ const BrandLogos = () => {
                     src={logo.logo_url}
                     alt={logo.name}
                     className="h-14 md:h-16 w-auto object-contain transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_hsl(var(--primary)/0.4)]"
+                    loading="lazy"
+                    decoding="async"
                   />
                   {logo.hover_text && (
                     <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">

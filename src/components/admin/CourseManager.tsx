@@ -1285,12 +1285,12 @@ export default function CourseManager() {
                       <div className="flex items-center gap-1">
                         <span>💰</span>
                         <span>
-                          {course.is_free ? 'Free' : course.discounted_price ? (
+                          {course.is_free ? 'Free' : (course.discounted_price ? (
                             <>
                               ৳{course.discounted_price}
                               <span className="line-through ml-1">৳{course.price}</span>
                             </>
-                          ) : `৳${course.price}`}
+                          ) : `৳${course.price}`)}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
