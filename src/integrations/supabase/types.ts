@@ -152,6 +152,38 @@ export type Database = {
         }
         Relationships: []
       }
+      course_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          parent_id: string | null
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          parent_id?: string | null
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          parent_id?: string | null
+          slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "course_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_content: {
         Row: {
           content_category:
@@ -168,6 +200,7 @@ export type Database = {
           order_index: number
           section_id: string | null
           title: string
+          topics: string[] | null
           updated_at: string
         }
         Insert: {
@@ -185,6 +218,7 @@ export type Database = {
           order_index?: number
           section_id?: string | null
           title: string
+          topics?: string[] | null
           updated_at?: string
         }
         Update: {
@@ -202,6 +236,7 @@ export type Database = {
           order_index?: number
           section_id?: string | null
           title?: string
+          topics?: string[] | null
           updated_at?: string
         }
         Relationships: [
@@ -228,9 +263,11 @@ export type Database = {
           enrolled_at: string
           id: string
           institute_name: string | null
+          payment_method: string | null
           profession: string | null
           progress: Json | null
           status: string
+          transaction_id: string | null
           updated_at: string
           user_email: string
           user_name: string
@@ -242,9 +279,11 @@ export type Database = {
           enrolled_at?: string
           id?: string
           institute_name?: string | null
+          payment_method?: string | null
           profession?: string | null
           progress?: Json | null
           status?: string
+          transaction_id?: string | null
           updated_at?: string
           user_email: string
           user_name: string
@@ -256,9 +295,11 @@ export type Database = {
           enrolled_at?: string
           id?: string
           institute_name?: string | null
+          payment_method?: string | null
           profession?: string | null
           progress?: Json | null
           status?: string
+          transaction_id?: string | null
           updated_at?: string
           user_email?: string
           user_name?: string
@@ -267,6 +308,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "course_enrollments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_reviews: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          id: string
+          is_approved: boolean | null
+          rating: number
+          review_text: string | null
+          student_email: string
+          student_name: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string | null
+          id?: string
+          is_approved?: boolean | null
+          rating: number
+          review_text?: string | null
+          student_email: string
+          student_name: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          id?: string
+          is_approved?: boolean | null
+          rating?: number
+          review_text?: string | null
+          student_email?: string
+          student_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_reviews_course_id_fkey"
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
@@ -313,6 +395,8 @@ export type Database = {
       courses: {
         Row: {
           banner_image: string | null
+          category_id: string | null
+          course_includes: string[] | null
           created_at: string
           description: string
           difficulty_level: string | null
@@ -320,18 +404,24 @@ export type Database = {
           discounted_price: number | null
           duration_hours: number | null
           id: string
+          instructor_id: string | null
           is_free: boolean
+          learning_outcomes: string[] | null
           price: number | null
           rating: number | null
+          requirements: string[] | null
           start_date: string | null
           status: string
           student_count: number | null
+          target_audience: string[] | null
           technologies: string[]
           title: string
           updated_at: string
         }
         Insert: {
           banner_image?: string | null
+          category_id?: string | null
+          course_includes?: string[] | null
           created_at?: string
           description: string
           difficulty_level?: string | null
@@ -339,18 +429,24 @@ export type Database = {
           discounted_price?: number | null
           duration_hours?: number | null
           id?: string
+          instructor_id?: string | null
           is_free?: boolean
+          learning_outcomes?: string[] | null
           price?: number | null
           rating?: number | null
+          requirements?: string[] | null
           start_date?: string | null
           status?: string
           student_count?: number | null
+          target_audience?: string[] | null
           technologies?: string[]
           title: string
           updated_at?: string
         }
         Update: {
           banner_image?: string | null
+          category_id?: string | null
+          course_includes?: string[] | null
           created_at?: string
           description?: string
           difficulty_level?: string | null
@@ -358,15 +454,79 @@ export type Database = {
           discounted_price?: number | null
           duration_hours?: number | null
           id?: string
+          instructor_id?: string | null
           is_free?: boolean
+          learning_outcomes?: string[] | null
           price?: number | null
           rating?: number | null
+          requirements?: string[] | null
           start_date?: string | null
           status?: string
           student_count?: number | null
+          target_audience?: string[] | null
           technologies?: string[]
           title?: string
           updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "course_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instructors: {
+        Row: {
+          assigned_courses: string[] | null
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          email: string
+          id: string
+          is_active: boolean
+          name: string
+          phone: string | null
+          specialization: string | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          assigned_courses?: string[] | null
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+          is_active?: boolean
+          name: string
+          phone?: string | null
+          specialization?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          assigned_courses?: string[] | null
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          phone?: string | null
+          specialization?: string | null
+          updated_at?: string | null
+          website?: string | null
         }
         Relationships: []
       }
@@ -395,24 +555,30 @@ export type Database = {
         Row: {
           additional_instructions: string | null
           bkash_number: string | null
+          bkash_qr_code: string | null
           id: string
           nagad_number: string | null
+          nagad_qr_code: string | null
           payment_window_minutes: number
           updated_at: string
         }
         Insert: {
           additional_instructions?: string | null
           bkash_number?: string | null
+          bkash_qr_code?: string | null
           id?: string
           nagad_number?: string | null
+          nagad_qr_code?: string | null
           payment_window_minutes?: number
           updated_at?: string
         }
         Update: {
           additional_instructions?: string | null
           bkash_number?: string | null
+          bkash_qr_code?: string | null
           id?: string
           nagad_number?: string | null
+          nagad_qr_code?: string | null
           payment_window_minutes?: number
           updated_at?: string
         }
@@ -600,6 +766,48 @@ export type Database = {
           is_paid?: boolean
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      students: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          email: string
+          enrolled_courses: string[] | null
+          id: string
+          institution: string | null
+          is_active: boolean
+          name: string
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          email: string
+          enrolled_courses?: string[] | null
+          id?: string
+          institution?: string | null
+          is_active?: boolean
+          name: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          email?: string
+          enrolled_courses?: string[] | null
+          id?: string
+          institution?: string | null
+          is_active?: boolean
+          name?: string
+          phone?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
