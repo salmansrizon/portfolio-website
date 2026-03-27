@@ -94,7 +94,7 @@ interface Course {
   updated_at?: string;
 }
 
-type ContentType = 'video' | 'text' | 'quiz' | 'lesson' | 'assignment' | 'lecture';
+type ContentType = 'video' | 'text' | 'quiz' | 'lesson' | 'assignment' | 'lecture' | 'project';
 
 // Type for database course content
 interface DBCourseContent {
@@ -133,7 +133,7 @@ interface CourseContent {
 
 // Helper function to safely convert string to ContentType
 function toContentType(type: string): ContentType {
-  return (['video', 'text', 'quiz', 'lesson', 'assignment', 'lecture'] as const)
+  return (['video', 'text', 'quiz', 'lesson', 'assignment', 'lecture', 'project'] as const)
     .includes(type as any)
     ? type as ContentType
     : 'lesson';
@@ -584,6 +584,33 @@ export default function CourseManager() {
     }
   };
 
+  const handlePriceChange = (val: string) => {
+    const price = parseFloat(val) || 0;
+    let newDiscountedPrice = formData.discounted_price;
+    if (formData.discount_percentage !== null && price > 0) {
+      newDiscountedPrice = Number((price - (price * formData.discount_percentage / 100)).toFixed(2));
+    }
+    setFormData({ ...formData, price, discounted_price: newDiscountedPrice });
+  };
+
+  const handleDiscountedPriceChange = (val: string) => {
+    const discounted = parseFloat(val) || null;
+    let newPct = formData.discount_percentage;
+    if (discounted !== null && formData.price && formData.price > 0) {
+      newPct = Math.round(((formData.price - discounted) / formData.price) * 100);
+    }
+    setFormData({ ...formData, discounted_price: discounted, discount_percentage: newPct });
+  };
+
+  const handleDiscountPercentageChange = (val: string) => {
+    const pct = parseFloat(val) || null;
+    let newDiscountedPrice = formData.discounted_price;
+    if (pct !== null && formData.price && formData.price > 0) {
+      newDiscountedPrice = Number((formData.price - (formData.price * pct / 100)).toFixed(2));
+    }
+    setFormData({ ...formData, discount_percentage: pct, discounted_price: newDiscountedPrice });
+  };
+
   const removeTechnology = (tech: string) => {
     setFormData({
       ...formData,
@@ -649,7 +676,7 @@ export default function CourseManager() {
       const section = updatedSections[sectionIndex];
       if (section && section.contents && section.contents[contentIndex]) {
         // Ensure the value is a valid ContentType
-        const validContentType = (['lesson', 'video', 'text', 'quiz', 'assignment', 'lecture'] as const).includes(value as any)
+        const validContentType = (['lesson', 'video', 'text', 'quiz', 'assignment', 'lecture', 'project'] as const).includes(value as any)
           ? (value as ContentType)
           : 'lesson';
         section.contents[contentIndex].content_type = validContentType;
@@ -724,7 +751,7 @@ export default function CourseManager() {
                         type="number"
                         step="0.01"
                         value={formData.price || ''}
-                        onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                        onChange={(e) => handlePriceChange(e.target.value)}
                         placeholder="Course price"
                       />
                     </div>
@@ -735,8 +762,20 @@ export default function CourseManager() {
                         type="number"
                         step="0.01"
                         value={formData.discounted_price || ''}
-                        onChange={(e) => setFormData({ ...formData, discounted_price: parseFloat(e.target.value) || null })}
+                        onChange={(e) => handleDiscountedPriceChange(e.target.value)}
                         placeholder="Discounted price"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="discount_percentage">Discount Percentage (%)</Label>
+                      <Input
+                        id="discount_percentage"
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={formData.discount_percentage || ''}
+                        onChange={(e) => handleDiscountPercentageChange(e.target.value)}
+                        placeholder="e.g. 25"
                       />
                     </div>
                     <div>
@@ -1159,6 +1198,7 @@ export default function CourseManager() {
                                               <SelectItem value="text">📝 Text</SelectItem>
                                               <SelectItem value="quiz">❓ Quiz</SelectItem>
                                               <SelectItem value="assignment">📋 Assignment</SelectItem>
+                                              <SelectItem value="project">🚀 Project</SelectItem>
                                             </SelectContent>
                                           </Select>
                                         </div>

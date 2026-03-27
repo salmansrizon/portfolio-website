@@ -10,7 +10,8 @@ import {
   Play, Lock, Star, ChevronRight, Share2, 
   CheckCircle2, Video, FileText, MonitorPlay, Award, 
   Info, Loader2, Pin, CheckSquare, ListChecks, Clock as ClockIcon,
-  ChevronDown, Send, UserCircle, Mail, Timer, CreditCard
+  ChevronDown, Send, UserCircle, Mail, Timer, CreditCard,
+  GraduationCap, Rocket, BookOpen, Layout
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -246,6 +247,27 @@ export default function CourseDetails() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const getIconForType = (type: string) => {
+    switch (type) {
+      case 'video':
+        return <MonitorPlay className="w-4 h-4 text-primary shrink-0" />;
+      case 'lecture':
+        return <GraduationCap className="w-4 h-4 text-indigo-500 shrink-0" />;
+      case 'quiz':
+        return <CheckSquare className="w-4 h-4 text-amber-500 shrink-0" />;
+      case 'assignment':
+        return <Award className="w-4 h-4 text-purple-500 shrink-0" />;
+      case 'project':
+        return <Rocket className="w-4 h-4 text-pink-500 shrink-0" />;
+      case 'lesson':
+        return <BookOpen className="w-4 h-4 text-emerald-500 shrink-0" />;
+      case 'text':
+        return <FileText className="w-4 h-4 text-orange-500 shrink-0" />;
+      default:
+        return <Layout className="w-4 h-4 text-muted-foreground shrink-0" />;
     }
   };
 
@@ -559,7 +581,7 @@ export default function CourseDetails() {
                                         <div className="flex-1 select-none pr-4">
                                           <div className="flex items-center gap-2">
                                             <p className="font-semibold text-foreground text-sm sm:text-base flex items-center gap-2 group-hover/item:text-primary transition-colors">
-                                              {item.content_type === 'video' ? <MonitorPlay className="w-4 h-4 text-primary shrink-0" /> : <FileText className="w-4 h-4 text-orange-500 shrink-0" />}
+                                              {getIconForType(item.content_type)}
                                               <span className="line-clamp-1">{item.title}</span>
                                             </p>
                                           </div>
@@ -832,11 +854,6 @@ export default function CourseDetails() {
                     >
                        <Share2 className="w-5 h-5 text-foreground" />
                     </Button>
-                 </div>
-
-                 <div className="text-center text-xs text-muted-foreground font-medium mb-8 pb-8 border-b border-border flex items-center justify-center gap-1.5 opacity-80">
-                    <Info className="w-4 h-4" />
-                    14 day money back guarantee
                  </div>
 
                  {/* Course Includes - Dynamic from admin */}
