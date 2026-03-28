@@ -83,9 +83,9 @@ const CareerPrepManager = () => {
   };
 
   const fetchUsers = async () => {
-    const [{ data: students }, { data: subs }] = await Promise.all([
+    const [{ data: students }, { data: guests }] = await Promise.all([
       (supabase as any).from('students').select('id,full_name,email,created_at'),
-      (supabase as any).from('careerprep_submissions').select('guest_email,guest_whatsapp,created_at').not('guest_email','is',null),
+      (supabase as any).from('careerprep_guests').select('*').order('created_at', { ascending: false }),
     ]);
 
     const registered = (students || []).map((s: any) => ({
@@ -93,17 +93,13 @@ const CareerPrepManager = () => {
       phone: 'N/A', type: 'Student', joined: s.created_at,
     }));
 
-    const guestMap = new Map<string, any>();
-    (subs || []).forEach((s: any) => {
-      if (!guestMap.has(s.guest_email)) {
-        guestMap.set(s.guest_email, {
-          id: s.guest_email, name: 'Guest', email: s.guest_email,
-          phone: s.guest_whatsapp || 'N/A', type: 'Guest', joined: s.created_at,
-        });
-      }
-    });
+    const guestUsers = (guests || []).map((g: any) => ({
+      id: g.id, name: 'Guest', email: g.email,
+      phone: g.whatsapp || 'N/A', type: 'Guest', joined: g.created_at,
+      lastActive: g.last_active_at,
+    }));
 
-    setAppUsers([...registered, ...Array.from(guestMap.values())]);
+    setAppUsers([...registered, ...guestUsers]);
   };
 
   // ── CSV export ────────────────────────────────────────────────────────────
