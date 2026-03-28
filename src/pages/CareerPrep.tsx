@@ -112,12 +112,26 @@ const CareerPrep = () => {
     setShowGuestModal(true);
   };
 
-  const handleGuestSubmit = (e: React.FormEvent) => {
+  const handleGuestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!guestEmail || !guestWhatsapp) return;
     
     localStorage.setItem('careerprep_guest', 'true');
     localStorage.setItem('careerprep_guest_email', guestEmail);
+    localStorage.setItem('careerprep_guest_whatsapp', guestWhatsapp);
+
+    // Upsert guest into careerprep_guests table
+    try {
+      const { error } = await supabase
+        .from('careerprep_guests')
+        .upsert(
+          { email: guestEmail, whatsapp: guestWhatsapp, last_active_at: new Date().toISOString() },
+          { onConflict: 'email' }
+        );
+      if (error) console.error('Error saving guest:', error);
+    } catch (err) {
+      console.error('Guest upsert error:', err);
+    }
     
     setShowGuestModal(false);
     if (targetSlug) {
