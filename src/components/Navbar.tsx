@@ -15,7 +15,6 @@ const Navbar = () => {
     { name: "All Courses", href: "/courses" },
     { name: "Portfolio", href: "/portfolio" },
     { name: "Blog", href: "/blog" },
-    { name: "Contact", href: "/#contact" },
   ]
 
   // Helper function to handle hash links
@@ -57,8 +56,16 @@ const Navbar = () => {
                     <Link
                       key={item.name}
                       to={item.href}
-                      className="px-4 py-2 text-sm font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-md animate-pulse hover:animate-none"
+                      className={`flex items-center gap-2 px-3 py-2 text-sm font-medium transition-colors ${
+                        isActive(item.href)
+                          ? "text-primary border-b-2 border-primary"
+                          : "text-foreground hover:text-primary"
+                      }`}
                     >
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                      </span>
                       {item.name}
                     </Link>
                   )
@@ -131,9 +138,13 @@ const Navbar = () => {
                   <Link
                     key={item.name}
                     to={item.href}
-                    className="block mx-3 my-2 px-4 py-2.5 text-center text-base font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
+                    className="flex items-center gap-2 px-3 py-2 text-base font-medium text-foreground hover:text-primary transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                    </span>
                     {item.name}
                   </Link>
                 )
