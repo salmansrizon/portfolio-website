@@ -1,0 +1,1 @@
+ALTER TABLE public.careerprep_guests ADD CONSTRAINT careerprep_guests_email_unique UNIQUE (email);
