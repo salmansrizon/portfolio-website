@@ -11,11 +11,11 @@ const Navbar = () => {
   const navItems = [
     { name: "Home", href: "/" },
     { name: "Career Prep", href: "/career-prep", highlight: true },
+    { name: "Contact", href: "/#contact", pulse: true },
     { name: "Services", href: "/#services" },
     { name: "All Courses", href: "/courses" },
     { name: "Portfolio", href: "/portfolio" },
     { name: "Blog", href: "/blog" },
-    { name: "Contact", href: "/#contact" },
   ]
 
   // Helper function to handle hash links
