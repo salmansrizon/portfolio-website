@@ -11,11 +11,11 @@ const Navbar = () => {
   const navItems = [
     { name: "Home", href: "/" },
     { name: "Career Prep", href: "/career-prep", highlight: true },
-    { name: "Contact", href: "/#contact", pulse: true },
     { name: "Services", href: "/#services" },
     { name: "All Courses", href: "/courses" },
     { name: "Portfolio", href: "/portfolio" },
     { name: "Blog", href: "/blog" },
+    { name: "Contact", href: "/#contact" },
   ]
 
   // Helper function to handle hash links
@@ -51,7 +51,7 @@ const Navbar = () => {
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
               {navItems.map((item: any) => {
-                // Highlight button (filled)
+                // Highlight button
                 if (item.highlight) {
                   return (
                     <Link
@@ -64,27 +64,7 @@ const Navbar = () => {
                   )
                 }
 
-                // Pulse bordered button
-                if (item.pulse) {
-                  return (
-                    <button
-                      key={item.name}
-                      onClick={() => {
-                        if (location.pathname !== "/") {
-                          window.location.href = item.href
-                        } else {
-                          handleHashLink(item.href)
-                        }
-                      }}
-                      className="relative px-4 py-1.5 text-sm font-semibold rounded-full border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300"
-                    >
-                      <span className="absolute inset-0 rounded-full border-2 border-primary animate-ping opacity-30 pointer-events-none" />
-                      {item.name}
-                    </button>
-                  )
-                }
-
-                // Handle hash links
+                // Handle hash links differently
                 if (item.href.startsWith("/#")) {
                   return (
                     <button
@@ -156,27 +136,6 @@ const Navbar = () => {
                   >
                     {item.name}
                   </Link>
-                )
-              }
-
-              // Pulse bordered button for mobile
-              if (item.pulse) {
-                return (
-                  <button
-                    key={item.name}
-                    onClick={() => {
-                      setIsOpen(false)
-                      if (location.pathname !== "/") {
-                        window.location.href = item.href
-                      } else {
-                        handleHashLink(item.href)
-                      }
-                    }}
-                    className="relative block mx-3 my-2 px-4 py-2.5 text-center text-base font-semibold rounded-full border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all w-[calc(100%-1.5rem)]"
-                  >
-                    <span className="absolute inset-0 rounded-full border-2 border-primary animate-ping opacity-30 pointer-events-none" />
-                    {item.name}
-                  </button>
                 )
               }
 
