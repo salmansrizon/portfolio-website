@@ -51,7 +51,7 @@ const Navbar = () => {
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
               {navItems.map((item: any) => {
-                // Highlight button
+                // Highlight button (filled)
                 if (item.highlight) {
                   return (
                     <Link
@@ -64,7 +64,27 @@ const Navbar = () => {
                   )
                 }
 
-                // Handle hash links differently
+                // Pulse bordered button
+                if (item.pulse) {
+                  return (
+                    <button
+                      key={item.name}
+                      onClick={() => {
+                        if (location.pathname !== "/") {
+                          window.location.href = item.href
+                        } else {
+                          handleHashLink(item.href)
+                        }
+                      }}
+                      className="relative px-4 py-1.5 text-sm font-semibold rounded-full border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300"
+                    >
+                      <span className="absolute inset-0 rounded-full border-2 border-primary animate-ping opacity-30 pointer-events-none" />
+                      {item.name}
+                    </button>
+                  )
+                }
+
+                // Handle hash links
                 if (item.href.startsWith("/#")) {
                   return (
                     <button
