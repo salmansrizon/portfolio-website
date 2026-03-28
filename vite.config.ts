@@ -9,6 +9,9 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  optimizeDeps: {
+    exclude: ['@electric-sql/pglite'],
+  },
   plugins: [
     react(),
     mode === 'development' &&

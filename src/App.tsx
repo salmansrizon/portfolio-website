@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "next-themes";
+import { SQLProvider } from "@/contexts/SQLContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
@@ -15,6 +16,8 @@ import CoursesPage from "./pages/CoursesPage";
 import CourseDetails from "./pages/CourseDetails";
 import BookSession from "./pages/BookSession";
 import NotFound from "./pages/NotFound";
+import CareerPrep from "./pages/CareerPrep";
+import SQLChallenge from "./pages/SQLChallenge";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +39,8 @@ const App = () => (
               <Route path="/courses" element={<CoursesPage />} />
               <Route path="/course/:courseId" element={<CourseDetails />} />
               <Route path="/book-session" element={<BookSession />} />
+              <Route path="/career-prep" element={<CareerPrep />} />
+              <Route path="/career-prep/solve/:slug" element={<SQLProvider><SQLChallenge /></SQLProvider>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

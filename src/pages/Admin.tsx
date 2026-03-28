@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import * as React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, Settings, FileText, Award, Briefcase, MessageSquare, User, FolderKanban, GraduationCap, CalendarCheck, LayoutDashboard, Menu, Image, UserCheck, Users, Star } from 'lucide-react';
+import { LogOut, Settings, FileText, Award, Briefcase, MessageSquare, User, FolderKanban, GraduationCap, CalendarCheck, LayoutDashboard, Menu, Image, UserCheck, Users, Star, Database } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -23,6 +23,7 @@ import BrandLogosManager from '@/components/admin/BrandLogosManager';
 import InstructorManager from '@/components/admin/InstructorManager';
 import StudentManager from '@/components/admin/StudentManager';
 import CourseReviewManager from '@/components/admin/CourseReviewManager';
+import CareerPrepManager from '@/components/admin/CareerPrepManager';
 
 const navigation = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -38,6 +39,7 @@ const navigation = [
   { id: 'sessions', label: 'Sessions', icon: CalendarCheck },
   { id: 'reviews', label: 'Reviews', icon: Star },
   { id: 'brand-logos', label: 'Brand Logos', icon: Image },
+  { id: 'career-prep', label: 'Career Prep', icon: Database },
   { id: 'profile', label: 'Profile', icon: User },
 ];
 
@@ -45,8 +47,8 @@ const Admin = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('overview');
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = React.useState('overview');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -90,6 +92,8 @@ const Admin = () => {
         return <CourseReviewManager />;
       case 'brand-logos':
         return <BrandLogosManager />;
+      case 'career-prep':
+        return <CareerPrepManager />;
       case 'profile':
         return (
           <Card>
