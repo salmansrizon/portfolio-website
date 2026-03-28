@@ -159,6 +159,27 @@ const Navbar = () => {
                 )
               }
 
+              // Pulse bordered button for mobile
+              if (item.pulse) {
+                return (
+                  <button
+                    key={item.name}
+                    onClick={() => {
+                      setIsOpen(false)
+                      if (location.pathname !== "/") {
+                        window.location.href = item.href
+                      } else {
+                        handleHashLink(item.href)
+                      }
+                    }}
+                    className="relative block mx-3 my-2 px-4 py-2.5 text-center text-base font-semibold rounded-full border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all w-[calc(100%-1.5rem)]"
+                  >
+                    <span className="absolute inset-0 rounded-full border-2 border-primary animate-ping opacity-30 pointer-events-none" />
+                    {item.name}
+                  </button>
+                )
+              }
+
               // Handle hash links for mobile
               if (item.href.startsWith("/#")) {
                 return (
