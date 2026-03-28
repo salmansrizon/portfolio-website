@@ -15,7 +15,6 @@ const Navbar = () => {
     { name: "All Courses", href: "/courses" },
     { name: "Portfolio", href: "/portfolio" },
     { name: "Blog", href: "/blog" },
-    { name: "Contact", href: "/#contact" },
   ]
 
   // Helper function to handle hash links
