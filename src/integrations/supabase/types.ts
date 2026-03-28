@@ -119,6 +119,161 @@ export type Database = {
         }
         Relationships: []
       }
+      careerprep_guests: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          last_active_at: string | null
+          whatsapp: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          last_active_at?: string | null
+          whatsapp: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          last_active_at?: string | null
+          whatsapp?: string
+        }
+        Relationships: []
+      }
+      careerprep_questions: {
+        Row: {
+          category: string | null
+          content_md: string
+          correct_option: string | null
+          created_at: string | null
+          difficulty: string | null
+          hints: Json | null
+          id: string
+          industry: string
+          initial_sql: string
+          options: Json | null
+          order_index: number | null
+          parent_id: string | null
+          question_type: Database["public"]["Enums"]["careerprep_question_type"]
+          schema_sql: string
+          slug: string
+          solution_sql: string
+          success_rate: number | null
+          tags: string[] | null
+          time_limit_secs: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          content_md: string
+          correct_option?: string | null
+          created_at?: string | null
+          difficulty?: string | null
+          hints?: Json | null
+          id?: string
+          industry: string
+          initial_sql: string
+          options?: Json | null
+          order_index?: number | null
+          parent_id?: string | null
+          question_type?: Database["public"]["Enums"]["careerprep_question_type"]
+          schema_sql: string
+          slug: string
+          solution_sql: string
+          success_rate?: number | null
+          tags?: string[] | null
+          time_limit_secs?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          content_md?: string
+          correct_option?: string | null
+          created_at?: string | null
+          difficulty?: string | null
+          hints?: Json | null
+          id?: string
+          industry?: string
+          initial_sql?: string
+          options?: Json | null
+          order_index?: number | null
+          parent_id?: string | null
+          question_type?: Database["public"]["Enums"]["careerprep_question_type"]
+          schema_sql?: string
+          slug?: string
+          solution_sql?: string
+          success_rate?: number | null
+          tags?: string[] | null
+          time_limit_secs?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "careerprep_questions_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "careerprep_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      careerprep_submissions: {
+        Row: {
+          created_at: string | null
+          execution_time: number | null
+          guest_email: string | null
+          guest_whatsapp: string | null
+          id: string
+          is_correct: boolean
+          question_id: string | null
+          student_id: string | null
+          submitted_code: string
+        }
+        Insert: {
+          created_at?: string | null
+          execution_time?: number | null
+          guest_email?: string | null
+          guest_whatsapp?: string | null
+          id?: string
+          is_correct?: boolean
+          question_id?: string | null
+          student_id?: string | null
+          submitted_code: string
+        }
+        Update: {
+          created_at?: string | null
+          execution_time?: number | null
+          guest_email?: string | null
+          guest_whatsapp?: string | null
+          id?: string
+          is_correct?: boolean
+          question_id?: string | null
+          student_id?: string | null
+          submitted_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "careerprep_submissions_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "careerprep_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "careerprep_submissions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       certifications: {
         Row: {
           created_at: string
@@ -410,6 +565,7 @@ export type Database = {
           price: number | null
           rating: number | null
           requirements: string[] | null
+          short_description: string | null
           start_date: string | null
           status: string
           student_count: number | null
@@ -435,6 +591,7 @@ export type Database = {
           price?: number | null
           rating?: number | null
           requirements?: string[] | null
+          short_description?: string | null
           start_date?: string | null
           status?: string
           student_count?: number | null
@@ -460,6 +617,7 @@ export type Database = {
           price?: number | null
           rating?: number | null
           requirements?: string[] | null
+          short_description?: string | null
           start_date?: string | null
           status?: string
           student_count?: number | null
@@ -781,7 +939,9 @@ export type Database = {
           is_active: boolean
           name: string
           phone: string | null
+          streak: number | null
           updated_at: string | null
+          xp: number | null
         }
         Insert: {
           avatar_url?: string | null
@@ -794,7 +954,9 @@ export type Database = {
           is_active?: boolean
           name: string
           phone?: string | null
+          streak?: number | null
           updated_at?: string | null
+          xp?: number | null
         }
         Update: {
           avatar_url?: string | null
@@ -807,7 +969,9 @@ export type Database = {
           is_active?: boolean
           name?: string
           phone?: string | null
+          streak?: number | null
           updated_at?: string | null
+          xp?: number | null
         }
         Relationships: []
       }
@@ -873,6 +1037,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      careerprep_question_type: "root" | "code" | "mcq" | "case_study"
       content_type_enum:
         | "lesson"
         | "quiz"
@@ -1007,6 +1172,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      careerprep_question_type: ["root", "code", "mcq", "case_study"],
       content_type_enum: [
         "lesson",
         "quiz",
