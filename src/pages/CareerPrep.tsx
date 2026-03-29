@@ -255,6 +255,7 @@ const CareerPrep = () => {
                   </button>
                 );
               })}
+            </div>
 
             {/* Stats & Search row */}
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
