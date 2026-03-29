@@ -75,19 +75,8 @@ const CareerPrep = () => {
   // Derived filtered questions
   const filteredQuestions = useMemo(() => {
     return shuffledQuestions.filter((q) => {
-      // 1. Only show top-level questions (no parent)
-      if (q.parent_id) return false;
-
-      // 2. Logic for filtering based on industry-to-category mapping
-      const isSqlRelated = q.industry === 'SQL' || q.industry === 'Fintech (MFS)' || q.industry === 'Logistics' || q.industry === 'E-commerce';
-      
-      const matchesCategory = activeTab === 'All' || 
-        (activeTab === 'SQL' && isSqlRelated) ||
-        (activeTab === 'Management' && q.industry === 'Management') ||
-        (activeTab === 'System Design' && q.industry === 'System Design') ||
-        q.industry === activeTab;
-
-      // 3. Filter by question type
+      // When filtering by specific type, show matching questions (including children)
+      // When "All" type is selected, only show top-level questions
       const typeMap: Record<QuestionTypeFilter, string | null> = {
         'All': null,
         'MCQ': 'mcq',
@@ -95,15 +84,22 @@ const CareerPrep = () => {
         'Case Study': 'case_study',
       };
       const targetType = typeMap[activeType];
-      const matchesType = !targetType || q.question_type === targetType;
       
+      if (targetType) {
+        // Show questions matching the selected type (children included)
+        if (q.question_type !== targetType) return false;
+      } else {
+        // "All" — only show top-level (root or standalone, no parent)
+        if (q.parent_id) return false;
+      }
+
       const searchLower = searchQuery.toLowerCase();
       const matchesSearch = 
         q.title.toLowerCase().includes(searchLower) || 
         q.content_md.toLowerCase().includes(searchLower);
-      return matchesCategory && matchesType && matchesSearch;
+      return matchesSearch;
     });
-  }, [shuffledQuestions, activeTab, activeType, searchQuery]);
+  }, [shuffledQuestions, activeType, searchQuery]);
 
   // Statistics
   const stats = useMemo(() => {
