@@ -9,7 +9,6 @@ const Navbar = () => {
   const location = useLocation()
 
   const navItems = [
-    { name: "Home", href: "/" },
     { name: "Career Prep", href: "/career-prep", highlight: true },
     { name: "Services", href: "/#services" },
     { name: "All Courses", href: "/courses" },
