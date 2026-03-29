@@ -39,6 +39,7 @@ const CareerPrep = () => {
 
   const [activeTab, setActiveTab] = useState('All');
   const [activeType, setActiveType] = useState<QuestionTypeFilter>('All');
+  const [activeDifficulty, setActiveDifficulty] = useState<DifficultyFilter>('All');
   const [searchQuery, setSearchQuery] = useState('');
   
   // Guest Modal State
