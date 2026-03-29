@@ -214,28 +214,7 @@ const CareerPrep = () => {
           {/* Main Content - Left Side */}
           <div className="lg:col-span-3 space-y-6">
             
-           {/* Relocated Categories Tabs */}
-            <div className="flex flex-wrap gap-x-8 gap-y-3 border-b border-border/50 mb-6">
-              {CATEGORIES.map(category => (
-                <button
-                  key={category}
-                  onClick={() => setActiveTab(category)}
-                  className={`pb-3 text-[11px] font-black uppercase tracking-[0.2em] transition-all relative ${
-                    activeTab === category 
-                      ? 'text-primary' 
-                      : 'text-muted-foreground/60 hover:text-foreground'
-                  }`}
-                >
-                  {category}
-                  {activeTab === category && (
-                    <motion.span 
-                      layoutId="tab-underline"
-                      className="absolute bottom-[-1px] left-0 w-full h-0.5 bg-primary rounded-t-full z-10 shadow-[0_0_10px_rgba(var(--primary),0.3)]" 
-                    />
-                  )}
-                </button>
-              ))}
-            </div>
+           {/* Question Type Filter */}
 
             {/* Question Type Filter */}
             <div className="flex flex-wrap gap-2 mb-2">
