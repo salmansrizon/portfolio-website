@@ -137,30 +137,62 @@ const CareerPrep = () => {
     setShowGuestModal(true);
   };
 
+  const [guestSaving, setGuestSaving] = useState(false);
+
   const handleGuestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!guestEmail || !guestWhatsapp) return;
     
-    localStorage.setItem('careerprep_guest', 'true');
-    localStorage.setItem('careerprep_guest_email', guestEmail);
-    localStorage.setItem('careerprep_guest_whatsapp', guestWhatsapp);
-
-    // Upsert guest into careerprep_guests table
-    try {
-      const { error } = await supabase
-        .from('careerprep_guests')
-        .upsert(
-          { email: guestEmail, whatsapp: guestWhatsapp, last_active_at: new Date().toISOString() },
-          { onConflict: 'email' }
-        );
-      if (error) console.error('Error saving guest:', error);
-    } catch (err) {
-      console.error('Guest upsert error:', err);
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(guestEmail)) {
+      alert('Please enter a valid email address.');
+      return;
     }
     
-    setShowGuestModal(false);
-    if (targetSlug) {
-      navigate(`/career-prep/solve/${targetSlug}`);
+    // WhatsApp validation: must start with + and have 10-15 digits
+    const phoneRegex = /^\+?[0-9]{10,15}$/;
+    const cleanPhone = guestWhatsapp.replace(/[\s-]/g, '');
+    if (!phoneRegex.test(cleanPhone)) {
+      alert('Please enter a valid WhatsApp number (e.g. +8801712345678).');
+      return;
+    }
+
+    setGuestSaving(true);
+    const payload = { 
+      email: guestEmail.trim().toLowerCase(), 
+      whatsapp: cleanPhone,
+      last_active_at: new Date().toISOString()
+    };
+    
+    console.log('[CareerPrep] Saving guest to DB:', payload);
+    
+    try {
+      // Use upsert to handle existing guests gracefully
+      const { error } = await supabase
+        .from('careerprep_guests')
+        .upsert(payload, { onConflict: 'email' });
+
+      if (error) {
+        console.error('Guest save error:', error);
+        alert(`Could not save your info: ${error.message}`);
+        setGuestSaving(false);
+        return;
+      }
+
+      // Persist to localStorage for session-level tracking
+      localStorage.setItem('careerprep_guest', 'true');
+      localStorage.setItem('careerprep_guest_email', payload.email);
+      localStorage.setItem('careerprep_guest_whatsapp', cleanPhone);
+
+      setShowGuestModal(false);
+      if (targetSlug) {
+        navigate(`/career-prep/solve/${targetSlug}`);
+      }
+    } catch (err) {
+      console.error('Guest registration failed:', err);
+      alert('Something went wrong. Please try again.');
+    } finally {
+      setGuestSaving(false);
     }
   };
 
@@ -588,10 +620,10 @@ const CareerPrep = () => {
               </div>
                 <Button 
                   type="submit" 
-                  className="w-full font-bold h-11 shadow-md hover:shadow-lg transition-all animate-pulse hover:animate-none"
-                  style={{ animationDuration: '5s' }}
+                  disabled={guestSaving}
+                  className="w-full font-bold h-11 shadow-md hover:shadow-lg transition-all"
                 >
-                  Continue to Challenge
+                  {guestSaving ? 'Saving...' : 'Continue to Challenge'}
                 </Button>
             </div>
           </form>
