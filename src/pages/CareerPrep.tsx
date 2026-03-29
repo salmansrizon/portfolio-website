@@ -15,6 +15,18 @@ import { useQuestions, useCompletedMissions } from '@/hooks/useCareerPrep';
 import { supabase } from '@/integrations/supabase/client';
 
 const CATEGORIES = ['All', 'SQL', 'Management', 'System Design'];
+const QUESTION_TYPES = ['All', 'MCQ', 'Coding Test', 'Case Study'] as const;
+type QuestionTypeFilter = typeof QUESTION_TYPES[number];
+
+// Shuffle array deterministically per page load
+function shuffleArray<T>(arr: T[]): T[] {
+  const shuffled = [...arr];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
 
 const CareerPrep = () => {
   const navigate = useNavigate();
@@ -23,6 +35,7 @@ const CareerPrep = () => {
   const { completedIds } = useCompletedMissions();
 
   const [activeTab, setActiveTab] = useState('All');
+  const [activeType, setActiveType] = useState<QuestionTypeFilter>('All');
   const [searchQuery, setSearchQuery] = useState('');
   
   // Guest Modal State
@@ -56,9 +69,12 @@ const CareerPrep = () => {
     return () => clearInterval(timer);
   }, [courses.length]);
 
+  // Shuffle questions once per page load
+  const shuffledQuestions = useMemo(() => shuffleArray(questions), [questions]);
+
   // Derived filtered questions
   const filteredQuestions = useMemo(() => {
-    return questions.filter((q) => {
+    return shuffledQuestions.filter((q) => {
       // 1. Only show top-level questions (no parent)
       if (q.parent_id) return false;
 
@@ -70,14 +86,24 @@ const CareerPrep = () => {
         (activeTab === 'Management' && q.industry === 'Management') ||
         (activeTab === 'System Design' && q.industry === 'System Design') ||
         q.industry === activeTab;
+
+      // 3. Filter by question type
+      const typeMap: Record<QuestionTypeFilter, string | null> = {
+        'All': null,
+        'MCQ': 'mcq',
+        'Coding Test': 'code',
+        'Case Study': 'case_study',
+      };
+      const targetType = typeMap[activeType];
+      const matchesType = !targetType || q.question_type === targetType;
       
       const searchLower = searchQuery.toLowerCase();
       const matchesSearch = 
         q.title.toLowerCase().includes(searchLower) || 
         q.content_md.toLowerCase().includes(searchLower);
-      return matchesCategory && matchesSearch;
+      return matchesCategory && matchesType && matchesSearch;
     });
-  }, [questions, activeTab, searchQuery]);
+  }, [shuffledQuestions, activeTab, activeType, searchQuery]);
 
   // Statistics
   const stats = useMemo(() => {
