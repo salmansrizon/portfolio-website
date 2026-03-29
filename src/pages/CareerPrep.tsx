@@ -232,6 +232,30 @@ const CareerPrep = () => {
               ))}
             </div>
 
+            {/* Difficulty Filter */}
+            <div className="flex flex-wrap gap-2 mb-2">
+              {DIFFICULTY_FILTERS.map(diff => {
+                const colorMap: Record<DifficultyFilter, string> = {
+                  'All': activeType === diff ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:text-foreground',
+                  'Easy': activeDifficulty === diff ? 'bg-green-500/20 text-green-600 border-green-500/50' : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-green-500/10 hover:text-green-600',
+                  'Medium': activeDifficulty === diff ? 'bg-yellow-500/20 text-yellow-600 border-yellow-500/50' : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-yellow-500/10 hover:text-yellow-600',
+                  'Hard': activeDifficulty === diff ? 'bg-red-500/20 text-red-600 border-red-500/50' : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-red-500/10 hover:text-red-600',
+                };
+                return (
+                  <button
+                    key={diff}
+                    onClick={() => setActiveDifficulty(diff)}
+                    className={`px-3 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wider transition-all border ${
+                      diff === 'All'
+                        ? (activeDifficulty === 'All' ? 'bg-primary text-primary-foreground border-primary shadow-sm' : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:text-foreground')
+                        : colorMap[diff]
+                    }`}
+                  >
+                    {diff}
+                  </button>
+                );
+              })}
+
             {/* Stats & Search row */}
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
               <div className="flex items-center gap-4 text-sm whitespace-nowrap overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
