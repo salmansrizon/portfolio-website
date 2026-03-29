@@ -18,6 +18,9 @@ const CATEGORIES = ['All', 'SQL', 'Management', 'System Design'];
 const QUESTION_TYPES = ['All', 'MCQ', 'Coding Test', 'Case Study'] as const;
 type QuestionTypeFilter = typeof QUESTION_TYPES[number];
 
+const DIFFICULTY_FILTERS = ['All', 'Easy', 'Medium', 'Hard'] as const;
+type DifficultyFilter = typeof DIFFICULTY_FILTERS[number];
+
 // Shuffle array deterministically per page load
 function shuffleArray<T>(arr: T[]): T[] {
   const shuffled = [...arr];
