@@ -79,8 +79,6 @@ const CareerPrep = () => {
   // Derived filtered questions
   const filteredQuestions = useMemo(() => {
     return shuffledQuestions.filter((q) => {
-      // When filtering by specific type, show matching questions (including children)
-      // When "All" type is selected, only show top-level questions
       const typeMap: Record<QuestionTypeFilter, string | null> = {
         'All': null,
         'MCQ': 'mcq',
@@ -90,12 +88,13 @@ const CareerPrep = () => {
       const targetType = typeMap[activeType];
       
       if (targetType) {
-        // Show questions matching the selected type (children included)
         if (q.question_type !== targetType) return false;
       } else {
-        // "All" — only show top-level (root or standalone, no parent)
         if (q.parent_id) return false;
       }
+
+      // Difficulty filter
+      if (activeDifficulty !== 'All' && q.difficulty !== activeDifficulty) return false;
 
       const searchLower = searchQuery.toLowerCase();
       const matchesSearch = 
@@ -103,7 +102,7 @@ const CareerPrep = () => {
         q.content_md.toLowerCase().includes(searchLower);
       return matchesSearch;
     });
-  }, [shuffledQuestions, activeType, searchQuery]);
+  }, [shuffledQuestions, activeType, activeDifficulty, searchQuery]);
 
   // Statistics
   const stats = useMemo(() => {
