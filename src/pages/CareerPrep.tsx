@@ -18,6 +18,9 @@ const CATEGORIES = ['All', 'SQL', 'Management', 'System Design'];
 const QUESTION_TYPES = ['All', 'MCQ', 'Coding Test', 'Case Study'] as const;
 type QuestionTypeFilter = typeof QUESTION_TYPES[number];
 
+const DIFFICULTY_FILTERS = ['All', 'Easy', 'Medium', 'Hard'] as const;
+type DifficultyFilter = typeof DIFFICULTY_FILTERS[number];
+
 // Shuffle array deterministically per page load
 function shuffleArray<T>(arr: T[]): T[] {
   const shuffled = [...arr];
@@ -36,6 +39,7 @@ const CareerPrep = () => {
 
   const [activeTab, setActiveTab] = useState('All');
   const [activeType, setActiveType] = useState<QuestionTypeFilter>('All');
+  const [activeDifficulty, setActiveDifficulty] = useState<DifficultyFilter>('All');
   const [searchQuery, setSearchQuery] = useState('');
   
   // Guest Modal State
@@ -75,8 +79,6 @@ const CareerPrep = () => {
   // Derived filtered questions
   const filteredQuestions = useMemo(() => {
     return shuffledQuestions.filter((q) => {
-      // When filtering by specific type, show matching questions (including children)
-      // When "All" type is selected, only show top-level questions
       const typeMap: Record<QuestionTypeFilter, string | null> = {
         'All': null,
         'MCQ': 'mcq',
@@ -86,12 +88,13 @@ const CareerPrep = () => {
       const targetType = typeMap[activeType];
       
       if (targetType) {
-        // Show questions matching the selected type (children included)
         if (q.question_type !== targetType) return false;
       } else {
-        // "All" — only show top-level (root or standalone, no parent)
         if (q.parent_id) return false;
       }
+
+      // Difficulty filter
+      if (activeDifficulty !== 'All' && q.difficulty !== activeDifficulty) return false;
 
       const searchLower = searchQuery.toLowerCase();
       const matchesSearch = 
@@ -99,7 +102,7 @@ const CareerPrep = () => {
         q.content_md.toLowerCase().includes(searchLower);
       return matchesSearch;
     });
-  }, [shuffledQuestions, activeType, searchQuery]);
+  }, [shuffledQuestions, activeType, activeDifficulty, searchQuery]);
 
   // Statistics
   const stats = useMemo(() => {
@@ -227,6 +230,31 @@ const CareerPrep = () => {
                   {type}
                 </button>
               ))}
+            </div>
+
+            {/* Difficulty Filter */}
+            <div className="flex flex-wrap gap-2 mb-2">
+              {DIFFICULTY_FILTERS.map(diff => {
+                const colorMap: Record<DifficultyFilter, string> = {
+                  'All': activeType === diff ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:text-foreground',
+                  'Easy': activeDifficulty === diff ? 'bg-green-500/20 text-green-600 border-green-500/50' : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-green-500/10 hover:text-green-600',
+                  'Medium': activeDifficulty === diff ? 'bg-yellow-500/20 text-yellow-600 border-yellow-500/50' : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-yellow-500/10 hover:text-yellow-600',
+                  'Hard': activeDifficulty === diff ? 'bg-red-500/20 text-red-600 border-red-500/50' : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-red-500/10 hover:text-red-600',
+                };
+                return (
+                  <button
+                    key={diff}
+                    onClick={() => setActiveDifficulty(diff)}
+                    className={`px-3 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wider transition-all border ${
+                      diff === 'All'
+                        ? (activeDifficulty === 'All' ? 'bg-primary text-primary-foreground border-primary shadow-sm' : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:text-foreground')
+                        : colorMap[diff]
+                    }`}
+                  >
+                    {diff}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Stats & Search row */}
