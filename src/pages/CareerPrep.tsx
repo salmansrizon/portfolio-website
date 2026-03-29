@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import Navbar from '@/components/Navbar';
 import { Search, Trophy, Loader2, CheckCircle2, Circle, ChevronRight, Lock, Sparkles } from 'lucide-react';
-import { useQuestions, useCompletedMissions } from '@/hooks/useCareerPrep';
+import { useQuestions, useCompletedMissions, useXPStats } from '@/hooks/useCareerPrep';
 import { supabase } from '@/integrations/supabase/client';
 
 const CATEGORIES = ['All', 'SQL', 'Management', 'System Design'];
@@ -39,7 +39,6 @@ const CareerPrep = () => {
 
   const [activeTab, setActiveTab] = useState('All');
   const [activeType, setActiveType] = useState<QuestionTypeFilter>('All');
-  const [activeDifficulty, setActiveDifficulty] = useState<DifficultyFilter>('All');
   const [searchQuery, setSearchQuery] = useState('');
   
   // Guest Modal State
@@ -50,6 +49,13 @@ const CareerPrep = () => {
 
   const [courses, setCourses] = useState<any[]>([]);
   const [currentCourseIndex, setCurrentCourseIndex] = useState(0);
+  const xpStats = useXPStats();
+
+  useEffect(() => {
+    if (!localStorage.getItem('careerprep_session_id')) {
+      localStorage.setItem('careerprep_session_id', Math.random().toString(36).substring(2, 15));
+    }
+  }, []);
 
   // Fetch courses for carousel
   useEffect(() => {
@@ -93,32 +99,39 @@ const CareerPrep = () => {
         if (q.parent_id) return false;
       }
 
-      // Difficulty filter
-      if (activeDifficulty !== 'All' && q.difficulty !== activeDifficulty) return false;
-
       const searchLower = searchQuery.toLowerCase();
       const matchesSearch = 
         q.title.toLowerCase().includes(searchLower) || 
         q.content_md.toLowerCase().includes(searchLower);
       return matchesSearch;
     });
-  }, [shuffledQuestions, activeType, activeDifficulty, searchQuery]);
+  }, [shuffledQuestions, activeType, searchQuery]);
 
   // Statistics
   const stats = useMemo(() => {
     const topLevel = questions.filter(q => !q.parent_id);
     const total = topLevel.length;
     let solved = 0;
-    let easy = 0, medium = 0, hard = 0;
+    
+    // Detailed difficulty counts
+    const counts = {
+      Easy: { solved: 0, total: 0 },
+      Medium: { solved: 0, total: 0 },
+      Hard: { solved: 0, total: 0 }
+    };
     
     topLevel.forEach(q => {
-      if (completedIds.has(q.id)) solved++;
+      const isCompleted = completedIds.has(q.id);
+      if (isCompleted) solved++;
       
-      if (q.difficulty === 'Easy') easy++;
-      else if (q.difficulty === 'Medium') medium++;
-      else if (q.difficulty === 'Hard') hard++;
+      const difficulty = q.difficulty as 'Easy' | 'Medium' | 'Hard';
+      if (counts[difficulty]) {
+        counts[difficulty].total++;
+        if (isCompleted) counts[difficulty].solved++;
+      }
     });
-    return { total, solved, easy, medium, hard };
+
+    return { total, solved, counts };
   }, [questions, completedIds]);
 
   const handleRowClick = (slug: string) => {
@@ -231,7 +244,7 @@ const CareerPrep = () => {
                 Career Missions
               </span>
               <br />
-              <span className="text-foreground">Master your skills with Sequential Challenges</span>
+              <span className="text-foreground">Master your skills by solving real-world Challenges</span>
             </h1>
             
             {/* Hero text section - tabs removed from here */}
@@ -245,8 +258,6 @@ const CareerPrep = () => {
           {/* Main Content - Left Side */}
           <div className="lg:col-span-3 space-y-6">
             
-           {/* Question Type Filter */}
-
             {/* Question Type Filter */}
             <div className="flex flex-wrap gap-2 mb-2">
               {QUESTION_TYPES.map(type => (
@@ -264,45 +275,20 @@ const CareerPrep = () => {
               ))}
             </div>
 
-            {/* Difficulty Filter */}
-            <div className="flex flex-wrap gap-2 mb-2">
-              {DIFFICULTY_FILTERS.map(diff => {
-                const colorMap: Record<DifficultyFilter, string> = {
-                  'All': activeType === diff ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:text-foreground',
-                  'Easy': activeDifficulty === diff ? 'bg-green-500/20 text-green-600 border-green-500/50' : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-green-500/10 hover:text-green-600',
-                  'Medium': activeDifficulty === diff ? 'bg-yellow-500/20 text-yellow-600 border-yellow-500/50' : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-yellow-500/10 hover:text-yellow-600',
-                  'Hard': activeDifficulty === diff ? 'bg-red-500/20 text-red-600 border-red-500/50' : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-red-500/10 hover:text-red-600',
-                };
-                return (
-                  <button
-                    key={diff}
-                    onClick={() => setActiveDifficulty(diff)}
-                    className={`px-3 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wider transition-all border ${
-                      diff === 'All'
-                        ? (activeDifficulty === 'All' ? 'bg-primary text-primary-foreground border-primary shadow-sm' : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:text-foreground')
-                        : colorMap[diff]
-                    }`}
-                  >
-                    {diff}
-                  </button>
-                );
-              })}
-            </div>
-
             {/* Stats & Search row */}
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
               <div className="flex items-center gap-4 text-sm whitespace-nowrap overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
                 <span className="font-bold text-muted-foreground mr-2 uppercase tracking-tighter">
-                  {stats.solved}/{stats.total} TRANSMISSIONS SOLVED
+                  {stats.solved}/{stats.total} MISSIONS COMPLETED
                 </span>
                 <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-0 font-bold uppercase text-[10px]">
-                  Easy {stats.easy}
+                  Easy {stats.counts.Easy.total}
                 </Badge>
                 <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600 border-0 font-bold uppercase text-[10px]">
-                  Medium {stats.medium}
+                  Medium {stats.counts.Medium.total}
                 </Badge>
                 <Badge variant="secondary" className="bg-red-500/10 text-red-600 border-0 font-bold uppercase text-[10px]">
-                  Hard {stats.hard}
+                  Hard {stats.counts.Hard.total}
                 </Badge>
               </div>
 
@@ -465,7 +451,10 @@ const CareerPrep = () => {
             <Card className="shadow-sm border-border/50 overflow-hidden group">
               <CardHeader className="pb-2 border-b bg-muted/20">
                 <CardTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  <div className="relative flex items-center justify-center">
+                    <div className="absolute w-2.5 h-2.5 rounded-full bg-primary/40 animate-ping" />
+                    <div className="relative w-1.5 h-1.5 rounded-full bg-primary" />
+                  </div>
                   Your Progress
                 </CardTitle>
               </CardHeader>
@@ -498,7 +487,7 @@ const CareerPrep = () => {
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                       <span className="text-2xl font-black text-foreground">{stats.solved}/{stats.total}</span>
-                      <span className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em]">SOLVED</span>
+                      <span className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em]">COMPLETED</span>
                     </div>
                   </div>
 
@@ -506,23 +495,23 @@ const CareerPrep = () => {
                     <div className="flex items-center gap-2 text-xs justify-between w-full">
                       <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-sm shadow-green-500/20" />
-                        <span className="text-muted-foreground font-bold uppercase tracking-tighter">Easy Challenges</span>
+                        <span className="text-muted-foreground font-bold uppercase tracking-tighter">Easy</span>
                       </div>
-                      <span className="font-black text-foreground">{stats.easy}</span>
+                      <span className="font-black text-foreground">{stats.counts.Easy.solved}/{stats.counts.Easy.total}</span>
                     </div>
                     <div className="flex items-center gap-2 text-xs justify-between w-full">
                       <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-yellow-500 shadow-sm shadow-yellow-500/20" />
-                        <span className="text-muted-foreground font-bold uppercase tracking-tighter">Medium Level</span>
+                        <span className="text-muted-foreground font-bold uppercase tracking-tighter">Medium</span>
                       </div>
-                      <span className="font-black text-foreground">{stats.medium}</span>
+                      <span className="font-black text-foreground">{stats.counts.Medium.solved}/{stats.counts.Medium.total}</span>
                     </div>
                     <div className="flex items-center gap-2 text-xs justify-between w-full">
                       <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm shadow-red-500/20" />
-                        <span className="text-muted-foreground font-bold uppercase tracking-tighter">Hard Core SQL</span>
+                        <span className="text-muted-foreground font-bold uppercase tracking-tighter">Hard</span>
                       </div>
-                      <span className="font-black text-foreground">{stats.hard}</span>
+                      <span className="font-black text-foreground">{stats.counts.Hard.solved}/{stats.counts.Hard.total}</span>
                     </div>
                   </div>
                 </div>
@@ -533,15 +522,14 @@ const CareerPrep = () => {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Your XP</p>
                     <p className="text-2xl font-bold text-primary flex items-center gap-2">
                       <Trophy className="w-5 h-5" />
-                      {session ? '250' : '0'}
+                      {xpStats.xp}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Streak</p>
-                    <p className="text-2xl font-bold text-orange-500">🔥 {session ? '3' : '0'}</p>
+                    <p className="text-2xl font-bold text-orange-500">🔥 {xpStats.streak}</p>
                   </div>
                 </div>
                 {!session && (
@@ -560,6 +548,7 @@ const CareerPrep = () => {
               <ul className="space-y-3">
                 {[
                   'Top 100 Liked Questions',
+                  'Most Attempted by Users',
                   'Top e-Commerce Questions',
                   'Top Fintech Questions',
                   'Top Interview Questions'

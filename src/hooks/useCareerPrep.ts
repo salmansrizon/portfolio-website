@@ -145,7 +145,11 @@ export function useSubmitCode() {
     // Get guest info from localStorage if present
     const guestEmail = localStorage.getItem('careerprep_guest_email');
     const guestWhatsapp = localStorage.getItem('careerprep_guest_whatsapp');
+    const sessionId = localStorage.getItem('careerprep_session_id');
     
+    // Update local last active for guest streak logic
+    localStorage.setItem('careerprep_guest_last_active', new Date().toISOString());
+
     try {
       const { error } = await (supabase as any)
         .from('careerprep_submissions')
@@ -154,9 +158,10 @@ export function useSubmitCode() {
           submitted_code: submittedCode,
           is_correct: isCorrect,
           execution_time: executionTimeMs,
-          user_id: session?.user?.id || 'guest',
+          student_id: session?.user?.id || null,
           guest_email: guestEmail,
-          guest_whatsapp: guestWhatsapp
+          guest_whatsapp: guestWhatsapp,
+          session_id: sessionId
         });
       
       if (error) {
@@ -179,7 +184,7 @@ export function useCompletedMissions() {
   
   const fetchCompleted = useCallback(async () => {
     const guestEmail = localStorage.getItem('careerprep_guest_email');
-    const guestWhatsapp = localStorage.getItem('careerprep_guest_whatsapp');
+    const sessionId = localStorage.getItem('careerprep_session_id');
     
     // Create base query
     let query = (supabase as any).from('careerprep_submissions').select('question_id').eq('is_correct', true);
@@ -188,8 +193,8 @@ export function useCompletedMissions() {
       query = query.eq('student_id', session.user.id);
     } else if (guestEmail) {
       query = query.eq('guest_email', guestEmail);
-    } else if (guestWhatsapp) {
-      query = query.eq('guest_whatsapp', guestWhatsapp);
+    } else if (sessionId) {
+      query = query.eq('session_id', sessionId);
     } else {
       setLoading(false);
       return;
@@ -209,4 +214,32 @@ export function useCompletedMissions() {
   }, [fetchCompleted]);
 
   return { completedIds, loading, refresh: fetchCompleted };
+}
+
+export function useXPStats() {
+  const [stats, setStats] = useState({ xp: 0, streak: 0 });
+  const { session } = useAuth();
+  const { completedIds } = useCompletedMissions();
+
+  useEffect(() => {
+     // For now, calculate XP simply based on completed unique missions
+     // Each mission = 10 XP
+     const xp = completedIds.size * 10;
+     
+     // Simple streak mock logic based on last active
+     // (In a real app, this would be computed server-side or from a history table)
+     const guestEmail = localStorage.getItem('careerprep_guest_email');
+     const guestActive = localStorage.getItem('careerprep_guest_last_active');
+     let streak = session ? 3 : 0; // Default/Mock
+     
+     if (!session && guestEmail && guestActive) {
+        const last = new Date(guestActive);
+        const diff = (new Date().getTime() - last.getTime()) / (1000 * 3600 * 24);
+        if (diff < 2) streak = 1; // Basic survival streak
+     }
+
+     setStats({ xp, streak });
+  }, [completedIds, session]);
+
+  return stats;
 }
