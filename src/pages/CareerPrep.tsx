@@ -237,6 +237,23 @@ const CareerPrep = () => {
               ))}
             </div>
 
+            {/* Question Type Filter */}
+            <div className="flex flex-wrap gap-2 mb-2">
+              {QUESTION_TYPES.map(type => (
+                <button
+                  key={type}
+                  onClick={() => setActiveType(type)}
+                  className={`px-3 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wider transition-all border ${
+                    activeType === type 
+                      ? 'bg-primary text-primary-foreground border-primary shadow-sm' 
+                      : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+
             {/* Stats & Search row */}
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
               <div className="flex items-center gap-4 text-sm whitespace-nowrap overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
