@@ -120,6 +120,7 @@ const SQLChallenge = () => {
   const [totalMistakes, setTotalMistakes] = useState(0);
 
   const [stepResults, setStepResults] = useState<Record<number, boolean>>({});
+  const [showFailedDialog, setShowFailedDialog] = useState(false);
 
   useEffect(() => {
     if (!qLoading && question) {
