@@ -298,7 +298,8 @@ const SQLChallenge = () => {
         handleAdvance();
       }
     } else {
-      // Show Mission Failed dialog — no XP, no attempt logged
+      // Increment fail count and show Mission Failed dialog
+      setFailCount(prev => ({ ...prev, [currentIdx]: (prev[currentIdx] || 0) + 1 }));
       setShowFailedDialog(true);
     }
   };
