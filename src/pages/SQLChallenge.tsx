@@ -449,7 +449,7 @@ const SQLChallenge = () => {
 
             <Button size="default" onClick={handleSubmit} disabled={isSubmitting || (showsEditor && !envReady)} className="bg-primary hover:bg-primary/90 text-primary-foreground h-11 px-8 rounded-2xl font-black text-[11px] uppercase tracking-[0.15em] shadow-xl shadow-primary/25 gap-3 transition-all active:scale-95 group">
               <Send className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
-              Finalize Step
+              Submit
             </Button>
           </div>
         </header>
