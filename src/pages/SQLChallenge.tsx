@@ -557,7 +557,76 @@ const SQLChallenge = () => {
               Your solution doesn't match the expected output. Review your query and try again — no XP or attempts are recorded for failed submissions.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-3 pt-4">
+
+          {/* Progressive Hints */}
+          {(() => {
+            const fails = failCount[cursorIdx] || 0;
+            const hints = currentQ?.hints || [];
+            const revealedCount = Math.min(fails, hints.length);
+            const nextHintAt = revealedCount < hints.length ? revealedCount + 1 : null;
+
+            if (hints.length === 0 && fails >= 3) {
+              // No hints available, reveal solution after 5 fails
+              return fails >= 5 && currentQ?.solution_sql ? (
+                <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary">
+                    <Sparkles className="w-3 h-3" /> Solution Revealed
+                  </div>
+                  <pre className="text-xs font-mono text-foreground/80 whitespace-pre-wrap bg-muted/50 p-3 rounded-lg border border-border/50">
+                    {currentQ.question_type === 'mcq' ? `Correct: ${currentQ.correct_option}` : currentQ.solution_sql}
+                  </pre>
+                </div>
+              ) : (
+                <p className="text-center text-[10px] text-muted-foreground font-medium">
+                  {fails >= 3 ? `No hints available. Solution reveals after ${5 - fails} more attempt${5 - fails !== 1 ? 's' : ''}.` : ''}
+                </p>
+              );
+            }
+
+            return revealedCount > 0 ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">
+                  <AlertCircle className="w-3 h-3 text-yellow-500" />
+                  {revealedCount}/{hints.length} Hint{revealedCount !== 1 ? 's' : ''} Unlocked
+                </div>
+                <div className="space-y-2">
+                  {hints.slice(0, revealedCount).map((hint: string, i: number) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3 flex items-start gap-3"
+                    >
+                      <span className="shrink-0 w-6 h-6 rounded-lg bg-yellow-500/10 text-yellow-500 flex items-center justify-center text-[10px] font-black">{i + 1}</span>
+                      <p className="text-sm text-foreground/80 pt-0.5">{hint}</p>
+                    </motion.div>
+                  ))}
+                </div>
+                {nextHintAt && (
+                  <p className="text-center text-[10px] text-muted-foreground font-medium">
+                    Next hint unlocks after {nextHintAt} more failed attempt{nextHintAt !== 1 ? 's' : ''}
+                  </p>
+                )}
+                {revealedCount >= hints.length && fails >= hints.length + 2 && currentQ?.solution_sql && (
+                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-2 mt-2">
+                    <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary">
+                      <Sparkles className="w-3 h-3" /> Solution Revealed
+                    </div>
+                    <pre className="text-xs font-mono text-foreground/80 whitespace-pre-wrap bg-muted/50 p-3 rounded-lg border border-border/50">
+                      {currentQ.question_type === 'mcq' ? `Correct: ${currentQ.correct_option}` : currentQ.solution_sql}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-center text-[10px] text-muted-foreground font-medium">
+                💡 Hint unlocks after 1 more failed attempt
+              </p>
+            );
+          })()}
+
+          <div className="flex flex-col gap-3 pt-2">
             <Button
               onClick={() => setShowFailedDialog(false)}
               className="w-full h-11 rounded-xl font-black text-xs uppercase tracking-widest gap-2"
