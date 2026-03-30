@@ -541,6 +541,31 @@ const SQLChallenge = () => {
           </PanelGroup>
         </div>
       </div>
+      {/* Mission Failed Dialog */}
+      <Dialog open={showFailedDialog} onOpenChange={setShowFailedDialog}>
+        <DialogContent className="sm:max-w-md bg-card border-destructive/30">
+          <DialogHeader className="items-center text-center">
+            <div className="w-16 h-16 bg-destructive/10 rounded-2xl flex items-center justify-center mb-3 mx-auto border border-destructive/20">
+              <XCircle className="w-8 h-8 text-destructive" />
+            </div>
+            <DialogTitle className="text-2xl font-black uppercase tracking-tight italic text-destructive">
+              Mission Failed
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground text-sm">
+              Your solution doesn't match the expected output. Review your query and try again — no XP or attempts are recorded for failed submissions.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 pt-4">
+            <Button
+              onClick={() => setShowFailedDialog(false)}
+              className="w-full h-11 rounded-xl font-black text-xs uppercase tracking-widest gap-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Retry
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
