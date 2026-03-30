@@ -125,21 +125,30 @@ export type Database = {
           email: string
           id: string
           last_active_at: string | null
+          level: number | null
+          streak: number | null
           whatsapp: string
+          xp: number | null
         }
         Insert: {
           created_at?: string | null
           email: string
           id?: string
           last_active_at?: string | null
+          level?: number | null
+          streak?: number | null
           whatsapp: string
+          xp?: number | null
         }
         Update: {
           created_at?: string | null
           email?: string
           id?: string
           last_active_at?: string | null
+          level?: number | null
+          streak?: number | null
           whatsapp?: string
+          xp?: number | null
         }
         Relationships: []
       }
@@ -232,6 +241,7 @@ export type Database = {
           id: string
           is_correct: boolean
           question_id: string | null
+          session_id: string | null
           student_id: string | null
           submitted_code: string
         }
@@ -243,6 +253,7 @@ export type Database = {
           id?: string
           is_correct?: boolean
           question_id?: string | null
+          session_id?: string | null
           student_id?: string | null
           submitted_code: string
         }
@@ -254,6 +265,7 @@ export type Database = {
           id?: string
           is_correct?: boolean
           question_id?: string | null
+          session_id?: string | null
           student_id?: string | null
           submitted_code?: string
         }

@@ -21,8 +21,16 @@ import {
   Award,
   Star,
   BookOpen,
-  RotateCcw
+  RotateCcw,
+  XCircle
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toPng } from 'html-to-image';
@@ -112,6 +120,7 @@ const SQLChallenge = () => {
   const [totalMistakes, setTotalMistakes] = useState(0);
 
   const [stepResults, setStepResults] = useState<Record<number, boolean>>({});
+  const [showFailedDialog, setShowFailedDialog] = useState(false);
 
   useEffect(() => {
     if (!qLoading && question) {
@@ -253,45 +262,43 @@ const SQLChallenge = () => {
 
   const handleSubmit = async () => {
     if (!currentQ) return;
+    const pg = pgRef.current;
     const isMultiStep = missionQueue.length > 1;
-    let isCorrect = currentQ.question_type === 'mcq' ? mcqAnswer === currentQ.correct_option : true;
-    
-    // For single questions, the 'isCorrect' logic for code questions should actually check against a solution?
-    // Actually our code questions implicitly trust users for now OR we compare results.
-    // The previous implementation used 'true' for code questions in handleSubmit (blocking only by toast).
-    // Let's assume isCorrect is determined by result comparison IF possible, else use true for advancement.
-    
+    let isCorrect = false;
+
+    if (currentQ.question_type === 'mcq') {
+      isCorrect = mcqAnswer === currentQ.correct_option;
+    } else if (pg && currentQ.solution_sql) {
+      // Validate by comparing user query results with solution query results
+      try {
+        const userRes = await pg.query(code);
+        const solRes = await pg.query(currentQ.solution_sql);
+        // Compare stringified sorted results
+        const normalize = (rows: any[]) => JSON.stringify(rows.map(r => JSON.stringify(Object.values(r))).sort());
+        isCorrect = normalize(userRes.rows) === normalize(solRes.rows);
+      } catch {
+        isCorrect = false;
+      }
+    }
+
     const currentIdx = cursorIdx;
-    await logSubmission(currentQ.id, currentQ.question_type === 'mcq' ? `Choice: ${mcqAnswer}` : code, isCorrect, executionTime || 0);
-    refreshSubmissions();
-    
-    if (isMultiStep) {
-       setStepResults(prev => ({ ...prev, [currentIdx]: isCorrect }));
-       if (isCorrect) toast({ title: 'Step Verified', description: 'Proceeding to next mission step.' });
-       else toast({ title: 'Submission Logged', description: 'Recorded as incorrect. Proceeding...', variant: 'destructive' });
-       handleAdvance();
+
+    if (isCorrect) {
+      // Log submission only on correct answer
+      await logSubmission(currentQ.id, currentQ.question_type === 'mcq' ? `Choice: ${mcqAnswer}` : code, true, executionTime || 0);
+      refreshSubmissions();
+      setStepResults(prev => ({ ...prev, [currentIdx]: true }));
+      
+      if (isMultiStep) {
+        toast({ title: 'Step Verified', description: 'Proceeding to next mission step.' });
+        handleAdvance();
+      } else {
+        toast({ title: 'Challenge Cleared', description: 'Perfect solution provided!' });
+        handleAdvance();
+      }
     } else {
-       // Single Question Logic
-       if (isCorrect) {
-          setStepResults(prev => ({ ...prev, [currentIdx]: true }));
-          toast({ title: 'Challenge Cleared', description: 'Perfect solution provided!' });
-          handleAdvance();
-       } else {
-          setAttemptsRecord(prev => ({ ...prev, [currentIdx]: (prev[currentIdx] || 0) + 1 }));
-          const fails = (attemptsRecord[currentIdx] || 0) + 1;
-          toast({ 
-            title: `Incorrect Attempt #${fails}`, 
-            description: fails >= 5 ? 'Persistent errors detected. Solution revealed below.' : 'Please evaluate your logic and try again.', 
-            variant: 'destructive' 
-          });
-          if (fails >= 5) {
-             toast({ 
-               title: 'Solution Revealed', 
-               description: currentQ.question_type === 'mcq' ? `Correct Option: ${currentQ.correct_option}` : `Hint/Solution: ${currentQ.solution_sql}`,
-               duration: 10000
-             });
-          }
-       }
+      // Show Mission Failed dialog — no XP, no attempt logged
+      setShowFailedDialog(true);
     }
   };
 
@@ -442,7 +449,7 @@ const SQLChallenge = () => {
 
             <Button size="default" onClick={handleSubmit} disabled={isSubmitting || (showsEditor && !envReady)} className="bg-primary hover:bg-primary/90 text-primary-foreground h-11 px-8 rounded-2xl font-black text-[11px] uppercase tracking-[0.15em] shadow-xl shadow-primary/25 gap-3 transition-all active:scale-95 group">
               <Send className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
-              Finalize Step
+              Submit
             </Button>
           </div>
         </header>
@@ -534,6 +541,31 @@ const SQLChallenge = () => {
           </PanelGroup>
         </div>
       </div>
+      {/* Mission Failed Dialog */}
+      <Dialog open={showFailedDialog} onOpenChange={setShowFailedDialog}>
+        <DialogContent className="sm:max-w-md bg-card border-destructive/30">
+          <DialogHeader className="items-center text-center">
+            <div className="w-16 h-16 bg-destructive/10 rounded-2xl flex items-center justify-center mb-3 mx-auto border border-destructive/20">
+              <XCircle className="w-8 h-8 text-destructive" />
+            </div>
+            <DialogTitle className="text-2xl font-black uppercase tracking-tight italic text-destructive">
+              Mission Failed
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground text-sm">
+              Your solution doesn't match the expected output. Review your query and try again — no XP or attempts are recorded for failed submissions.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 pt-4">
+            <Button
+              onClick={() => setShowFailedDialog(false)}
+              className="w-full h-11 rounded-xl font-black text-xs uppercase tracking-widest gap-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Retry
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
