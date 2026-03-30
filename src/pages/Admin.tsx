@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, Settings, FileText, Award, Briefcase, MessageSquare, User, FolderKanban, GraduationCap, CalendarCheck, LayoutDashboard, Menu, Image, UserCheck, Users, Star, Database } from 'lucide-react';
+import { LogOut, Settings, FileText, Award, Briefcase, MessageSquare, User, FolderKanban, GraduationCap, CalendarCheck, LayoutDashboard, Menu, Image, UserCheck, Users, Star, Database, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -24,9 +24,11 @@ import InstructorManager from '@/components/admin/InstructorManager';
 import StudentManager from '@/components/admin/StudentManager';
 import CourseReviewManager from '@/components/admin/CourseReviewManager';
 import CareerPrepManager from '@/components/admin/CareerPrepManager';
+import WebinarManager from '@/components/admin/WebinarManager';
 
 const navigation = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'webinars', label: 'Webinars', icon: Calendar },
   { id: 'sections', label: 'Sections', icon: Settings },
   { id: 'blogs', label: 'Blogs', icon: FileText },
   { id: 'services', label: 'Services', icon: Briefcase },
@@ -68,6 +70,8 @@ const Admin = () => {
     switch (activeTab) {
       case 'overview':
         return <DashboardOverview />;
+      case 'webinars':
+        return <WebinarManager />;
       case 'sections':
         return <SectionEditor />;
       case 'blogs':

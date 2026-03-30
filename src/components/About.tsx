@@ -5,15 +5,15 @@ import BrandLogos from "./BrandLogos";
 
 const About = () => {
   const stats = [
-    { number: "4+", label: "Industry Catered" },
+    { number: "7+", label: "Years Experience" },
     { number: "30+", label: "Successful Projects" },
     { number: "10+", label: "Satisfied Clients" },
-    { number: "4+", label: "Satisfied Clients" },
+    { number: "4+", label: "Industry Catered" },
   ];
 
   const skills = [
     { name: "Power BI", percentage: 95 },
-    { name: "Tableu", percentage: 80 },
+    { name: "Tableau", percentage: 80 },
     { name: "Metabase", percentage: 90 },
     { name: "SQL", percentage: 90 },
     { name: "Python", percentage: 85 },
@@ -39,8 +39,8 @@ const About = () => {
             <div>
               <h3 className="text-2xl font-bold text-foreground mb-4 text-center sm:text-left">Professional Journey</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Currently serving as an Data analytics Manager at Wagely Bangladesh, I specialize in 
-                transforming complex Finantial and business data into actionable insights. 
+                Currently serving as a Data Analytics Manager at Wagely Bangladesh, I specialize in 
+                transforming complex Financial and business data into actionable insights. 
                 With over 7 years of experience across Fintech, consulting, and education 
                 sectors, I've helped organizations optimize their data strategies and make 
                 informed decisions.

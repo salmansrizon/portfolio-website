@@ -1,0 +1,525 @@
+import React, { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Plus, Edit, Trash2, Calendar, Users, DollarSign, Layout, ChevronDown, ChevronUp, CheckCircle2, MessageCircle, UserPlus, X } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+
+interface WebinarContentBlock {
+    id: string;
+    type: 'hero' | 'benefits' | 'host' | 'success_story' | 'pricing' | 'faq' | 'cta';
+    title: string;
+    content: any;
+    order_index: number;
+}
+
+interface Webinar {
+    id: string;
+    title: string;
+    description: string;
+    webinar_date: string;
+    price: number | string;
+    is_free: boolean;
+    banner_url: string;
+    content_blocks: WebinarContentBlock[];
+    status: 'draft' | 'published';
+    booked_count: number;
+    created_at: string;
+}
+
+interface Booking {
+    id: string;
+    webinar_id: string;
+    student_name: string;
+    student_email: string;
+    student_whatsapp: string;
+    student_role: string;
+    payment_status: string;
+    payment_method: string;
+    payment_transaction_id: string;
+    booking_date: string;
+}
+
+export default function WebinarManager() {
+    const [webinars, setWebinars] = useState<Webinar[]>([]);
+    const [bookings, setBookings] = useState<Booking[]>([]);
+    const [instructors, setInstructors] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [currentWebinar, setCurrentWebinar] = useState<Partial<Webinar> | null>(null);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        fetchWebinars();
+        fetchBookings();
+        fetchInstructors();
+    }, []);
+
+    const fetchInstructors = async () => {
+        const { data, error } = await supabase.from('instructors').select('*').eq('is_active', true);
+        if (data) setInstructors(data);
+    };
+
+    const fetchWebinars = async () => {
+        setIsLoading(true);
+        const { data, error } = await (supabase.from('webinars' as any).select('*').order('created_at', { ascending: false }) as any);
+        if (error) {
+            toast({ title: "Error fetching webinars", description: error.message, variant: "destructive" });
+        } else {
+            setWebinars(data || []);
+        }
+        setIsLoading(false);
+    };
+
+    const fetchBookings = async () => {
+        const { data, error } = await (supabase.from('webinar_bookings' as any).select('*').order('booking_date', { ascending: false }) as any);
+        if (error) {
+            toast({ title: "Error fetching bookings", description: error.message, variant: "destructive" });
+        } else {
+            setBookings(data || []);
+        }
+    };
+
+    const handleSaveWebinar = async () => {
+        if (!currentWebinar?.title || !currentWebinar?.webinar_date) {
+            toast({ title: "Missing fields", description: "Please enter title and date", variant: "destructive" });
+            return;
+        }
+
+        const payload = {
+            title: currentWebinar.title,
+            description: currentWebinar.description,
+            webinar_date: currentWebinar.webinar_date,
+            price: currentWebinar.price || 0,
+            is_free: currentWebinar.is_free ?? true,
+            banner_url: currentWebinar.banner_url || '',
+            content_blocks: currentWebinar.content_blocks || [],
+            status: currentWebinar.status || 'draft',
+            booked_count: currentWebinar.booked_count || 0
+        };
+
+        if (currentWebinar.id) {
+            const { error } = await (supabase.from('webinars' as any).update(payload).eq('id', currentWebinar.id) as any);
+            if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+            else {
+                toast({ title: "Success", description: "Webinar updated successfully" });
+                setIsDialogOpen(false);
+                fetchWebinars();
+            }
+        } else {
+            const { error } = await (supabase.from('webinars' as any).insert([payload]) as any);
+            if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+            else {
+                toast({ title: "Success", description: "Webinar created successfully" });
+                setIsDialogOpen(false);
+                fetchWebinars();
+            }
+        }
+    };
+
+    const handleDeleteWebinar = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this webinar?")) return;
+        const { error } = await (supabase.from('webinars' as any).delete().eq('id', id) as any);
+        if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+        else {
+            toast({ title: "Success", description: "Webinar deleted" });
+            fetchWebinars();
+        }
+    };
+
+    const addBlock = (type: WebinarContentBlock['type']) => {
+        const newBlock: WebinarContentBlock = {
+            id: Math.random().toString(36).substr(2, 9),
+            type,
+            title: type.charAt(0).toUpperCase() + type.slice(1),
+            content: getDefaultBlockContent(type),
+            order_index: (currentWebinar?.content_blocks?.length || 0)
+        };
+        setCurrentWebinar(prev => ({
+            ...prev,
+            content_blocks: [...(prev?.content_blocks || []), newBlock]
+        }));
+    };
+
+    const getDefaultBlockContent = (type: WebinarContentBlock['type']) => {
+        switch (type) {
+            case 'hero': return { subtitle: '', video_url: '', button_text: 'Book Now' };
+            case 'benefits': return { items: [{ icon: 'check', text: '' }] };
+            case 'host': return { instructor_ids: [] };
+            case 'pricing': return { price: 0, currency: 'BDT', features: [] };
+            case 'faq': return { questions: [{ q: '', a: '' }] };
+            default: return {};
+        }
+    };
+
+    const updateBlock = (index: number, content: any) => {
+        const blocks = [...(currentWebinar?.content_blocks || [])];
+        blocks[index].content = content;
+        setCurrentWebinar({ ...currentWebinar, content_blocks: blocks });
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="flex justify-between items-center">
+                <div>
+                    <h2 className="text-3xl font-bold tracking-tight text-foreground">Webinar Management</h2>
+                    <p className="text-muted-foreground text-sm">Create and manage your webinar landing pages and attendees.</p>
+                </div>
+                <Button onClick={() => { setCurrentWebinar({ is_free: true, content_blocks: [], status: 'draft', price: 0, booked_count: 0 }); setIsDialogOpen(true); }}>
+                    <Plus className="mr-2 h-4 w-4" /> New Webinar
+                </Button>
+            </div>
+
+            <Tabs defaultValue="webinars">
+                <TabsList className="mb-4">
+                    <TabsTrigger value="webinars" className="gap-2"><Layout className="h-4 w-4" /> Webinars</TabsTrigger>
+                    <TabsTrigger value="bookings" className="gap-2"><Users className="h-4 w-4" /> All Bookings</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="webinars">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {webinars.map(w => (
+                            <Card key={w.id} className="overflow-hidden border-border/50 hover:border-primary/30 transition-all bg-card/50 backdrop-blur-sm">
+                                <CardHeader className="pb-3">
+                                    <div className="flex justify-between items-start">
+                                        <Badge variant={w.status === 'published' ? 'default' : 'secondary'}>
+                                            {w.status.toUpperCase()}
+                                        </Badge>
+                                        <Badge variant="outline" className="text-primary border-primary/20">
+                                            {w.is_free ? 'FREE' : `৳${w.price}`}
+                                        </Badge>
+                                    </div>
+                                    <CardTitle className="mt-2 text-foreground">{w.title}</CardTitle>
+                                    <CardDescription>{w.webinar_date ? format(new Date(w.webinar_date), 'PPP p') : 'Date not set'}</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex gap-2">
+                                        <Button variant="outline" size="sm" className="flex-1" onClick={() => { setCurrentWebinar(w); setIsDialogOpen(true); }}>
+                                            <Edit className="mr-2 h-3 w-3" /> Edit
+                                        </Button>
+                                        <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDeleteWebinar(w.id)}>
+                                            <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                        {webinars.length === 0 && (
+                            <div className="col-span-full py-20 text-center border-2 border-dashed rounded-xl opacity-50">
+                                <Calendar className="h-12 w-12 mx-auto mb-4" />
+                                <p>No webinars created yet.</p>
+                            </div>
+                        )}
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="bookings">
+                    <Card className="bg-card/50 backdrop-blur-sm">
+                        <CardHeader>
+                            <CardTitle>Registered Participants</CardTitle>
+                            <CardDescription>View all students who have registered for webinars.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="rounded-md border border-border/50 overflow-hidden">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-muted/50">
+                                        <tr>
+                                            <th className="p-3 text-left">Student</th>
+                                            <th className="p-3 text-left">Webinar</th>
+                                            <th className="p-3 text-left">Contact</th>
+                                            <th className="p-3 text-left">Payment Info</th>
+                                            <th className="p-3 text-left">Status</th>
+                                            <th className="p-3 text-left">Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-border/50">
+                                        {bookings.map(b => (
+                                            <tr key={b.id} className="hover:bg-muted/30">
+                                                <td className="p-3 font-medium">{b.student_name}</td>
+                                                <td className="p-3 text-muted-foreground">{webinars.find(w => w.id === b.webinar_id)?.title || 'Unknown'}</td>
+                                                <td className="p-3">
+                                                    <div className="flex flex-col">
+                                                        <span>{b.student_email}</span>
+                                                        <span className="text-xs text-muted-foreground">{b.student_whatsapp}</span>
+                                                        <span className="text-[10px] uppercase font-bold text-primary/60">{b.student_role}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="p-3">
+                                                    <div className="flex flex-col gap-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <Badge variant="outline" className="text-[10px] h-5 bg-background uppercase">{b.payment_method || 'N/A'}</Badge>
+                                                        </div>
+                                                        <span className="text-xs font-mono font-bold text-foreground bg-accent/20 px-2 py-0.5 rounded border border-primary/5">{b.payment_transaction_id || '---'}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="p-3">
+                                                    <Badge className={cn(
+                                                        "text-[10px] font-black uppercase tracking-wider h-6 px-3",
+                                                        b.payment_status === 'confirmed' ? "bg-green-500 hover:bg-green-600 text-white" : "bg-orange-500 hover:bg-orange-600 text-white"
+                                                    )}>
+                                                        {b.payment_status}
+                                                    </Badge>
+                                                </td>
+                                                <td className="p-3 text-xs font-medium">{b.booking_date ? format(new Date(b.booking_date), 'PP') : 'N/A'}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                                {bookings.length === 0 && (
+                                    <div className="p-8 text-center text-muted-foreground">No bookings found.</div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+
+            {/* Webinar Edit Dialog */}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-background/95 backdrop-blur-xl border-primary/20">
+                    <DialogHeader>
+                        <DialogTitle>{currentWebinar?.id ? 'Edit Webinar' : 'Add New Webinar'}</DialogTitle>
+                    </DialogHeader>
+                    
+                    <div className="flex-1 overflow-y-auto pr-2 space-y-6 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2 col-span-2">
+                                <Label>Title</Label>
+                                <Input value={currentWebinar?.title || ''} onChange={e => setCurrentWebinar({ ...currentWebinar, title: e.target.value })} placeholder="Webinar Title" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Date & Time</Label>
+                                <Input type="datetime-local" value={currentWebinar?.webinar_date ? new Date(new Date(currentWebinar.webinar_date).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ''} onChange={e => setCurrentWebinar({ ...currentWebinar, webinar_date: e.target.value })} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Price (৳)</Label>
+                                <Input type="number" value={currentWebinar?.price || 0} onChange={e => setCurrentWebinar({ ...currentWebinar, price: parseFloat(e.target.value) })} disabled={currentWebinar?.is_free} />
+                            </div>
+                            <div className="flex items-center space-x-2 pt-8">
+                                <Switch checked={currentWebinar?.is_free} onCheckedChange={checked => setCurrentWebinar({ ...currentWebinar, is_free: checked, price: checked ? 0 : (currentWebinar?.price || 0) })} />
+                                <Label>Free Webinar</Label>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Social Proof: Registered Count</Label>
+                                <Input type="number" value={currentWebinar?.booked_count || 0} onChange={e => setCurrentWebinar({ ...currentWebinar, booked_count: parseInt(e.target.value) || 0 })} placeholder="E.G. 15" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Status</Label>
+                                <Select value={currentWebinar?.status || 'draft'} onValueChange={val => setCurrentWebinar({ ...currentWebinar, status: val as any })}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="draft">Draft</SelectItem>
+                                        <SelectItem value="published">Published</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div className="border-t border-border/50 pt-6">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-bold">Content Blocks</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    <Button variant="outline" size="sm" onClick={() => addBlock('hero')} className="hover:bg-primary/10">Hero</Button>
+                                    <Button variant="outline" size="sm" onClick={() => addBlock('benefits')} className="hover:bg-primary/10">Benefits</Button>
+                                    <Button variant="outline" size="sm" onClick={() => addBlock('host')} className="hover:bg-primary/10">Host</Button>
+                                    <Button variant="outline" size="sm" onClick={() => addBlock('pricing')} className="hover:bg-primary/10">Pricing</Button>
+                                    <Button variant="outline" size="sm" onClick={() => addBlock('faq')} className="hover:bg-primary/10">FAQ</Button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                {currentWebinar?.content_blocks?.map((block, idx) => (
+                                    <Card key={block.id} className="relative border-border/40 bg-muted/20">
+                                        <CardHeader className="py-2 px-4 bg-muted/40 flex flex-row justify-between items-center">
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant="outline" className="bg-background text-[10px]">{idx + 1}</Badge>
+                                                <span className="text-xs font-bold uppercase tracking-wider">{block.type}</span>
+                                            </div>
+                                            <div className="flex gap-1">
+                                                <Button variant="ghost" size="icon" className="h-6 w-6"><ChevronUp className="h-3 w-3" /></Button>
+                                                <Button variant="ghost" size="icon" className="h-6 w-6"><ChevronDown className="h-3 w-3" /></Button>
+                                                <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10" onClick={() => {
+                                                    const blocks = [...(currentWebinar.content_blocks || [])];
+                                                    blocks.splice(idx, 1);
+                                                    setCurrentWebinar({ ...currentWebinar, content_blocks: blocks });
+                                                }}><Trash2 className="h-3 w-3" /></Button>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="p-4 space-y-4">
+                                            <div>
+                                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Block Heading</Label>
+                                                <Input placeholder="Enter heading..." value={block.title} onChange={e => {
+                                                    const blocks = [...(currentWebinar.content_blocks || [])];
+                                                    blocks[idx].title = e.target.value;
+                                                    setCurrentWebinar({ ...currentWebinar, content_blocks: blocks });
+                                                }} />
+                                            </div>
+                                            
+                                            {block.type === 'hero' && (
+                                                <div className="space-y-2">
+                                                    <Label>Subtitle / Description</Label>
+                                                    <Textarea value={block.content.subtitle} onChange={e => updateBlock(idx, { ...block.content, subtitle: e.target.value })} placeholder="Short intro text..." />
+                                                </div>
+                                            )}
+                                            
+                                            {block.type === 'benefits' && (
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">Benefits List (One per line)</Label>
+                                                    <Textarea 
+                                                        placeholder="Benefit 1&#10;Benefit 2&#10;..."
+                                                        value={block.content.items?.map((i: any) => i.text).join('\n')} 
+                                                        onChange={e => updateBlock(idx, { ...block.content, items: e.target.value.split('\n').filter((t: string) => t.trim() !== '').map((t: string) => ({ text: t })) })} 
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {block.type === 'host' && (
+                                                <div className="space-y-4">
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {(block.content.instructor_ids || []).map((id: string) => {
+                                                            const inst = instructors.find(i => i.id === id);
+                                                            return inst ? (
+                                                                <Badge key={id} variant="secondary" className="pl-1 pr-1 py-1 gap-2 flex items-center">
+                                                                    <div className="w-5 h-5 rounded-full bg-primary/20 overflow-hidden flex items-center justify-center">
+                                                                        {inst.avatar_url ? <img src={inst.avatar_url} className="w-full h-full object-cover" /> : <Users className="h-3 w-3 text-primary" />}
+                                                                    </div>
+                                                                    <span className="text-xs font-bold text-foreground">{inst.name}</span>
+                                                                    <button 
+                                                                        onClick={() => {
+                                                                            const newIds = block.content.instructor_ids.filter((hid: string) => hid !== id);
+                                                                            updateBlock(idx, { ...block.content, instructor_ids: newIds });
+                                                                        }}
+                                                                        className="hover:bg-destructive/20 rounded-full p-0.5"
+                                                                    >
+                                                                        <X className="h-3 w-3 text-destructive" />
+                                                                    </button>
+                                                                </Badge>
+                                                            ) : null;
+                                                        })}
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[10px] uppercase font-bold text-muted-foreground">Add Host / Instructor</Label>
+                                                        <Select onValueChange={(val) => {
+                                                            const currentIds = block.content.instructor_ids || [];
+                                                            if (!currentIds.includes(val)) {
+                                                                updateBlock(idx, { ...block.content, instructor_ids: [...currentIds, val] });
+                                                            }
+                                                        }}>
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Search and add instructors..." />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {instructors.filter(i => !(block.content.instructor_ids || []).includes(i.id)).map(inst => (
+                                                                    <SelectItem key={inst.id} value={inst.id}>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <div className="w-6 h-6 rounded-full bg-primary/10 overflow-hidden flex items-center justify-center">
+                                                                                {inst.avatar_url ? <img src={inst.avatar_url} className="w-full h-full object-cover" /> : <Users className="h-4 w-4" />}
+                                                                            </div>
+                                                                            <div>
+                                                                                <p className="font-bold text-sm leading-none">{inst.name}</p>
+                                                                                <p className="text-[10px] text-muted-foreground">{inst.specialization}</p>
+                                                                            </div>
+                                                                        </div>
+                                                                    </SelectItem>
+                                                                ))}
+                                                                {instructors.filter(i => !(block.content.instructor_ids || []).includes(i.id)).length === 0 && (
+                                                                    <p className="text-xs text-center py-2 text-muted-foreground italic">No more instructors available</p>
+                                                                )}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {block.type === 'faq' && (
+                                                <div className="space-y-4">
+                                                    {block.content.questions?.map((q: any, qIdx: number) => (
+                                                        <div key={qIdx} className="bg-accent/5 p-4 rounded-xl border border-border/50 relative group/faq">
+                                                            <div className="grid gap-3">
+                                                                <div className="space-y-1">
+                                                                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">Question {qIdx + 1}</Label>
+                                                                    <Input 
+                                                                        value={q.q} 
+                                                                        onChange={e => {
+                                                                            const newQs = [...block.content.questions];
+                                                                            newQs[qIdx].q = e.target.value;
+                                                                            updateBlock(idx, { ...block.content, questions: newQs });
+                                                                        }}
+                                                                        placeholder="E.G. What is included?"
+                                                                    />
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">Answer</Label>
+                                                                    <Textarea 
+                                                                        value={q.a} 
+                                                                        onChange={e => {
+                                                                            const newQs = [...block.content.questions];
+                                                                            newQs[qIdx].a = e.target.value;
+                                                                            updateBlock(idx, { ...block.content, questions: newQs });
+                                                                        }}
+                                                                        placeholder="Enter detailed answer..."
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="icon" 
+                                                                className="absolute top-2 right-2 h-6 w-6 text-destructive opacity-0 group-hover/faq:opacity-100 transition-opacity"
+                                                                onClick={() => {
+                                                                    const newQs = block.content.questions.filter((_: any, i: number) => i !== qIdx);
+                                                                    updateBlock(idx, { ...block.content, questions: newQs });
+                                                                }}
+                                                            >
+                                                                <Trash2 className="h-3 w-3" />
+                                                            </Button>
+                                                        </div>
+                                                    ))}
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="sm" 
+                                                        className="w-full border-dashed"
+                                                        onClick={() => {
+                                                            const newQs = [...(block.content.questions || []), { q: '', a: '' }];
+                                                            updateBlock(idx, { ...block.content, questions: newQs });
+                                                        }}
+                                                    >
+                                                        <Plus className="h-3 w-3 mr-2" /> Add FAQ Item
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                                {(!currentWebinar?.content_blocks || currentWebinar.content_blocks.length === 0) && (
+                                    <div className="text-center py-10 text-muted-foreground border border-dashed rounded-lg">
+                                        No content blocks added yet. Click above to add sections.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <DialogFooter className="border-t border-border/50 pt-4 px-6 pb-6 bg-muted/20">
+                        <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={handleSaveWebinar} className="bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20">
+                            <CheckCircle2 className="mr-2 h-4 w-4" /> Save Webinar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
+}

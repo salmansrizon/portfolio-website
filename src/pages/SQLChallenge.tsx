@@ -40,6 +40,7 @@ import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import ReactMarkdown from 'react-markdown';
 import { useTheme } from 'next-themes';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // ── Performance Memoization ──────────────────────────────────────────────
 const MemoizedMarkdown = React.memo(({ content }: { content: string }) => (
@@ -84,6 +85,7 @@ const SQLChallenge = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const { question, children, loading: qLoading } = useQuestion(slug || '');
   const { logSubmission, isSubmitting } = useSubmitCode();
 
@@ -415,48 +417,49 @@ const SQLChallenge = () => {
         </div>
 
         <header className="h-16 shrink-0 border-b bg-background/50 backdrop-blur-2xl flex items-center justify-between px-6 z-40 border-primary/5">
-           <div className="flex items-center gap-5">
-            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary transition-all hover:bg-primary/5 rounded-xl px-2" onClick={() => navigate('/career-prep')}>
+           <div className="flex items-center gap-2 md:gap-5 min-w-0">
+            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary transition-all hover:bg-primary/5 rounded-xl px-1 md:px-2 shrink-0" onClick={() => navigate('/career-prep')}>
               <ChevronLeft className="w-5 h-5" />
             </Button>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-4">
-                <Badge className="bg-primary/10 text-primary border-primary/30 text-[9px] font-black uppercase tracking-[0.2em] h-5 px-2.5">Mission Step {cursorIdx + 1}</Badge>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-xl font-black tracking-tight text-foreground uppercase italic bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-2 md:gap-4 overflow-hidden">
+                <Badge className="hidden sm:inline-flex bg-primary/10 text-primary border-primary/30 text-[9px] font-black uppercase tracking-[0.2em] h-5 px-2.5 shrink-0">Mission Step {cursorIdx + 1}</Badge>
+                <div className="flex items-center gap-2 min-w-0">
+                  <h1 className="text-sm md:text-xl font-black tracking-tight text-foreground uppercase italic bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent truncate pr-2">
                     {currentQ?.title || question?.title}
                   </h1>
                 </div>
-                <Badge variant="outline" className="text-[9px] font-black uppercase tracking-widest border-border/50 text-muted-foreground h-5 px-2 bg-muted/30">
-                  {currentQ?.difficulty || 'LEVEL 1'}
-                </Badge>
+                {!isMobile && (
+                  <Badge variant="outline" className="text-[9px] font-black uppercase tracking-widest border-border/50 text-muted-foreground h-5 px-2 bg-muted/30 shrink-0">
+                    {currentQ?.difficulty || 'LEVEL 1'}
+                  </Badge>
+                )}
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4 shrink-0">
             {timeLeft !== null && (
-              <div className="bg-card/40 px-5 py-2 rounded-2xl border border-primary/10 flex items-center gap-3 group transition-all hover:bg-primary/5">
-                <Clock className="w-4 h-4 text-primary animate-pulse" />
-                <span className="text-xs font-mono font-black text-foreground tracking-tighter">{formatTime(timeLeft)}</span>
+              <div className="hidden sm:flex bg-card/40 px-3 md:px-5 py-1.5 md:py-2 rounded-xl md:rounded-2xl border border-primary/10 items-center gap-2 group transition-all hover:bg-primary/5">
+                <Clock className="w-3.5 h-3.5 text-primary animate-pulse" />
+                <span className="text-[10px] md:text-xs font-mono font-black text-foreground tracking-tighter">{formatTime(timeLeft)}</span>
               </div>
             )}
-            <div className="h-6 w-px bg-border/50 mx-1" />
             
             {showsEditor && (
-              <Button size="default" onClick={handleRun} disabled={!envReady} className="bg-background/80 hover:bg-background text-foreground border border-border/80 h-10 font-black text-[10px] uppercase tracking-widest px-5 gap-2 shadow-sm transition-all hover:shadow-md hover:border-primary/40 active:scale-95">
-                {envBooting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5 text-primary" />}
-                Run Code
+              <Button size="sm" onClick={handleRun} disabled={!envReady} className="bg-primary/10 hover:bg-primary/20 text-primary h-9 px-3 rounded-xl font-black text-[10px] uppercase gap-2 border border-primary/20 transition-all active:scale-95">
+                {envBooting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" fill="currentColor" />}
+                <span>Run</span>
               </Button>
             )}
 
-            <Button size="default" onClick={handleSubmit} disabled={isSubmitting || (showsEditor && !envReady)} className="bg-primary hover:bg-primary/90 text-primary-foreground h-11 px-8 rounded-2xl font-black text-[11px] uppercase tracking-[0.15em] shadow-xl shadow-primary/25 gap-3 transition-all active:scale-95 group">
-              <Send className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
-              Submit
+            <Button size="sm" onClick={handleSubmit} disabled={isSubmitting || (showsEditor && !envReady)} className="bg-primary hover:bg-primary/90 text-primary-foreground h-9 px-4 rounded-xl font-black text-[10px] uppercase gap-2 shadow-lg shadow-primary/20 transition-all active:scale-95 group">
+              <Send className="w-3.5 h-3.5" />
+              <span>Submit</span>
             </Button>
           </div>
         </header>
         <div className="flex-1 flex overflow-hidden">
-          <PanelGroup direction="horizontal">
+          <PanelGroup direction={isMobile ? "vertical" : "horizontal"}>
             <Panel defaultSize={30} minSize={20}>
               <div className="h-full flex flex-col bg-card border-r border-border">
                 <div className="h-12 shrink-0 border-b flex items-center px-6 gap-8 bg-muted/20 backdrop-blur-md">
@@ -483,8 +486,8 @@ const SQLChallenge = () => {
                 </div>
               </div>
             </Panel>
-            <PanelResizeHandle className="w-[1px] bg-border hover:bg-primary/40 transition-colors z-50 cursor-col-resize" />
-            <Panel defaultSize={70} minSize={30}>
+            <PanelResizeHandle className={isMobile ? "h-1 bg-border/20" : "w-[1px] bg-border hover:bg-primary/40 transition-colors z-50 cursor-col-resize"} />
+            <Panel defaultSize={isMobile ? 40 : 30} minSize={isMobile ? 20 : 20}>
                <div className="h-full flex flex-col bg-background relative z-10">
                   {currentQ?.question_type === 'mcq' ? (
                     <div className="flex-1 flex flex-col items-center justify-center p-8 overflow-auto relative">

@@ -18,6 +18,9 @@ import BookSession from "./pages/BookSession";
 import NotFound from "./pages/NotFound";
 import CareerPrep from "./pages/CareerPrep";
 import SQLChallenge from "./pages/SQLChallenge";
+import WebinarLanding from "./pages/WebinarLanding";
+import FloatingContact from "@/components/FloatingContact";
+import WebinarFloatingButton from "@/components/WebinarFloatingButton";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +32,8 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <FloatingContact />
+            <WebinarFloatingButton />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
@@ -41,6 +46,7 @@ const App = () => (
               <Route path="/book-session" element={<BookSession />} />
               <Route path="/career-prep" element={<CareerPrep />} />
               <Route path="/career-prep/solve/:slug" element={<SQLProvider><SQLChallenge /></SQLProvider>} />
+              <Route path="/webinar/:id" element={<WebinarLanding />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

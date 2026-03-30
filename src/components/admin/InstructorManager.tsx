@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, X, UserPlus, Mail, Phone, Globe, GraduationCap } from "lucide-react";
+import { Plus, Edit, Trash2, X, UserPlus, Mail, Phone, Globe, GraduationCap, Linkedin } from "lucide-react";
 
 interface Instructor {
   id: string;
@@ -20,6 +20,7 @@ interface Instructor {
   specialization?: string;
   avatar_url?: string;
   website?: string;
+  linkedin_url?: string;
   is_active: boolean;
   assigned_courses?: string[];
   created_at?: string;
@@ -38,6 +39,7 @@ const initialFormData = {
   specialization: "",
   avatar_url: "",
   website: "",
+  linkedin_url: "",
   is_active: true,
   assigned_courses: [] as string[],
 };
@@ -93,6 +95,7 @@ export default function InstructorManager() {
         specialization: formData.specialization || null,
         avatar_url: formData.avatar_url || null,
         website: formData.website || null,
+        linkedin_url: formData.linkedin_url || null,
         is_active: formData.is_active,
         assigned_courses: formData.assigned_courses,
       };
@@ -125,6 +128,7 @@ export default function InstructorManager() {
       specialization: instructor.specialization || "",
       avatar_url: instructor.avatar_url || "",
       website: instructor.website || "",
+      linkedin_url: instructor.linkedin_url || "",
       is_active: instructor.is_active,
       assigned_courses: instructor.assigned_courses || [],
     });
@@ -202,6 +206,10 @@ export default function InstructorManager() {
                 <div className="md:col-span-2">
                   <Label>Avatar URL</Label>
                   <Input value={formData.avatar_url} onChange={(e) => setFormData({ ...formData, avatar_url: e.target.value })} placeholder="https://example.com/avatar.jpg" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>LinkedIn Profile URL</Label>
+                  <Input value={formData.linkedin_url} onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })} placeholder="https://linkedin.com/in/username" />
                 </div>
                 <div className="md:col-span-2">
                   <Label>Bio</Label>
@@ -285,6 +293,7 @@ export default function InstructorManager() {
                   <div className="flex items-center gap-2"><Mail className="w-3.5 h-3.5" />{instructor.email}</div>
                   {instructor.phone && <div className="flex items-center gap-2"><Phone className="w-3.5 h-3.5" />{instructor.phone}</div>}
                   {instructor.website && <div className="flex items-center gap-2"><Globe className="w-3.5 h-3.5" /><a href={instructor.website} target="_blank" className="text-primary hover:underline truncate">{instructor.website}</a></div>}
+                  {instructor.linkedin_url && <div className="flex items-center gap-2 text-[#0077b5] font-bold"><Linkedin className="w-3.5 h-3.5" /><a href={instructor.linkedin_url} target="_blank" className="truncate hover:underline">LinkedIn Profile</a></div>}
                 </div>
                 {instructor.bio && <p className="text-xs text-muted-foreground line-clamp-2">{instructor.bio}</p>}
                 <div className="flex items-center gap-1 flex-wrap">

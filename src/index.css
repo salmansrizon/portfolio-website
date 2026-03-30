@@ -86,6 +86,9 @@
   * {
     @apply border-border;
   }
+  html, body {
+    @apply w-full overflow-x-hidden min-h-screen scroll-smooth;
+  }
   body {
     @apply bg-background text-foreground;
   }

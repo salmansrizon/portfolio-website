@@ -39,9 +39,21 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex-shrink-0">
-            <Link to="/" className="text-2xl font-bold text-primary hover:text-primary/80 transition-colors">
+          <div className="flex-shrink-0 flex items-center gap-3 md:gap-0">
+            <Link to="/" className="text-xl sm:text-2xl font-bold text-primary hover:text-primary/80 transition-colors">
               Salman Sakib
+            </Link>
+            
+            {/* Mobile Quick Action - Career Prep */}
+            <Link 
+              to="/career-prep" 
+              className="md:hidden flex items-center gap-1.5 px-2.5 py-1.5 bg-primary/10 rounded-full border border-primary/20 transition-all hover:bg-primary/20 active:scale-95"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </span>
+              <span className="text-[10px] font-black text-primary uppercase tracking-widest leading-none">Career Prep</span>
             </Link>
           </div>
 

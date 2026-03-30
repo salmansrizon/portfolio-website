@@ -90,6 +90,7 @@ interface Course {
   sections?: CourseSection[];
   student_count?: number;
   rating?: number;
+  faqs?: { question: string; answer: string }[];
   created_at?: string;
   updated_at?: string;
 }
@@ -162,6 +163,7 @@ interface FormData {
   start_date?: string;
   course_includes: string[];
   instructor_id: string | null;
+  faqs: { question: string; answer: string }[];
 }
 
 const initialFormData: FormData = {
@@ -187,6 +189,7 @@ const initialFormData: FormData = {
   start_date: undefined,
   course_includes: [],
   instructor_id: null,
+  faqs: [],
 };
 
 export default function CourseManager() {
@@ -260,6 +263,7 @@ export default function CourseManager() {
             start_date: formData.start_date ? new Date(formData.start_date).toISOString() : null,
             course_includes: formData.course_includes,
             instructor_id: formData.instructor_id || null,
+            faqs: formData.faqs || [],
           })
           .eq('id', courseId);
         if (courseError) throw courseError;
@@ -289,6 +293,7 @@ export default function CourseManager() {
             start_date: formData.start_date ? new Date(formData.start_date).toISOString() : null,
             course_includes: formData.course_includes,
             instructor_id: formData.instructor_id || null,
+            faqs: formData.faqs || [],
           })
           .select('id')
           .single();
@@ -666,6 +671,7 @@ export default function CourseManager() {
         start_date: courseData.start_date ? new Date(courseData.start_date).toISOString().slice(0, 16) : undefined,
         course_includes: courseData.course_includes || [],
         instructor_id: courseData.instructor_id || null,
+        faqs: courseData.faqs || [],
       });
       setShowDialog(true);
     } catch (error) {
@@ -974,6 +980,82 @@ export default function CourseManager() {
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
+                </div>
+
+                {/* FAQ Management Section */}
+                <div className="border rounded-lg p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">Frequently Asked Questions (FAQs)</h3>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setFormData({
+                        ...formData,
+                        faqs: [...(formData.faqs || []), { question: "", answer: "" }]
+                      })}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add FAQ
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {(!formData.faqs || formData.faqs.length === 0) ? (
+                      <div className="text-center py-6 text-muted-foreground border-2 border-dashed rounded-lg bg-muted/20">
+                        <p className="text-sm italic">No FAQs added yet. Add questions prospective students might have.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {formData.faqs.map((faq, idx) => (
+                          <div key={idx} className="relative p-4 border rounded-lg bg-muted/30 space-y-3 group">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute top-2 right-2 h-8 w-8 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
+                              onClick={() => {
+                                const newFaqs = [...formData.faqs];
+                                newFaqs.splice(idx, 1);
+                                setFormData({ ...formData, faqs: newFaqs });
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                            
+                            <div className="space-y-2">
+                              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Question {idx + 1}</Label>
+                              <Input
+                                value={faq.question}
+                                onChange={(e) => {
+                                  const newFaqs = [...formData.faqs];
+                                  newFaqs[idx].question = e.target.value;
+                                  setFormData({ ...formData, faqs: newFaqs });
+                                }}
+                                placeholder="e.g. Is there any prerequisite for this course?"
+                                className="bg-background"
+                              />
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Answer</Label>
+                              <Textarea
+                                value={faq.answer}
+                                onChange={(e) => {
+                                  const newFaqs = [...formData.faqs];
+                                  newFaqs[idx].answer = e.target.value;
+                                  setFormData({ ...formData, faqs: newFaqs });
+                                }}
+                                placeholder="Provide a clear, helpful answer..."
+                                rows={2}
+                                className="bg-background"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 

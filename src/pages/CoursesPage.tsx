@@ -8,6 +8,7 @@ import { Search, Filter, BookOpen, Clock, ChevronRight, GraduationCap } from "lu
 import { useNavigate } from "react-router-dom";
 import { CourseCountdown } from "@/components/CourseCountdown";
 import ScrollReveal from "@/components/ScrollReveal";
+import { cn } from "@/lib/utils";
 
 interface Category {
   id: string;
@@ -124,60 +125,48 @@ export default function CoursesPage() {
       </div>
 
       <div className="container mx-auto px-4 py-12">
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="space-y-8">
           
-          {/* Sidebar - Categories */}
-          <aside className="w-full lg:w-72 shrink-0">
-            <div className="bg-background/60 backdrop-blur-md border border-border/50 shadow-sm rounded-2xl overflow-hidden sticky top-24">
-              <div className="p-5 border-b border-border/50 bg-muted/20">
-                <h3 className="font-bold text-lg flex items-center gap-2">
-                  <Filter className="w-5 h-5 text-primary" /> Categories
-                </h3>
+          {/* Main Content - Course Grid */}
+          <div className="flex-1">
+            <div className="mb-8 space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-foreground">
+                  {selectedCategory ? categories.find(c => c.id === selectedCategory)?.name : 'All Courses'}
+                  <span className="ml-3 text-sm font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                    {filteredCourses.length}
+                  </span>
+                </h2>
               </div>
-              <div className="p-4 space-y-1">
-                <button 
+
+              {/* Horizontal Category Filter (Top of Cards) */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide no-scrollbar -mx-1 px-1">
+                <button
                   onClick={() => setSelectedCategory(null)}
-                  className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${!selectedCategory ? 'bg-primary text-primary-foreground shadow-md' : 'hover:bg-muted text-muted-foreground'}`}
+                  className={cn(
+                    "px-5 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border shadow-sm",
+                    !selectedCategory 
+                      ? "bg-primary text-primary-foreground border-primary shadow-primary/20 scale-105" 
+                      : "bg-background/80 text-muted-foreground border-border hover:border-primary/30 hover:text-primary"
+                  )}
                 >
                   All Courses
                 </button>
-                
-                {rootCategories.map(root => (
-                  <div key={root.id} className="space-y-1 pt-2">
-                    <button 
-                      onClick={() => setSelectedCategory(root.id)}
-                      className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${selectedCategory === root.id ? 'bg-primary text-primary-foreground shadow-md' : 'hover:bg-muted text-foreground'}`}
-                    >
-                      {root.name}
-                    </button>
-                    
-                    {/* Subcategories */}
-                    <div className="pl-4 space-y-1 border-l-2 border-muted ml-3">
-                      {getSubcategories(root.id).map(sub => (
-                        <button 
-                          key={sub.id}
-                          onClick={() => setSelectedCategory(sub.id)}
-                          className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all ${selectedCategory === sub.id ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50 text-muted-foreground'}`}
-                        >
-                          {sub.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                {rootCategories.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(cat.id)}
+                    className={cn(
+                      "px-5 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border shadow-sm",
+                      selectedCategory === cat.id 
+                        ? "bg-primary text-primary-foreground border-primary shadow-primary/20 scale-105" 
+                        : "bg-background/80 text-muted-foreground border-border hover:border-primary/30 hover:text-primary"
+                    )}
+                  >
+                    {cat.name}
+                  </button>
                 ))}
               </div>
-            </div>
-          </aside>
-
-          {/* Main Content - Course Grid */}
-          <div className="flex-1">
-            <div className="mb-8 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-foreground">
-                {selectedCategory ? categories.find(c => c.id === selectedCategory)?.name : 'All Courses'}
-                <span className="ml-3 text-sm font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                  {filteredCourses.length}
-                </span>
-              </h2>
             </div>
 
             {isLoading ? (
@@ -187,79 +176,107 @@ export default function CoursesPage() {
                 ))}
               </div>
             ) : filteredCourses.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                 {filteredCourses.map((course, index) => (
                   <ScrollReveal key={course.id} direction="up" delay={index * 0.05}>
-                    <div className="bg-background/60 backdrop-blur-sm rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50 group">
-                      {/* Image top curve design */}
-                      <div className="relative bg-gradient-to-br from-primary to-blue-500 text-white p-6 pb-8 flex flex-col items-center justify-center text-center overflow-hidden h-[180px] shrink-0">
-                        {course.banner_image && (
+                    <div 
+                      className="group relative flex flex-col h-full bg-card/40 backdrop-blur-md rounded-[32px] border border-border/50 overflow-hidden hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 transition-all duration-500"
+                      onClick={() => navigate(`/course/${course.id}`)}
+                    >
+                      {/* Course Banner */}
+                      <div className="relative h-56 w-full overflow-hidden shrink-0">
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/90 to-blue-600/90 z-10 group-hover:opacity-100 transition-opacity" />
+                        {course.banner_image ? (
                           <img 
                             src={course.banner_image} 
-                            className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:scale-110 transition-transform duration-700" 
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
                             alt={course.title} 
-                            loading="lazy"
-                            decoding="async"
                           />
+                        ) : (
+                          <div className="absolute inset-0 bg-primary/20 animate-pulse" />
                         )}
-                        <h3 className="font-bold text-xl z-10 uppercase tracking-wide leading-tight px-4">
-                          {course.title}
-                        </h3>
-                        {course.start_date && (
-                          <div className="mt-4 z-10 bg-white/20 backdrop-blur-md text-white text-[9px] font-bold px-3 py-1.5 rounded-full tracking-wider border border-white/10">
-                            REGISTRATION OPEN
+                        
+                        {/* Overlay Content */}
+                        <div className="absolute inset-0 z-20 p-8 flex flex-col justify-between">
+                          <div className="flex justify-between items-start w-full">
+                            {course.is_free ? (
+                              <Badge className="bg-emerald-500/90 backdrop-blur-md border-none text-white px-3 py-1 font-black tracking-tighter text-[10px] animate-pulse">
+                                FREE ACCESS
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-white/20 backdrop-blur-md border border-white/20 text-white px-3 py-1 font-bold text-[10px]">
+                                PREMIUM
+                              </Badge>
+                            )}
+                            
+                            {course.start_date && (
+                              <CourseCountdown 
+                                startDate={course.start_date} 
+                                className="bg-white/10 backdrop-blur-xl text-white border border-white/20 font-black tracking-widest text-[9px] px-3 py-1.5 rounded-full"
+                              />
+                            )}
                           </div>
-                        )}
+                          
+                          <h3 className="text-white text-xl font-black leading-tight uppercase tracking-tight drop-shadow-lg line-clamp-2">
+                             {course.title}
+                          </h3>
+                        </div>
                       </div>
 
-                      <div className="p-6 flex flex-col flex-grow gap-4">
-                        <div className="flex justify-between items-start mb-1">
-                          <h4 className="font-bold text-lg text-gray-900 dark:text-foreground line-clamp-1">{course.title}</h4>
+                      {/* Card Content */}
+                      <div className="p-8 flex flex-col flex-grow">
+                        <div className="mb-4">
+                          <p className="text-sm text-muted-foreground line-clamp-2 italic font-medium leading-relaxed">
+                            {course.description}
+                          </p>
                         </div>
-                        
-                        <p className="text-sm text-gray-500 dark:text-muted-foreground line-clamp-2 leading-relaxed flex-grow">
-                          {course.description}
-                        </p>
-                        
-                        <div className="flex flex-wrap gap-1.5">
-                          {course.technologies.slice(0, 2).map(tech => (
-                            <Badge key={tech} variant="secondary" className="text-[9px] font-medium rounded-full py-0 px-2 bg-muted text-gray-700 dark:text-foreground">
+
+                        {/* Tech Stack */}
+                        <div className="flex flex-wrap gap-2 mb-6">
+                          {course.technologies.slice(0, 3).map(tech => (
+                            <span key={tech} className="text-[10px] font-black uppercase tracking-widest text-primary/70 bg-primary/5 px-2.5 py-1 rounded-full border border-primary/10">
                               {tech}
-                            </Badge>
+                            </span>
                           ))}
                         </div>
-                        
-                        <div className="flex items-center justify-between text-sm py-2 border-t border-border mt-2">
-                          <div className="flex items-center gap-1.5 text-gray-500">
-                            <Clock className="w-4 h-4" />
-                            <span className="text-xs font-medium">{course.duration_hours || '10'}h</span>
+
+                        {/* Footer Info */}
+                        <div className="mt-auto pt-6 border-t border-border/50 flex items-center justify-between">
+                          <div className="grid gap-1">
+                            <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold">
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>{course.duration_hours || 'Self-paced'}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold">
+                              <BookOpen className="w-3.5 h-3.5" />
+                              <span className="capitalize">{course.difficulty_level || 'All levels'}</span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2 font-bold text-gray-900 dark:text-foreground">
+
+                          <div className="text-right">
                             {course.is_free ? (
-                              <Badge className="bg-green-500 hover:bg-green-600 text-[10px] text-white px-2 py-0 h-5 border-none shadow-sm flex items-center gap-1.5 font-bold shrink-0">
-                                <div className="relative flex h-1.5 w-1.5">
-                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
-                                </div>
-                                FREE
-                              </Badge>
-                            ) : course.discounted_price ? (
-                              <>
-                                <span>৳ {course.discounted_price}</span>
-                                <span className="text-xs text-gray-400 line-through font-normal">৳ {course.price}</span>
-                              </>
+                              <div className="flex flex-col items-end">
+                                <span className="text-xl font-black text-emerald-500 tracking-tighter uppercase">FREE</span>
+                                <div className="h-1 w-6 bg-emerald-500 rounded-full mt-1" />
+                              </div>
                             ) : (
-                              <span>৳ {course.price}</span>
+                              <div className="flex flex-col items-end">
+                                <div className="flex items-baseline gap-2">
+                                  <span className="text-2xl font-black text-foreground tracking-tighter">৳{course.discounted_price || course.price}</span>
+                                </div>
+                                {course.discounted_price && (
+                                  <span className="text-[10px] text-muted-foreground line-through font-bold">৳{course.price}</span>
+                                )}
+                              </div>
                             )}
                           </div>
                         </div>
-                        
-                        <Button 
-                          className="w-full bg-primary hover:bg-primary-hover text-primary-foreground rounded-xl h-11 font-semibold shadow-sm hover:shadow-md transition-all"
-                          onClick={() => navigate(`/course/${course.id}`)}
-                        >
-                          View Details
-                        </Button>
+
+                        {/* Action Shadow Button - Visible on Hover */}
+                        <div className="mt-8 flex items-center gap-3 text-primary font-black text-sm group-hover:gap-5 transition-all cursor-pointer">
+                          <span>VIEW CURRICULUM</span>
+                          <ChevronRight className="w-4 h-4" />
+                        </div>
                       </div>
                     </div>
                   </ScrollReveal>
