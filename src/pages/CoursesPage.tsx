@@ -180,103 +180,94 @@ export default function CoursesPage() {
                 {filteredCourses.map((course, index) => (
                   <ScrollReveal key={course.id} direction="up" delay={index * 0.05}>
                     <div 
-                      className="group relative flex flex-col h-full bg-card/40 backdrop-blur-md rounded-[32px] border border-border/50 overflow-hidden hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 transition-all duration-500"
+                      className="bg-white dark:bg-card rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50 group cursor-pointer"
                       onClick={() => navigate(`/course/${course.id}`)}
                     >
-                      {/* Course Banner */}
-                      <div className="relative h-56 w-full overflow-hidden shrink-0">
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/90 to-blue-600/90 z-10 group-hover:opacity-100 transition-opacity" />
-                        {course.banner_image ? (
-                          <img 
-                            src={course.banner_image} 
-                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
-                            alt={course.title} 
-                          />
-                        ) : (
-                          <div className="absolute inset-0 bg-primary/20 animate-pulse" />
-                        )}
+                      {/* Header Section */}
+                      <div className="relative bg-[#1a56db] text-white p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[200px] shrink-0">
+                        {/* Decorative shapes */}
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full translate-x-12 -translate-y-12"></div>
+                        <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full -translate-x-8 translate-y-8"></div>
                         
-                        {/* Overlay Content */}
-                        <div className="absolute inset-0 z-20 p-8 flex flex-col justify-between">
-                          <div className="flex justify-between items-start w-full">
-                            {course.is_free ? (
-                              <Badge className="bg-emerald-500/90 backdrop-blur-md border-none text-white px-3 py-1 font-black tracking-tighter text-[10px] animate-pulse">
-                                FREE ACCESS
-                              </Badge>
-                            ) : (
-                              <Badge className="bg-white/20 backdrop-blur-md border border-white/20 text-white px-3 py-1 font-bold text-[10px]">
-                                PREMIUM
-                              </Badge>
-                            )}
-                            
-                            {course.start_date && (
-                              <CourseCountdown 
-                                startDate={course.start_date} 
-                                className="bg-white/10 backdrop-blur-xl text-white border border-white/20 font-black tracking-widest text-[9px] px-3 py-1.5 rounded-full"
-                              />
-                            )}
-                          </div>
-                          
-                          <h3 className="text-white text-xl font-black leading-tight uppercase tracking-tight drop-shadow-lg line-clamp-2">
-                             {course.title}
-                          </h3>
+                        {/* Title */}
+                        <h3 className="font-bold text-2xl z-10 uppercase tracking-wide leading-tight px-4 flex items-center justify-center gap-2">
+                          {course.title}
+                        </h3>
+                        
+                        {/* Registration Pill */}
+                        <div className="mt-4 z-10 bg-[#0042a5] text-white text-[10px] font-bold px-4 py-1.5 rounded-full tracking-wider border border-white/10 shadow-sm">
+                          REGISTRATION NOW
                         </div>
+                        
+                        {/* Limited Seat available text */}
+                        <div className="mt-2 text-[9px] z-10 text-blue-100 uppercase tracking-widest font-medium">Limited seat available</div>
                       </div>
 
-                      {/* Card Content */}
-                      <div className="p-8 flex flex-col flex-grow">
-                        <div className="mb-4">
-                          <p className="text-sm text-muted-foreground line-clamp-2 italic font-medium leading-relaxed">
-                            {course.description}
-                          </p>
-                        </div>
-
-                        {/* Tech Stack */}
-                        <div className="flex flex-wrap gap-2 mb-6">
-                          {course.technologies.slice(0, 3).map(tech => (
-                            <span key={tech} className="text-[10px] font-black uppercase tracking-widest text-primary/70 bg-primary/5 px-2.5 py-1 rounded-full border border-primary/10">
-                              {tech}
-                            </span>
-                          ))}
-                        </div>
-
-                        {/* Footer Info */}
-                        <div className="mt-auto pt-6 border-t border-border/50 flex items-center justify-between">
-                          <div className="grid gap-1">
-                            <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold">
-                              <Clock className="w-3.5 h-3.5" />
-                              <span>{course.duration_hours || 'Self-paced'}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold">
-                              <BookOpen className="w-3.5 h-3.5" />
-                              <span className="capitalize">{course.difficulty_level || 'All levels'}</span>
+                      {/* Body Content */}
+                      <div className="p-6 flex flex-col flex-grow gap-5">
+                        <div className="flex justify-between items-start gap-4">
+                          <h4 className="font-bold text-lg text-gray-900 dark:text-foreground leading-snug flex items-center gap-2">
+                             {course.title}
+                             {course.is_free && (
+                               <span className="bg-red-500 text-white text-[9px] h-4 px-1.5 rounded-full flex items-center gap-1 font-black animate-pulse shrink-0">
+                                 FREE
+                               </span>
+                             )}
+                          </h4>
+                          <div className="flex flex-col gap-1 items-end shrink-0">
+                            {course.start_date && (
+                              <div className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                <CourseCountdown startDate={course.start_date} showIcon={false} />
+                              </div>
+                            )}
+                            <div className="bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-emerald-100 dark:border-emerald-800">
+                              {course.difficulty_level || "beginner"}
                             </div>
                           </div>
-
-                          <div className="text-right">
-                            {course.is_free ? (
-                              <div className="flex flex-col items-end">
-                                <span className="text-xl font-black text-emerald-500 tracking-tighter uppercase">FREE</span>
-                                <div className="h-1 w-6 bg-emerald-500 rounded-full mt-1" />
-                              </div>
+                        </div>
+                        
+                        <p className="text-sm text-gray-500 dark:text-muted-foreground line-clamp-3 leading-relaxed flex-grow">
+                          {course.description}
+                        </p>
+                        
+                        <div className="flex flex-wrap gap-1.5 mt-auto">
+                          {course.technologies?.slice(0, 3).map(tech => (
+                            <Badge key={tech} variant="secondary" className="text-[10px] font-medium rounded-full py-0.5 px-3 bg-gray-50 dark:bg-muted text-gray-600 dark:text-foreground border border-gray-200 dark:border-border/50 hover:bg-gray-100">
+                              {tech}
+                            </Badge>
+                          ))}
+                          {course.technologies?.length > 3 && (
+                            <Badge variant="secondary" className="text-[10px] font-medium rounded-full py-0.5 px-3 bg-gray-50 dark:bg-muted text-gray-600 dark:text-foreground border border-gray-200">
+                              +{course.technologies.length - 3} more
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center justify-between text-sm pt-2 border-t border-border/10">
+                          <div className="flex items-center gap-1.5 text-gray-500 dark:text-muted-foreground">
+                            <Clock className="w-4 h-4" />
+                            <span className="text-xs font-medium">{course.duration_hours ? `${course.duration_hours}h` : 'Self-paced'}</span>
+                          </div>
+                          <div className="flex items-center gap-2 font-bold text-gray-900 dark:text-foreground">
+                            {course.discounted_price ? (
+                              <>
+                                <span>৳ {course.discounted_price}</span>
+                                <span className="text-xs text-gray-400 line-through font-normal">৳ {course.price}</span>
+                              </>
+                            ) : course.is_free ? (
+                              <span className="text-emerald-600 font-black tracking-tight">FREE</span>
                             ) : (
-                              <div className="flex flex-col items-end">
-                                <div className="flex items-baseline gap-2">
-                                  <span className="text-2xl font-black text-foreground tracking-tighter">৳{course.discounted_price || course.price}</span>
-                                </div>
-                                {course.discounted_price && (
-                                  <span className="text-[10px] text-muted-foreground line-through font-bold">৳{course.price}</span>
-                                )}
-                              </div>
+                              <span>৳ {course.price}</span>
                             )}
                           </div>
                         </div>
-
-                        {/* Action Shadow Button - Visible on Hover */}
-                        <div className="mt-8 flex items-center gap-3 text-primary font-black text-sm group-hover:gap-5 transition-all cursor-pointer">
-                          <span>VIEW CURRICULUM</span>
-                          <ChevronRight className="w-4 h-4" />
-                        </div>
+                        
+                        <Button 
+                          className="w-full bg-[#3b62f6] hover:bg-[#254ee6] text-white rounded-xl mt-1 h-12 font-semibold shadow-md transition-all active:scale-[0.98]"
+                          onClick={() => navigate(`/course/${course.id}`)}
+                        >
+                          View Course Details
+                        </Button>
                       </div>
                     </div>
                   </ScrollReveal>

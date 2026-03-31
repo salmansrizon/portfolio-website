@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, ExternalLink, Github, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, ExternalLink, Github, ChevronDown, ChevronUp, Image as ImageIcon } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from "@/components/Navbar";
 import { usePageView } from "@/hooks/usePageView";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Project {
   id: string;
@@ -58,9 +59,35 @@ const PortfolioPage = () => {
     return (
       <>
         <Navbar />
-        <div className="min-h-screen pt-16 bg-background">
-          <div className="flex justify-center items-center min-h-[400px]">
-            <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="min-h-screen pt-32 bg-background">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="text-center mb-12">
+              <Skeleton className="h-14 w-64 mx-auto mb-4" />
+              <Skeleton className="h-6 w-full max-w-2xl mx-auto" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Card key={i} className="overflow-hidden border border-border/50">
+                  <Skeleton className="aspect-video w-full" />
+                  <CardHeader className="p-6">
+                    <Skeleton className="h-6 w-3/4 mb-4" />
+                    <div className="flex gap-2">
+                       <Skeleton className="h-5 w-16" />
+                       <Skeleton className="h-5 w-20" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-6 pt-0">
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-2/3 mb-6" />
+                    <div className="flex gap-3">
+                       <Skeleton className="h-10 flex-1" />
+                       <Skeleton className="h-10 flex-1" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
       </>

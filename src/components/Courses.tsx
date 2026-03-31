@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
-import { BookOpen, Clock } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { BookOpen, Clock, Zap, ChevronRight, ArrowRight, Layout, PlayCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CourseCountdown } from "@/components/CourseCountdown";
 import ScrollReveal from "./ScrollReveal";
@@ -95,34 +95,27 @@ export default function Courses() {
             <ScrollReveal key={course.id} direction="up" delay={index * 0.1}>
               <div className="bg-white dark:bg-card rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50">
                 
-                {/* Image top curve design */}
+                {/* Header Section */}
                 <div className="relative bg-[#1a56db] text-white p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[200px] shrink-0">
                   {/* Decorative shapes */}
                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full translate-x-12 -translate-y-12"></div>
                   <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full -translate-x-8 translate-y-8"></div>
                   
-                  {/* Title & Badge */}
+                  {/* Title */}
                   <h3 className="font-bold text-2xl z-10 uppercase tracking-wide leading-tight px-4 flex items-center justify-center gap-2">
                     {course.title}
-                    {course.is_free && (
-                      <span className="bg-red-500 text-white text-[10px] h-5 px-2 rounded-full flex items-center gap-1.5 font-black border border-white/20 animate-pulse">
-                        <span className="relative flex h-1.5 w-1.5">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
-                        </span>
-                        FREE
-                      </span>
-                    )}
                   </h3>
-                  {course.start_date && (
-                    <div className="mt-4 z-10 bg-[#0042a5] text-white text-[10px] font-bold px-4 py-1.5 rounded-full tracking-wider border border-white/10 shadow-sm">
-                      REGISTRATION NOW
-                    </div>
-                  )}
-                  <div className="mt-1.5 text-[9px] z-10 text-blue-100 uppercase tracking-widest font-medium">Limited seat available</div>
+                  
+                  {/* Registration Pill */}
+                  <div className="mt-4 z-10 bg-[#0042a5] text-white text-[10px] font-bold px-4 py-1.5 rounded-full tracking-wider border border-white/10 shadow-sm">
+                    REGISTRATION NOW
+                  </div>
+                  
+                  {/* Limited Seat available text */}
+                  <div className="mt-2 text-[9px] z-10 text-blue-100 uppercase tracking-widest font-medium">Limited seat available</div>
                 </div>
 
-                {/* Body */}
+                {/* Body Content */}
                 <div className="p-6 flex flex-col flex-grow gap-5">
                   <div className="flex justify-between items-start gap-4">
                     <h4 className="font-bold text-lg text-gray-900 dark:text-foreground leading-snug flex items-center gap-2">
@@ -143,7 +136,7 @@ export default function Courses() {
                           <CourseCountdown startDate={course.start_date} showIcon={false} />
                         </div>
                       )}
-                      <div className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                      <div className="bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-emerald-100 dark:border-emerald-800">
                         {course.difficulty_level || "beginner"}
                       </div>
                     </div>
@@ -155,18 +148,18 @@ export default function Courses() {
                   
                   <div className="flex flex-wrap gap-1.5 mt-auto">
                     {course.technologies.slice(0, 3).map(tech => (
-                      <Badge key={tech} variant="secondary" className="text-[10px] font-medium rounded-full py-0.5 px-3 bg-gray-100 dark:bg-muted text-gray-700 dark:text-foreground border hover:bg-gray-200">
+                      <Badge key={tech} variant="secondary" className="text-[10px] font-medium rounded-full py-0.5 px-3 bg-gray-50 dark:bg-muted text-gray-600 dark:text-foreground border border-gray-200 dark:border-border/50 hover:bg-gray-100">
                         {tech}
                       </Badge>
                     ))}
                     {course.technologies.length > 3 && (
-                      <Badge variant="secondary" className="text-[10px] font-medium rounded-full py-0.5 px-3 bg-gray-100 dark:bg-muted text-gray-700 dark:text-foreground border">
+                      <Badge variant="secondary" className="text-[10px] font-medium rounded-full py-0.5 px-3 bg-gray-50 dark:bg-muted text-gray-600 dark:text-foreground border border-gray-200">
                         +{course.technologies.length - 3} more
                       </Badge>
                     )}
                   </div>
                   
-                  <div className="flex items-center justify-between text-sm pt-2">
+                  <div className="flex items-center justify-between text-sm pt-2 border-t border-border/10">
                     <div className="flex items-center gap-1.5 text-gray-500 dark:text-muted-foreground">
                       <Clock className="w-4 h-4" />
                       <span className="text-xs font-medium">{course.duration_hours ? `${course.duration_hours}h` : 'N/A'}</span>
@@ -194,7 +187,7 @@ export default function Courses() {
                   </div>
                   
                   <Button 
-                    className="w-full bg-[#3b62f6] hover:bg-[#254ee6] text-white rounded-xl mt-1 h-11 font-semibold shadow-md transition-all active:scale-[0.98]"
+                    className="w-full bg-[#3b62f6] hover:bg-[#254ee6] text-white rounded-xl mt-1 h-12 font-semibold shadow-md transition-all active:scale-[0.98]"
                     onClick={() => navigate(`/course/${course.id}`)}
                   >
                     View Course Details

@@ -13,7 +13,7 @@ import {
   Info, Loader2, Pin, CheckSquare, ListChecks, Clock as ClockIcon,
   ChevronDown, Send, UserCircle, Mail, Timer, CreditCard,
   GraduationCap, Rocket, BookOpen, Layout, Linkedin,
-  HelpCircle, Quote, ArrowRight
+  HelpCircle, Quote, ArrowRight, Zap
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -34,6 +34,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { addMinutes } from "date-fns";
 import { cn } from "@/lib/utils";
+import PaymentModal, { PaymentModalData } from "@/components/PaymentModal";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Course {
   id: string;
@@ -112,41 +114,17 @@ export default function CourseDetails() {
   const [instructor, setInstructor] = useState<Instructor | null>(null);
   const [reviews, setReviews] = useState<CourseReview[]>([]);
   const [loading, setLoading] = useState(true);
-  
+  const [relatedCourses, setRelatedCourses] = useState<Course[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
   
   // Enrollment Modal state
   const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
-  const [enrollmentData, setEnrollmentData] = useState({
-    user_name: "", user_email: "", whatsapp_number: "", profession: "", institute_name: ""
-  });
-  const [paymentMethod, setPaymentMethod] = useState<'bkash' | 'nagad' | ''>('');
-  const [transactionId, setTransactionId] = useState("");
-  const [paymentDeadline, setPaymentDeadline] = useState<Date | null>(null);
-  const [timeLeft, setTimeLeft] = useState('');
-  const [paymentSettings, setPaymentSettings] = useState<any>(null);
 
   // Review state
   const [reviewData, setReviewData] = useState({ student_name: "", student_email: "", rating: 5, review_text: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
-
-  useEffect(() => {
-    if (!paymentDeadline) return;
-    const interval = setInterval(() => {
-      const now = new Date();
-      const diff = paymentDeadline.getTime() - now.getTime();
-      if (diff <= 0) {
-        setTimeLeft('Expired');
-        clearInterval(interval);
-        return;
-      }
-      const mins = Math.floor(diff / 60000);
-      const secs = Math.floor((diff % 60000) / 1000);
-      setTimeLeft(`${mins}:${secs.toString().padStart(2, '0')}`);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [paymentDeadline]);
+  const [paymentSettings, setPaymentSettings] = useState<any>(null);
 
   useEffect(() => {
     if (courseId) {
@@ -156,7 +134,7 @@ export default function CourseDetails() {
 
   const fetchCourseDetails = async () => {
     try {
-      // Fetch course
+      // 1. Fetch primary course data first (essential for other queries)
       const { data: courseData, error: courseError } = await supabase
         .from("courses")
         .select("*, category:course_categories(name)")
@@ -167,52 +145,71 @@ export default function CourseDetails() {
       const cData = courseData as any;
       setCourse(cData);
 
-      // Fetch assigned instructor - use instructor_id from course data
-      const instrId = cData.instructor_id;
-      if (instrId) {
-        const { data: instrData, error: instrError } = await (supabase.from("instructors" as any).select("*").eq("id", instrId).single() as any);
-        if (instrData && !instrError) setInstructor(instrData as Instructor);
-      } else {
-        const { data: instrList } = await (supabase.from("instructors" as any).select("*").contains("assigned_courses", [courseId]) as any);
-        if (instrList && instrList.length > 0) {
-          setInstructor(instrList[0] as Instructor);
-        }
-      }
+      // 2. Parallelize all independent secondary metadata queries
+      const [
+        instructorResult,
+        reviewsResult,
+        paymentResult,
+        sectionsResult,
+        contentResult,
+        relatedResult
+      ] = await Promise.all([
+        // Instructor fetch
+        (async () => {
+          const instrId = cData.instructor_id;
+          if (instrId) {
+            const { data } = await (supabase.from("instructors" as any).select("*").eq("id", instrId).single() as any);
+            return data;
+          } else {
+            const { data } = await (supabase.from("instructors" as any).select("*").contains("assigned_courses", [courseId]) as any);
+            return data && data.length > 0 ? data[0] : null;
+          }
+        })(),
+        // Reviews fetch
+        supabase.from("course_reviews" as any).select("*").eq("course_id", courseId).eq("is_approved", true).order("created_at", { ascending: false }),
+        // Payment settings fetch
+        supabase.from("payment_settings").select("*").limit(1).single(),
+        // Sections fetch
+        supabase.from("course_sections").select("*").eq("course_id", courseId).order("order_index"),
+        // Content fetch
+        supabase.from("course_content").select("*").eq("course_id", courseId).order("order_index"),
+        // Related courses fetch
+        (async () => {
+           // We fire these in parallel internally too
+           const [catRelated, tagRelated] = await Promise.all([
+             (supabase.from("courses") as any).select("*").eq("category_id", cData.category_id).neq("id", courseId).limit(6),
+             (supabase.from("courses") as any).select("*").overlaps("technologies", cData.technologies || []).neq("id", courseId).limit(6)
+           ]);
+           
+           let unique = Array.from(new Map([...(catRelated.data || []), ...(tagRelated.data || [])].map(c => [c.id, c])).values())
+            .filter(c => c.id !== courseId)
+            .slice(0, 3);
+            
+           if (unique.length === 0) {
+             const { data } = await (supabase.from("courses") as any).select("*").neq("id", courseId).limit(3);
+             unique = (data || []) as Course[];
+           }
+           return unique;
+        })()
+      ]);
 
-      // Fetch approved reviews
-      const { data: reviewsData } = await (supabase.from("course_reviews" as any).select("*").eq("course_id", courseId).eq("is_approved", true).order("created_at", { ascending: false }) as any);
-      setReviews((reviewsData || []) as CourseReview[]);
+      // 3. Batch state updates (React 18 handles this automatically, but logic is cleaner now)
+      if (instructorResult) setInstructor(instructorResult as Instructor);
+      setReviews((reviewsResult.data as any || []) as CourseReview[]);
+      if (paymentResult.data) setPaymentSettings(paymentResult.data);
+      setRelatedCourses(relatedResult as Course[]);
 
-      // Fetch payment settings
-      const { data: payData } = await (supabase.from("payment_settings").select("*").limit(1).single() as any);
-      if (payData) setPaymentSettings(payData);
-
-      // Fetch sections
-      const { data: sectionsData, error: sectionsError } = await supabase
-        .from("course_sections")
-        .select("*")
-        .eq("course_id", courseId)
-        .order("order_index");
-
-      if (sectionsError) throw sectionsError;
-
-      // Fetch content
-      const { data: contentData, error: contentError } = await supabase
-        .from("course_content")
-        .select("*")
-        .eq("course_id", courseId)
-        .order("order_index");
-
-      if (contentError) throw contentError;
-
-      // Map content to sections
+      // Process sections and content
+      const sectionsData = sectionsResult.data || [];
+      const contentData = contentResult.data || [];
+      
       const sectionsMap = new Map<string, CourseSection>();
-      (sectionsData || []).forEach(section => {
+      sectionsData.forEach(section => {
         sectionsMap.set(section.id, { ...section, contents: [] });
       });
 
       const uncategorizedContent: CourseContent[] = [];
-      (contentData || []).forEach(item => {
+      contentData.forEach(item => {
         if (item.section_id && sectionsMap.has(item.section_id)) {
           sectionsMap.get(item.section_id)!.contents!.push(item);
         } else {
@@ -221,7 +218,6 @@ export default function CourseDetails() {
       });
 
       const organizedSections = Array.from(sectionsMap.values());
-      
       if (uncategorizedContent.length > 0) {
         organizedSections.push({
           id: "uncategorized",
@@ -230,7 +226,6 @@ export default function CourseDetails() {
           contents: uncategorizedContent
         });
       }
-
       setSections(organizedSections);
 
     } catch (error) {
@@ -266,44 +261,20 @@ export default function CourseDetails() {
     }
   };
 
-  const handleEnrollment = async () => {
-    if (!enrollmentData.user_name || !enrollmentData.user_email || !enrollmentData.whatsapp_number) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!course?.is_free) {
-      if (!paymentMethod) {
-        toast({ title: "Error", description: "Please select a payment method before submitting.", variant: "destructive" });
-        return;
-      }
-      if (!transactionId || transactionId.trim() === "") {
-        toast({ title: "Error", description: "Transaction ID is required to verify your payment.", variant: "destructive" });
-        return;
-      }
-      if (timeLeft === 'Expired') {
-        toast({ title: "Error", description: "Payment window has expired.", variant: "destructive" });
-        return;
-      }
-    }
-
+  const handleEnrollment = async (data: PaymentModalData) => {
     setEnrolling(true);
     try {
       const { error } = await supabase
         .from("course_enrollments")
         .insert({
           course_id: courseId,
-          user_name: enrollmentData.user_name,
-          user_email: enrollmentData.user_email,
-          whatsapp_number: enrollmentData.whatsapp_number,
-          profession: enrollmentData.profession,
-          institute_name: enrollmentData.institute_name,
-          payment_method: course?.is_free ? 'free' : paymentMethod,
-          transaction_id: course?.is_free ? null : transactionId,
+          user_name: data.name,
+          user_email: data.email,
+          whatsapp_number: data.whatsapp,
+          profession: data.extras.profession,
+          institute_name: data.extras.institute_name,
+          payment_method: course?.is_free ? 'free' : data.paymentMethod,
+          transaction_id: course?.is_free ? null : data.transactionId,
         });
 
       if (error) throw error;
@@ -313,21 +284,10 @@ export default function CourseDetails() {
         description: "Successfully enrolled in the course!",
       });
       
-      setShowEnrollmentModal(false);
-      setPaymentMethod('');
-      setPaymentDeadline(null);
-      setTimeLeft('');
-      setTransactionId('');
-      setEnrollmentData({ 
-        user_name: "", user_email: "", whatsapp_number: "", profession: "", institute_name: "" 
-      });
+      // Modal success state is handled internally by PaymentModal
     } catch (error) {
       console.error("Error enrolling in course:", error);
-      toast({
-        title: "Error",
-        description: "Failed to enroll in course",
-        variant: "destructive",
-      });
+      throw error; // Rethrow so PaymentModal shows error
     } finally {
       setEnrolling(false);
     }
@@ -352,12 +312,48 @@ export default function CourseDetails() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pb-20">
         <Navbar />
-        <div className="flex items-center justify-center h-screen">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-lg font-medium text-muted-foreground">Loading Course Details...</p>
+        <div className="pt-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col lg:flex-row gap-12">
+            <div className="w-full lg:w-[65%]">
+              <Skeleton className="h-4 w-32 mb-6" />
+              <Skeleton className="h-10 w-full mb-6" />
+              <div className="flex gap-4 mb-6">
+                <Skeleton className="h-6 w-16" />
+                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-6 w-32" />
+              </div>
+              <Skeleton className="h-24 w-full mb-10" />
+              <div className="flex gap-4 border-y py-4 mb-8">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="flex-1">
+                   <Skeleton className="h-4 w-32 mb-2" />
+                   <Skeleton className="h-4 w-48" />
+                </div>
+              </div>
+              <div className="grid grid-cols-4 gap-4 mb-8">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <Skeleton className="h-64 w-full rounded-2xl" />
+            </div>
+            <div className="w-full lg:w-[35%]">
+              <div className="sticky top-24 border rounded-2xl overflow-hidden shadow-sm">
+                <Skeleton className="aspect-video w-full" />
+                <div className="p-7 space-y-6">
+                  <Skeleton className="h-10 w-1/2" />
+                  <Skeleton className="h-14 w-full" />
+                  <div className="space-y-4">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-2/3" />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -628,7 +624,7 @@ export default function CourseDetails() {
           <div className="w-full lg:w-[35%] relative">
             <div className="sticky top-24 bg-card/80 backdrop-blur-md border border-border/60 rounded-2xl overflow-hidden shadow-xl mb-8">
                <div className="relative h-60 bg-muted flex items-center justify-center overflow-hidden group cursor-pointer">
-                 {course.banner_image ? <img src={course.banner_image} alt={course.title} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gradient-to-br from-primary to-blue-500" />}
+                 {course.banner_image ? <img src={course.banner_image} alt={course.title} className="w-full h-full object-cover" decoding="async" /> : <div className="w-full h-full bg-gradient-to-br from-primary to-blue-500" />}
                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex flex-col items-center justify-center text-white"><Play className="w-16 h-16 fill-white opacity-60 group-hover:opacity-100 transition-all" /></div>
                </div>
                <div className="p-7">
@@ -641,41 +637,66 @@ export default function CourseDetails() {
                     <li className="flex items-start gap-4 text-sm font-medium"><MonitorPlay className="w-5 h-5 shrink-0" /> Full lifetime access</li>
                     <li className="flex items-start gap-4 text-sm font-medium"><Award className="w-5 h-5 shrink-0" /> Certificate of completion</li>
                  </ul>
+                </div>
+             </div>
+
+             {relatedCourses.length > 0 && (
+               <div className="mt-10 space-y-5">
+                 <h3 className="text-xl md:text-2xl font-black text-foreground/90 px-1 flex items-center gap-2">
+                   <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
+                   You can also find useful
+                 </h3>
+                 <div className="flex flex-col gap-4">
+                   {relatedCourses.map((rc) => (
+                     <div key={rc.id} className="bg-background/40 backdrop-blur-sm border border-border/40 rounded-2xl p-4 shadow-sm group hover:border-primary/40 hover:shadow-md transition-all flex gap-5">
+                       <Link to={`/course/${rc.id}`} className="w-20 h-20 shrink-0 rounded-xl overflow-hidden bg-muted group-hover:scale-95 transition-transform duration-500">
+                         {rc.banner_image ? <img src={rc.banner_image} className="w-full h-full object-cover" loading="lazy" decoding="async" /> : <div className="w-full h-full bg-primary/10 flex items-center justify-center"><Layout className="w-6 h-6 text-primary/40" /></div>}
+                       </Link>
+                       <div className="flex-1 min-w-0 flex flex-col justify-center">
+                         <div className="mb-2">
+                           <Link to={`/course/${rc.id}`} className="block font-bold text-sm leading-[1.3] text-foreground hover:text-primary transition-colors line-clamp-2">{rc.title}</Link>
+                         </div>
+                         <div className="flex items-center justify-between gap-2 mt-auto">
+                           <div className="flex flex-col">
+                             {rc.discounted_price ? (
+                               <div className="flex items-center gap-2">
+                                 <span className="text-sm font-black text-primary">৳{rc.discounted_price}</span>
+                                 <span className="text-[10px] text-muted-foreground line-through opacity-60">৳{rc.price}</span>
+                               </div>
+                             ) : (
+                               <span className="text-sm font-black text-primary">{rc.is_free ? 'FREE' : `৳${rc.price}`}</span>
+                             )}
+                           </div>
+                           <Link 
+                             to={`/course/${rc.id}`} 
+                             className="inline-flex items-center text-[10px] font-black uppercase tracking-widest text-[#d91d79] hover:text-[#b0145e] transition-colors"
+                           >
+                             Enroll Now <ChevronRight className="w-3 h-3 ml-0.5" />
+                           </Link>
+                         </div>
+                       </div>
+                     </div>
+                   ))}
+                 </div>
                </div>
-            </div>
-          </div>
+             )}
+           </div>
         </div>
 
+        <PaymentModal
+          open={showEnrollmentModal}
+          onOpenChange={setShowEnrollmentModal}
+          title={`Enroll in ${course.title}`}
+          isFree={course.is_free}
+          priceLabel={course.price ? `৳${course.discounted_price || course.price}` : undefined}
+          onSubmit={handleEnrollment}
+          extraFields={[
+            { key: 'profession', label: 'Profession', placeholder: 'e.g. Student, Engineer', required: true },
+            { key: 'institute_name', label: 'Institute/Organization', placeholder: 'e.g. University/Company', required: true }
+          ]}
+          submitLabel="Confirm Enrollment"
+        />
       </div>
-
-      <Dialog open={showEnrollmentModal} onOpenChange={setShowEnrollmentModal}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="text-2xl font-bold">Enroll in {course.title}</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-              <div className="space-y-1.5"><Label className="text-sm font-semibold">Full Name *</Label><Input value={enrollmentData.user_name} onChange={(e) => setEnrollmentData(p => ({ ...p, user_name: e.target.value }))} required /></div>
-              <div className="space-y-1.5"><Label className="text-sm font-semibold">Email *</Label><Input type="email" value={enrollmentData.user_email} onChange={(e) => setEnrollmentData(p => ({ ...p, user_email: e.target.value }))} required /></div>
-              <div className="space-y-1.5"><Label className="text-sm font-semibold">WhatsApp *</Label><Input type="tel" value={enrollmentData.whatsapp_number} onChange={(e) => setEnrollmentData(p => ({ ...p, whatsapp_number: e.target.value }))} required /></div>
-              {!course.is_free && (
-                <div className="space-y-4">
-                  <Label className="text-sm font-semibold">Payment Method *</Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {['bkash', 'nagad'].map(m => (
-                      <Button key={m} variant={paymentMethod === m ? 'default' : 'outline'} onClick={() => { setPaymentMethod(m as any); if(!paymentDeadline) setPaymentDeadline(addMinutes(new Date(), 30)); }}>{m}</Button>
-                    ))}
-                  </div>
-                  {paymentMethod && (
-                    <div className="p-5 border-2 rounded-xl text-center space-y-4">
-                      <p className="text-sm font-semibold">{timeLeft} left to pay</p>
-                      <p className="text-2xl font-mono font-bold tracking-tighter">{paymentMethod === 'bkash' ? paymentSettings?.bkash_number : paymentSettings?.nagad_number}</p>
-                      <Input value={transactionId} onChange={e => setTransactionId(e.target.value)} placeholder="Transaction ID" className="uppercase" />
-                    </div>
-                  )}
-                </div>
-              )}
-              <Button onClick={handleEnrollment} className="w-full bg-[#d91d79] text-white font-bold h-12 mt-4" disabled={enrolling || (!course.is_free && (!paymentMethod || !transactionId))}>{enrolling ? 'Enrolling...' : 'Confirm Enrollment'}</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
