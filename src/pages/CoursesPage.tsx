@@ -245,6 +245,11 @@ export default function CoursesPage() {
 
                         {/* Body */}
                         <div className="p-6 flex flex-col flex-grow gap-4">
+                          {new Date(webinar.webinar_date) > new Date() && (
+                            <div className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 text-[11px] font-bold px-3 py-1.5 rounded-full w-fit">
+                              <CourseCountdown startDate={webinar.webinar_date} showIcon={false} />
+                            </div>
+                          )}
                           <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed flex-grow">
                             {webinar.description || "Join this exciting webinar to learn from industry experts."}
                           </p>
