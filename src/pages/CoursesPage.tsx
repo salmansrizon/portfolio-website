@@ -54,7 +54,7 @@ export default function CoursesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [showWebinars, setShowWebinars] = useState(false);
+  
 
   useEffect(() => {
     fetchData();
