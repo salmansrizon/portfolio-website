@@ -146,40 +146,20 @@ export default function CoursesPage() {
             <div className="mb-8 space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-foreground">
-                  {showWebinars ? 'Webinars' : selectedCategory ? categories.find(c => c.id === selectedCategory)?.name : 'All Courses'}
+                  {selectedCategory ? categories.find(c => c.id === selectedCategory)?.name : 'All Courses'}
                   <span className="ml-3 text-sm font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                    {showWebinars ? filteredWebinars.length : filteredCourses.length}
+                    {filteredCourses.length + filteredWebinars.length}
                   </span>
                 </h2>
               </div>
 
-              {/* Category Filter with Webinar tab */}
+              {/* Category Filter */}
               <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide no-scrollbar -mx-1 px-1">
                 <button
-                  onClick={() => { setShowWebinars(true); setSelectedCategory(null); }}
-                  className={cn(
-                    "px-5 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border shadow-sm flex items-center gap-2",
-                    showWebinars
-                      ? "bg-primary text-primary-foreground border-primary shadow-primary/20 scale-105" 
-                      : "bg-background/80 text-muted-foreground border-border hover:border-primary/30 hover:text-primary"
-                  )}
-                >
-                  <Video className="w-3.5 h-3.5" />
-                  Webinar
-                  {webinars.length > 0 && (
-                    <span className={cn(
-                      "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
-                      showWebinars ? "bg-primary-foreground/20 text-primary-foreground" : "bg-primary/10 text-primary"
-                    )}>
-                      {webinars.length}
-                    </span>
-                  )}
-                </button>
-                <button
-                  onClick={() => { setSelectedCategory(null); setShowWebinars(false); }}
+                  onClick={() => setSelectedCategory(null)}
                   className={cn(
                     "px-5 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border shadow-sm",
-                    !selectedCategory && !showWebinars
+                    !selectedCategory
                       ? "bg-primary text-primary-foreground border-primary shadow-primary/20 scale-105" 
                       : "bg-background/80 text-muted-foreground border-border hover:border-primary/30 hover:text-primary"
                   )}
@@ -189,7 +169,7 @@ export default function CoursesPage() {
                 {rootCategories.map(cat => (
                   <button
                     key={cat.id}
-                    onClick={() => { setSelectedCategory(cat.id); setShowWebinars(false); }}
+                    onClick={() => setSelectedCategory(cat.id)}
                     className={cn(
                       "px-5 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border shadow-sm",
                       selectedCategory === cat.id 
@@ -209,102 +189,85 @@ export default function CoursesPage() {
                   <div key={i} className="h-[450px] bg-card border rounded-2xl animate-pulse"></div>
                 ))}
               </div>
-            ) : showWebinars ? (
-              /* Webinar Grid */
-              filteredWebinars.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                  {filteredWebinars.map((webinar, index) => (
-                    <ScrollReveal key={webinar.id} direction="up" delay={index * 0.05}>
-                      <div 
-                        className="bg-white dark:bg-card rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50 group cursor-pointer"
-                        onClick={() => navigate(`/webinar/${webinar.id}`)}
-                      >
-                        {/* Webinar Header */}
-                        <div className="relative bg-gradient-to-br from-purple-600 to-indigo-700 text-white p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[200px] shrink-0">
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full translate-x-12 -translate-y-12"></div>
-                          <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full -translate-x-8 translate-y-8"></div>
-                          
-                          {webinar.banner_url ? (
-                            <img src={webinar.banner_url} alt={webinar.title} className="absolute inset-0 w-full h-full object-cover opacity-30" />
-                          ) : null}
-                          
-                          <div className="z-10 flex items-center gap-2 mb-3">
-                            <Video className="w-5 h-5" />
-                            <span className="text-xs font-bold uppercase tracking-wider opacity-80">Webinar</span>
-                          </div>
-                          
-                          <h3 className="font-bold text-xl z-10 leading-tight px-4">
-                            {webinar.title}
-                          </h3>
-                          
-                          <div className="mt-3 z-10 flex items-center gap-2 text-xs opacity-90">
-                            <Calendar className="w-3.5 h-3.5" />
-                            {format(new Date(webinar.webinar_date), "MMM dd, yyyy • hh:mm a")}
-                          </div>
+            ) : (filteredWebinars.length > 0 || filteredCourses.length > 0) ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                {/* Webinar cards first */}
+                {filteredWebinars.map((webinar, index) => (
+                  <ScrollReveal key={`w-${webinar.id}`} direction="up" delay={index * 0.05}>
+                    <div 
+                      className="bg-white dark:bg-card rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50 group cursor-pointer"
+                      onClick={() => navigate(`/webinar/${webinar.id}`)}
+                    >
+                      <div className="relative bg-gradient-to-br from-purple-600 to-indigo-700 text-white p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[200px] shrink-0">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full translate-x-12 -translate-y-12"></div>
+                        <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full -translate-x-8 translate-y-8"></div>
+                        
+                        {webinar.banner_url && (
+                          <img src={webinar.banner_url} alt={webinar.title} className="absolute inset-0 w-full h-full object-cover opacity-30" />
+                        )}
+                        
+                        <div className="z-10 flex items-center gap-2 mb-3">
+                          <Video className="w-5 h-5" />
+                          <span className="text-xs font-bold uppercase tracking-wider opacity-80">Webinar</span>
                         </div>
-
-                        {/* Body */}
-                        <div className="p-6 flex flex-col flex-grow gap-4">
-                          {new Date(webinar.webinar_date) > new Date() && (
-                            <div className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 text-[11px] font-bold px-3 py-1.5 rounded-full w-fit">
-                              <CourseCountdown startDate={webinar.webinar_date} showIcon={false} />
-                            </div>
-                          )}
-                          <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed flex-grow">
-                            {webinar.description || "Join this exciting webinar to learn from industry experts."}
-                          </p>
-                          
-                          <div className="flex items-center justify-between text-sm pt-2 border-t border-border/10">
-                            <div className="flex items-center gap-1.5 text-muted-foreground">
-                              <BookOpen className="w-4 h-4" />
-                              <span className="text-xs font-medium">
-                                {webinar.booked_count || 0} registered
-                              </span>
-                            </div>
-                            <div className="font-bold text-foreground">
-                              {webinar.is_free ? (
-                                <span className="text-emerald-600 font-black tracking-tight">FREE</span>
-                              ) : (
-                                <span>৳ {webinar.price}</span>
-                              )}
-                            </div>
-                          </div>
-
-                          <Badge className={cn(
-                            "w-fit text-[10px] font-bold uppercase tracking-wider",
-                            webinar.status === 'published' 
-                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" 
-                              : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
-                          )}>
-                            {webinar.status === 'published' ? 'Live' : 'Upcoming'}
-                          </Badge>
-                          
-                          <Button 
-                            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl mt-1 h-12 font-semibold shadow-md transition-all active:scale-[0.98]"
-                            onClick={(e) => { e.stopPropagation(); navigate(`/webinar/${webinar.id}`); }}
-                          >
-                            Register Now
-                          </Button>
+                        
+                        <h3 className="font-bold text-xl z-10 leading-tight px-4">
+                          {webinar.title}
+                        </h3>
+                        
+                        <div className="mt-3 z-10 flex items-center gap-2 text-xs opacity-90">
+                          <Calendar className="w-3.5 h-3.5" />
+                          {format(new Date(webinar.webinar_date), "MMM dd, yyyy • hh:mm a")}
                         </div>
                       </div>
-                    </ScrollReveal>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-24 bg-card rounded-3xl border-2 border-dashed border-muted">
-                  <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Video className="w-10 h-10 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-2xl font-bold mb-2">No webinars found</h3>
-                  <p className="text-muted-foreground max-w-md mx-auto">
-                    No upcoming or published webinars at the moment. Check back soon!
-                  </p>
-                </div>
-              )
-            ) : filteredCourses.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+
+                      <div className="p-6 flex flex-col flex-grow gap-4">
+                        {new Date(webinar.webinar_date) > new Date() && (
+                          <div className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 text-[11px] font-bold px-3 py-1.5 rounded-full w-fit">
+                            <CourseCountdown startDate={webinar.webinar_date} showIcon={false} />
+                          </div>
+                        )}
+                        <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed flex-grow">
+                          {webinar.description || "Join this exciting webinar to learn from industry experts."}
+                        </p>
+                        
+                        <div className="flex items-center justify-between text-sm pt-2 border-t border-border/10">
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <BookOpen className="w-4 h-4" />
+                            <span className="text-xs font-medium">{webinar.booked_count || 0} registered</span>
+                          </div>
+                          <div className="font-bold text-foreground">
+                            {webinar.is_free ? (
+                              <span className="text-emerald-600 font-black tracking-tight">FREE</span>
+                            ) : (
+                              <span>৳ {webinar.price}</span>
+                            )}
+                          </div>
+                        </div>
+
+                        <Badge className={cn(
+                          "w-fit text-[10px] font-bold uppercase tracking-wider",
+                          webinar.status === 'published' 
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" 
+                            : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                        )}>
+                          {webinar.status === 'published' ? 'Live' : 'Upcoming'}
+                        </Badge>
+                        
+                        <Button 
+                          className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl mt-1 h-12 font-semibold shadow-md transition-all active:scale-[0.98]"
+                          onClick={(e) => { e.stopPropagation(); navigate(`/webinar/${webinar.id}`); }}
+                        >
+                          Register Now
+                        </Button>
+                      </div>
+                    </div>
+                  </ScrollReveal>
+                ))}
+
+                {/* Course cards after */}
                 {filteredCourses.map((course, index) => (
-                  <ScrollReveal key={course.id} direction="up" delay={index * 0.05}>
+                  <ScrollReveal key={course.id} direction="up" delay={(filteredWebinars.length + index) * 0.05}>
                     <div 
                       className="bg-white dark:bg-card rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50 group cursor-pointer"
                       onClick={() => navigate(`/course/${course.id}`)}
