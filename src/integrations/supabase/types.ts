@@ -570,6 +570,7 @@ export type Database = {
           discount_percentage: number | null
           discounted_price: number | null
           duration_hours: number | null
+          faqs: Json | null
           id: string
           instructor_id: string | null
           is_free: boolean
@@ -596,6 +597,7 @@ export type Database = {
           discount_percentage?: number | null
           discounted_price?: number | null
           duration_hours?: number | null
+          faqs?: Json | null
           id?: string
           instructor_id?: string | null
           is_free?: boolean
@@ -622,6 +624,7 @@ export type Database = {
           discount_percentage?: number | null
           discounted_price?: number | null
           duration_hours?: number | null
+          faqs?: Json | null
           id?: string
           instructor_id?: string | null
           is_free?: boolean
@@ -664,6 +667,7 @@ export type Database = {
           email: string
           id: string
           is_active: boolean
+          linkedin_url: string | null
           name: string
           phone: string | null
           specialization: string | null
@@ -678,6 +682,7 @@ export type Database = {
           email: string
           id?: string
           is_active?: boolean
+          linkedin_url?: string | null
           name: string
           phone?: string | null
           specialization?: string | null
@@ -692,6 +697,7 @@ export type Database = {
           email?: string
           id?: string
           is_active?: boolean
+          linkedin_url?: string | null
           name?: string
           phone?: string | null
           specialization?: string | null
@@ -1038,6 +1044,98 @@ export type Database = {
           reason?: string | null
           time_slot?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      webinar_bookings: {
+        Row: {
+          booking_date: string | null
+          id: string
+          payment_method: string | null
+          payment_status: string | null
+          payment_transaction_id: string | null
+          student_email: string
+          student_name: string
+          student_role: string | null
+          student_whatsapp: string
+          webinar_id: string | null
+        }
+        Insert: {
+          booking_date?: string | null
+          id?: string
+          payment_method?: string | null
+          payment_status?: string | null
+          payment_transaction_id?: string | null
+          student_email: string
+          student_name: string
+          student_role?: string | null
+          student_whatsapp: string
+          webinar_id?: string | null
+        }
+        Update: {
+          booking_date?: string | null
+          id?: string
+          payment_method?: string | null
+          payment_status?: string | null
+          payment_transaction_id?: string | null
+          student_email?: string
+          student_name?: string
+          student_role?: string | null
+          student_whatsapp?: string
+          webinar_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webinar_bookings_webinar_id_fkey"
+            columns: ["webinar_id"]
+            isOneToOne: false
+            referencedRelation: "webinars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webinars: {
+        Row: {
+          banner_url: string | null
+          booked_count: number | null
+          content_blocks: Json | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_free: boolean | null
+          price: number | null
+          status: string | null
+          title: string
+          updated_at: string | null
+          webinar_date: string
+        }
+        Insert: {
+          banner_url?: string | null
+          booked_count?: number | null
+          content_blocks?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_free?: boolean | null
+          price?: number | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          webinar_date: string
+        }
+        Update: {
+          banner_url?: string | null
+          booked_count?: number | null
+          content_blocks?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_free?: boolean | null
+          price?: number | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          webinar_date?: string
         }
         Relationships: []
       }
