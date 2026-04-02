@@ -154,7 +154,7 @@ export default function WebinarManager() {
     const getDefaultBlockContent = (type: WebinarContentBlock['type']) => {
         switch (type) {
             case 'hero': return { subtitle: '', video_url: '', button_text: 'Book Now' };
-            case 'benefits': return { items: [{ icon: 'check', text: '' }] };
+            case 'benefits': return { items: [{ title: '', description: '' }] };
             case 'host': return { instructor_ids: [] };
             case 'pricing': return { price: 0, currency: 'BDT', features: [] };
             case 'faq': return { questions: [{ q: '', a: '' }] };
@@ -368,20 +368,87 @@ export default function WebinarManager() {
                                             </div>
                                             
                                             {block.type === 'hero' && (
-                                                <div className="space-y-2">
-                                                    <Label>Subtitle / Description</Label>
-                                                    <Textarea value={block.content.subtitle} onChange={e => updateBlock(idx, { ...block.content, subtitle: e.target.value })} placeholder="Short intro text..." />
+                                                <div className="space-y-4">
+                                                    <div className="space-y-1">
+                                                        <Label className="text-[10px] uppercase font-bold text-muted-foreground">Subtitle / Description</Label>
+                                                        <Textarea 
+                                                            value={block.content.subtitle} 
+                                                            onChange={e => updateBlock(idx, { ...block.content, subtitle: e.target.value })} 
+                                                            placeholder="Short intro text..." 
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[10px] uppercase font-bold text-muted-foreground">Hero Image URL</Label>
+                                                            <Input 
+                                                                value={block.content.imageUrl || ''} 
+                                                                onChange={e => updateBlock(idx, { ...block.content, imageUrl: e.target.value })}
+                                                                placeholder="https://path/to/image.jpg"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[10px] uppercase font-bold text-muted-foreground">YouTube Video URL</Label>
+                                                            <Input 
+                                                                value={block.content.videoUrl || ''} 
+                                                                onChange={e => updateBlock(idx, { ...block.content, videoUrl: e.target.value })}
+                                                                placeholder="https://youtube.com/watch?v=..."
+                                                            />
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             )}
                                             
                                             {block.type === 'benefits' && (
-                                                <div className="space-y-2">
-                                                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">Benefits List (One per line)</Label>
-                                                    <Textarea 
-                                                        placeholder="Benefit 1&#10;Benefit 2&#10;..."
-                                                        value={block.content.items?.map((i: any) => i.text).join('\n')} 
-                                                        onChange={e => updateBlock(idx, { ...block.content, items: e.target.value.split('\n').filter((t: string) => t.trim() !== '').map((t: string) => ({ text: t })) })} 
-                                                    />
+                                                <div className="space-y-4">
+                                                    <div className="flex justify-between items-center bg-muted/40 p-2 rounded-lg mb-2">
+                                                        <Label className="text-[10px] uppercase font-bold text-muted-foreground">Benefits Items</Label>
+                                                        <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px] uppercase font-bold hover:bg-primary/20" onClick={() => {
+                                                            const newItems = [...(block.content.items || []), { title: '', description: '' }];
+                                                            updateBlock(idx, { ...block.content, items: newItems });
+                                                        }}>
+                                                            <Plus className="h-3 w-3 mr-1" /> Add Benefit
+                                                        </Button>
+                                                    </div>
+                                                    
+                                                    {block.content.items?.map((item: any, itemIdx: number) => (
+                                                        <div key={itemIdx} className="bg-accent/5 p-4 rounded-xl border border-border/50 relative group/benefit space-y-3">
+                                                            <div className="space-y-1">
+                                                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Title</Label>
+                                                                <Input 
+                                                                    value={item.title || ''} 
+                                                                    onChange={e => {
+                                                                        const newItems = [...block.content.items];
+                                                                        newItems[itemIdx].title = e.target.value;
+                                                                        updateBlock(idx, { ...block.content, items: newItems });
+                                                                    }}
+                                                                    placeholder="E.G. Automating Data Cleaning"
+                                                                />
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Description</Label>
+                                                                <Textarea 
+                                                                    value={item.description || item.text || ''} 
+                                                                    onChange={e => {
+                                                                        const newItems = [...block.content.items];
+                                                                        newItems[itemIdx].description = e.target.value;
+                                                                        updateBlock(idx, { ...block.content, items: newItems });
+                                                                    }}
+                                                                    placeholder="Detailed description..."
+                                                                />
+                                                            </div>
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="icon" 
+                                                                className="absolute top-2 right-2 h-6 w-6 text-destructive opacity-0 group-hover/benefit:opacity-100 transition-opacity"
+                                                                onClick={() => {
+                                                                    const newItems = block.content.items.filter((_: any, i: number) => i !== itemIdx);
+                                                                    updateBlock(idx, { ...block.content, items: newItems });
+                                                                }}
+                                                            >
+                                                                <Trash2 className="h-3 w-3" />
+                                                            </Button>
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             )}
 
@@ -446,33 +513,41 @@ export default function WebinarManager() {
 
                                             {block.type === 'faq' && (
                                                 <div className="space-y-4">
+                                                    <div className="flex justify-between items-center bg-muted/40 p-2 rounded-lg mb-2">
+                                                        <Label className="text-[10px] uppercase font-bold text-muted-foreground">FAQ Items</Label>
+                                                        <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px] uppercase font-bold hover:bg-primary/20" onClick={() => {
+                                                            const newQs = [...(block.content.questions || []), { q: '', a: '' }];
+                                                            updateBlock(idx, { ...block.content, questions: newQs });
+                                                        }}>
+                                                            <Plus className="h-3 w-3 mr-1" /> Add FAQ Item
+                                                        </Button>
+                                                    </div>
+
                                                     {block.content.questions?.map((q: any, qIdx: number) => (
-                                                        <div key={qIdx} className="bg-accent/5 p-4 rounded-xl border border-border/50 relative group/faq">
-                                                            <div className="grid gap-3">
-                                                                <div className="space-y-1">
-                                                                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">Question {qIdx + 1}</Label>
-                                                                    <Input 
-                                                                        value={q.q} 
-                                                                        onChange={e => {
-                                                                            const newQs = [...block.content.questions];
-                                                                            newQs[qIdx].q = e.target.value;
-                                                                            updateBlock(idx, { ...block.content, questions: newQs });
-                                                                        }}
-                                                                        placeholder="E.G. What is included?"
-                                                                    />
-                                                                </div>
-                                                                <div className="space-y-1">
-                                                                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">Answer</Label>
-                                                                    <Textarea 
-                                                                        value={q.a} 
-                                                                        onChange={e => {
-                                                                            const newQs = [...block.content.questions];
-                                                                            newQs[qIdx].a = e.target.value;
-                                                                            updateBlock(idx, { ...block.content, questions: newQs });
-                                                                        }}
-                                                                        placeholder="Enter detailed answer..."
-                                                                    />
-                                                                </div>
+                                                        <div key={qIdx} className="bg-accent/5 p-4 rounded-xl border border-border/50 relative group/faq space-y-3">
+                                                            <div className="space-y-1">
+                                                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Question {qIdx + 1}</Label>
+                                                                <Input 
+                                                                    value={q.q} 
+                                                                    onChange={e => {
+                                                                        const newQs = [...block.content.questions];
+                                                                        newQs[qIdx].q = e.target.value;
+                                                                        updateBlock(idx, { ...block.content, questions: newQs });
+                                                                    }}
+                                                                    placeholder="E.G. What is included?"
+                                                                />
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Answer</Label>
+                                                                <Textarea 
+                                                                    value={q.a} 
+                                                                    onChange={e => {
+                                                                        const newQs = [...block.content.questions];
+                                                                        newQs[qIdx].a = e.target.value;
+                                                                        updateBlock(idx, { ...block.content, questions: newQs });
+                                                                    }}
+                                                                    placeholder="Enter detailed answer..."
+                                                                />
                                                             </div>
                                                             <Button 
                                                                 variant="ghost" 
@@ -487,17 +562,6 @@ export default function WebinarManager() {
                                                             </Button>
                                                         </div>
                                                     ))}
-                                                    <Button 
-                                                        variant="outline" 
-                                                        size="sm" 
-                                                        className="w-full border-dashed"
-                                                        onClick={() => {
-                                                            const newQs = [...(block.content.questions || []), { q: '', a: '' }];
-                                                            updateBlock(idx, { ...block.content, questions: newQs });
-                                                        }}
-                                                    >
-                                                        <Plus className="h-3 w-3 mr-2" /> Add FAQ Item
-                                                    </Button>
                                                 </div>
                                             )}
                                         </CardContent>

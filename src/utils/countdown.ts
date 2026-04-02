@@ -31,12 +31,12 @@ export function calculateCountdown(startDate: string | Date): CountdownResult {
   let timeLeft = "";
   if (days > 0) {
     timeLeft = `${days} day${days > 1 ? 's' : ''} left`;
-  } else if (hours > 0) {
-    timeLeft = `${hours} hour${hours > 1 ? 's' : ''} left`;
-  } else if (minutes > 0) {
-    timeLeft = `${minutes} minute${minutes > 1 ? 's' : ''} left`;
   } else {
-    timeLeft = `${seconds} second${seconds > 1 ? 's' : ''} left`;
+    // Show HH:MM:SS for the final 24 hours
+    const h = hours.toString().padStart(2, '0');
+    const m = minutes.toString().padStart(2, '0');
+    const s = seconds.toString().padStart(2, '0');
+    timeLeft = `${h}:${m}:${s} left`;
   }
 
   return {

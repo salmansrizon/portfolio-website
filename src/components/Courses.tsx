@@ -6,6 +6,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { BookOpen, Clock, Zap, ChevronRight, ArrowRight, Layout, PlayCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CourseCountdown } from "@/components/CourseCountdown";
+import { cn } from "@/lib/utils";
 import ScrollReveal from "./ScrollReveal";
 
 interface Course {
@@ -186,11 +187,27 @@ export default function Courses() {
                     </div>
                   </div>
                   
-                  <Button 
-                    className="w-full bg-[#3b62f6] hover:bg-[#254ee6] text-white rounded-xl mt-1 h-12 font-semibold shadow-md transition-all active:scale-[0.98]"
+                   <Button 
+                    className={cn(
+                      "w-full rounded-xl mt-1 h-12 font-black shadow-md transition-all active:scale-[0.98] group flex items-center justify-center gap-2",
+                      course.is_free 
+                        ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200" 
+                        : "bg-[#3b62f6] hover:bg-[#254ee6] text-white shadow-blue-200"
+                    )}
                     onClick={() => navigate(`/course/${course.id}`)}
                   >
-                    View Course Details
+                    {course.is_free ? (
+                      <>
+                        <div className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                        </div>
+                        Join for Free
+                      </>
+                    ) : (
+                      "Claim Your Seat"
+                    )}
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </div>
               </div>
