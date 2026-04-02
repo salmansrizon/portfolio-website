@@ -225,7 +225,7 @@ export default function CourseManager() {
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      setCourses(data || []);
+      setCourses((data || []).map((c: any) => ({ ...c, faqs: Array.isArray(c.faqs) ? c.faqs : [] })) as Course[]);
     } catch (error: any) {
       console.error("Error fetching courses:", error);
       showError(error?.message || "Failed to load courses");

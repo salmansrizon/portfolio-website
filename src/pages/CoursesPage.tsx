@@ -4,11 +4,12 @@ import Navbar from "@/components/Navbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Filter, BookOpen, Clock, ChevronRight, GraduationCap } from "lucide-react";
+import { Search, Filter, BookOpen, Clock, ChevronRight, GraduationCap, Calendar, Video } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CourseCountdown } from "@/components/CourseCountdown";
 import ScrollReveal from "@/components/ScrollReveal";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
 interface Category {
   id: string;
@@ -33,13 +34,27 @@ interface Course {
   start_date?: string;
 }
 
+interface Webinar {
+  id: string;
+  title: string;
+  description: string | null;
+  webinar_date: string;
+  banner_url: string | null;
+  is_free: boolean | null;
+  price: number | null;
+  status: string | null;
+  booked_count: number | null;
+}
+
 export default function CoursesPage() {
   const navigate = useNavigate();
   const [courses, setCourses] = useState<Course[]>([]);
+  const [webinars, setWebinars] = useState<Webinar[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [showWebinars, setShowWebinars] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -48,17 +63,16 @@ export default function CoursesPage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const { data: catData } = await supabase.from("course_categories" as any).select("*").order("name");
-      setCategories((catData as any[]) || []);
+      const [catRes, courseRes, webinarRes] = await Promise.all([
+        supabase.from("course_categories" as any).select("*").order("name"),
+        supabase.from("courses").select("*").eq("status", "published").order("created_at", { ascending: false }),
+        supabase.from("webinars").select("*").in("status", ["published", "upcoming"]).order("webinar_date", { ascending: true }),
+      ]);
 
-      const { data: courseData, error } = await supabase
-        .from("courses")
-        .select("*")
-        .eq("status", "published")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setCourses((courseData as any[]) || []);
+      setCategories((catRes.data as any[]) || []);
+      if (courseRes.error) throw courseRes.error;
+      setCourses((courseRes.data as any[]) || []);
+      setWebinars((webinarRes.data as Webinar[]) || []);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -73,17 +87,19 @@ export default function CoursesPage() {
     return matchesSearch && matchesCategory;
   });
 
-  // Organize categories into hierarchy
+  const filteredWebinars = webinars.filter(w => 
+    w.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (w.description || "").toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const rootCategories = categories.filter(c => !c.parent_id);
-  const getSubcategories = (parentId: string) => categories.filter(c => c.parent_id === parentId);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-accent/30">
       <Navbar />
       
-      {/* Hero Section - Aligned with homepage theme */}
+      {/* Hero Section */}
       <div className="relative pt-32 pb-20 overflow-hidden">
-        {/* Background Blur Elements (matches Hero.tsx) */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-400/15 rounded-full blur-3xl animate-pulse delay-1000"></div>
@@ -92,7 +108,6 @@ export default function CoursesPage() {
           <div className="absolute bottom-1/3 left-1/3 w-56 h-56 bg-blue-300/8 rounded-full blur-xl animate-float-delayed"></div>
         </div>
         
-        {/* Gradient overlay for depth */}
         <div className="absolute inset-0 bg-gradient-to-t from-background/50 via-transparent to-background/30 pointer-events-none"></div>
         
         <div className="container mx-auto px-4 relative z-10">
@@ -115,7 +130,7 @@ export default function CoursesPage() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
               <Input 
                 className="w-full h-14 pl-12 bg-background/60 backdrop-blur-md border-border/50 text-foreground placeholder:text-muted-foreground rounded-2xl focus:bg-background/80 focus:border-primary/50 transition-all text-lg shadow-sm"
-                placeholder="Search for courses, skills, or technologies..."
+                placeholder="Search for courses, webinars, or technologies..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -127,25 +142,44 @@ export default function CoursesPage() {
       <div className="container mx-auto px-4 py-12">
         <div className="space-y-8">
           
-          {/* Main Content - Course Grid */}
           <div className="flex-1">
             <div className="mb-8 space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-foreground">
-                  {selectedCategory ? categories.find(c => c.id === selectedCategory)?.name : 'All Courses'}
+                  {showWebinars ? 'Webinars' : selectedCategory ? categories.find(c => c.id === selectedCategory)?.name : 'All Courses'}
                   <span className="ml-3 text-sm font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                    {filteredCourses.length}
+                    {showWebinars ? filteredWebinars.length : filteredCourses.length}
                   </span>
                 </h2>
               </div>
 
-              {/* Horizontal Category Filter (Top of Cards) */}
+              {/* Category Filter with Webinar tab */}
               <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide no-scrollbar -mx-1 px-1">
                 <button
-                  onClick={() => setSelectedCategory(null)}
+                  onClick={() => { setShowWebinars(true); setSelectedCategory(null); }}
+                  className={cn(
+                    "px-5 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border shadow-sm flex items-center gap-2",
+                    showWebinars
+                      ? "bg-primary text-primary-foreground border-primary shadow-primary/20 scale-105" 
+                      : "bg-background/80 text-muted-foreground border-border hover:border-primary/30 hover:text-primary"
+                  )}
+                >
+                  <Video className="w-3.5 h-3.5" />
+                  Webinar
+                  {webinars.length > 0 && (
+                    <span className={cn(
+                      "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
+                      showWebinars ? "bg-primary-foreground/20 text-primary-foreground" : "bg-primary/10 text-primary"
+                    )}>
+                      {webinars.length}
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => { setSelectedCategory(null); setShowWebinars(false); }}
                   className={cn(
                     "px-5 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border shadow-sm",
-                    !selectedCategory 
+                    !selectedCategory && !showWebinars
                       ? "bg-primary text-primary-foreground border-primary shadow-primary/20 scale-105" 
                       : "bg-background/80 text-muted-foreground border-border hover:border-primary/30 hover:text-primary"
                   )}
@@ -155,7 +189,7 @@ export default function CoursesPage() {
                 {rootCategories.map(cat => (
                   <button
                     key={cat.id}
-                    onClick={() => setSelectedCategory(cat.id)}
+                    onClick={() => { setSelectedCategory(cat.id); setShowWebinars(false); }}
                     className={cn(
                       "px-5 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border shadow-sm",
                       selectedCategory === cat.id 
@@ -175,6 +209,93 @@ export default function CoursesPage() {
                   <div key={i} className="h-[450px] bg-card border rounded-2xl animate-pulse"></div>
                 ))}
               </div>
+            ) : showWebinars ? (
+              /* Webinar Grid */
+              filteredWebinars.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                  {filteredWebinars.map((webinar, index) => (
+                    <ScrollReveal key={webinar.id} direction="up" delay={index * 0.05}>
+                      <div 
+                        className="bg-white dark:bg-card rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50 group cursor-pointer"
+                        onClick={() => navigate(`/webinar/${webinar.id}`)}
+                      >
+                        {/* Webinar Header */}
+                        <div className="relative bg-gradient-to-br from-purple-600 to-indigo-700 text-white p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[200px] shrink-0">
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full translate-x-12 -translate-y-12"></div>
+                          <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full -translate-x-8 translate-y-8"></div>
+                          
+                          {webinar.banner_url ? (
+                            <img src={webinar.banner_url} alt={webinar.title} className="absolute inset-0 w-full h-full object-cover opacity-30" />
+                          ) : null}
+                          
+                          <div className="z-10 flex items-center gap-2 mb-3">
+                            <Video className="w-5 h-5" />
+                            <span className="text-xs font-bold uppercase tracking-wider opacity-80">Webinar</span>
+                          </div>
+                          
+                          <h3 className="font-bold text-xl z-10 leading-tight px-4">
+                            {webinar.title}
+                          </h3>
+                          
+                          <div className="mt-3 z-10 flex items-center gap-2 text-xs opacity-90">
+                            <Calendar className="w-3.5 h-3.5" />
+                            {format(new Date(webinar.webinar_date), "MMM dd, yyyy • hh:mm a")}
+                          </div>
+                        </div>
+
+                        {/* Body */}
+                        <div className="p-6 flex flex-col flex-grow gap-4">
+                          <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed flex-grow">
+                            {webinar.description || "Join this exciting webinar to learn from industry experts."}
+                          </p>
+                          
+                          <div className="flex items-center justify-between text-sm pt-2 border-t border-border/10">
+                            <div className="flex items-center gap-1.5 text-muted-foreground">
+                              <BookOpen className="w-4 h-4" />
+                              <span className="text-xs font-medium">
+                                {webinar.booked_count || 0} registered
+                              </span>
+                            </div>
+                            <div className="font-bold text-foreground">
+                              {webinar.is_free ? (
+                                <span className="text-emerald-600 font-black tracking-tight">FREE</span>
+                              ) : (
+                                <span>৳ {webinar.price}</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <Badge className={cn(
+                            "w-fit text-[10px] font-bold uppercase tracking-wider",
+                            webinar.status === 'published' 
+                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" 
+                              : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                          )}>
+                            {webinar.status === 'published' ? 'Live' : 'Upcoming'}
+                          </Badge>
+                          
+                          <Button 
+                            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl mt-1 h-12 font-semibold shadow-md transition-all active:scale-[0.98]"
+                            onClick={(e) => { e.stopPropagation(); navigate(`/webinar/${webinar.id}`); }}
+                          >
+                            Register Now
+                          </Button>
+                        </div>
+                      </div>
+                    </ScrollReveal>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-24 bg-card rounded-3xl border-2 border-dashed border-muted">
+                  <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Video className="w-10 h-10 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-2">No webinars found</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    No upcoming or published webinars at the moment. Check back soon!
+                  </p>
+                </div>
+              )
             ) : filteredCourses.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                 {filteredCourses.map((course, index) => (
@@ -183,27 +304,21 @@ export default function CoursesPage() {
                       className="bg-white dark:bg-card rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50 group cursor-pointer"
                       onClick={() => navigate(`/course/${course.id}`)}
                     >
-                      {/* Header Section */}
                       <div className="relative bg-[#1a56db] text-white p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[200px] shrink-0">
-                        {/* Decorative shapes */}
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full translate-x-12 -translate-y-12"></div>
                         <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full -translate-x-8 translate-y-8"></div>
                         
-                        {/* Title */}
                         <h3 className="font-bold text-2xl z-10 uppercase tracking-wide leading-tight px-4 flex items-center justify-center gap-2">
                           {course.title}
                         </h3>
                         
-                        {/* Registration Pill */}
                         <div className="mt-4 z-10 bg-[#0042a5] text-white text-[10px] font-bold px-4 py-1.5 rounded-full tracking-wider border border-white/10 shadow-sm">
                           REGISTRATION NOW
                         </div>
                         
-                        {/* Limited Seat available text */}
                         <div className="mt-2 text-[9px] z-10 text-blue-100 uppercase tracking-widest font-medium">Limited seat available</div>
                       </div>
 
-                      {/* Body Content */}
                       <div className="p-6 flex flex-col flex-grow gap-5">
                         <div className="flex justify-between items-start gap-4">
                           <h4 className="font-bold text-lg text-gray-900 dark:text-foreground leading-snug flex items-center gap-2">
