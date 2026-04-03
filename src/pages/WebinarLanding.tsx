@@ -423,7 +423,7 @@ const WebinarLanding = () => {
                                                                                 className="relative px-5 py-2 bg-primary text-white rounded-full flex items-center gap-2 shadow-lg border border-white/20 transition-all duration-300 hover:scale-105 active:scale-95"
                                                                             >
                                                                                 <Linkedin className="h-3 w-3" />
-                                                                                <span className="text-[10px] font-black uppercase tracking-[0.1em]">Verified Profile</span>
+                                                                                <span className="text-[10px] font-black uppercase tracking-[0.1em]">VIEW PROFILE</span>
                                                                             </a>
                                                                         ) : (
                                                                             <div className="relative px-5 py-2 bg-primary text-white rounded-full font-black text-[10px] uppercase tracking-[0.1em] shadow-lg border border-white/20">
@@ -481,7 +481,7 @@ const WebinarLanding = () => {
                         {block.type === 'faq' && (
                             <div className="max-w-4xl mx-auto space-y-16">
                                 <div className="text-center space-y-4">
-                                    <h2 className="text-3xl md:text-5xl font-bold">{block.title || 'Common Questions'}</h2>
+                                    <h2 className="text-3xl md:text-5xl font-bold">{block.title === 'Faq' || block.title === 'FAQ' ? 'Frequently Asked Questions' : (block.title || 'Frequently Asked Questions')}</h2>
                                     <p className="text-muted-foreground text-lg">Everything you need to know about the webinar.</p>
                                 </div>
                                 <div className="space-y-6">

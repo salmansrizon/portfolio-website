@@ -32,6 +32,7 @@ interface Course {
   discounted_price: number | null;
   category_id: string | null;
   start_date?: string;
+  course_type?: string;
 }
 
 interface Webinar {
@@ -53,8 +54,7 @@ export default function CoursesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  
+  const [selectedTag, setSelectedTag] = useState<string>("all");
 
   useEffect(() => {
     fetchData();
@@ -83,16 +83,43 @@ export default function CoursesPage() {
   const filteredCourses = courses.filter(course => {
     const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          course.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory ? course.category_id === selectedCategory : true;
-    return matchesSearch && matchesCategory;
+    
+    let matchesTag = true;
+    if (selectedTag === "all") matchesTag = true;
+    else if (selectedTag === "free") matchesTag = course.is_free;
+    else if (selectedTag === "webinar") matchesTag = course.course_type === 'webinar';
+    else matchesTag = course.category_id === selectedTag || course.course_type?.toLowerCase() === selectedTag.toLowerCase();
+    
+    return matchesSearch && matchesTag;
   });
 
-  const filteredWebinars = webinars.filter(w => 
-    w.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (w.description || "").toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredWebinars = webinars.filter(w => {
+    const matchesSearch = w.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         (w.description || "").toLowerCase().includes(searchQuery.toLowerCase());
+    
+    let matchesTag = true;
+    if (selectedTag === "all") matchesTag = true;
+    else if (selectedTag === "free") matchesTag = w.is_free === true;
+    else if (selectedTag === "webinar") matchesTag = true;
+    else matchesTag = false; // Webinars don't have categories in this simple model
+    
+    return matchesSearch && matchesTag;
+  });
 
   const rootCategories = categories.filter(c => !c.parent_id);
+  const customTypes = Array.from(new Set(courses.map(c => c.course_type).filter(Boolean))) as string[];
+  const existingCategoryNames = new Set(categories.map(c => c.name.toLowerCase().trim()));
+  
+  const additionalTags = customTypes.filter(t => {
+    const normalized = t.toLowerCase().trim();
+    return !existingCategoryNames.has(normalized) && 
+           !['regular', 'free courses', 'free course', 'webinar', 'all'].includes(normalized);
+  });
+
+  const categoryTags = rootCategories.filter(cat => {
+    const normalized = cat.name.toLowerCase().trim();
+    return !['free courses', 'free course', 'webinar'].includes(normalized);
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-accent/30">
@@ -146,7 +173,10 @@ export default function CoursesPage() {
             <div className="mb-8 space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-foreground">
-                  {selectedCategory ? categories.find(c => c.id === selectedCategory)?.name : 'All Courses'}
+                  {selectedTag === 'all' ? 'All Courses' : 
+                   selectedTag === 'free' ? 'Free Courses' :
+                   selectedTag === 'webinar' ? 'Latest Webinars' :
+                   categories.find(c => c.id === selectedTag)?.name || 'Filtered Results'}
                   <span className="ml-3 text-sm font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                     {filteredCourses.length + filteredWebinars.length}
                   </span>
@@ -156,23 +186,23 @@ export default function CoursesPage() {
               {/* Category Filter */}
               <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide no-scrollbar -mx-1 px-1">
                 <button
-                  onClick={() => setSelectedCategory(null)}
+                  onClick={() => setSelectedTag("all")}
                   className={cn(
                     "px-5 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border shadow-sm",
-                    !selectedCategory
+                    selectedTag === "all"
                       ? "bg-primary text-primary-foreground border-primary shadow-primary/20 scale-105" 
                       : "bg-background/80 text-muted-foreground border-border hover:border-primary/30 hover:text-primary"
                   )}
                 >
                   All Courses
                 </button>
-                {rootCategories.map(cat => (
+                {categoryTags.map(cat => (
                   <button
                     key={cat.id}
-                    onClick={() => setSelectedCategory(cat.id)}
+                    onClick={() => setSelectedTag(cat.id)}
                     className={cn(
                       "px-5 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border shadow-sm",
-                      selectedCategory === cat.id 
+                      selectedTag === cat.id 
                         ? "bg-primary text-primary-foreground border-primary shadow-primary/20 scale-105" 
                         : "bg-background/80 text-muted-foreground border-border hover:border-primary/30 hover:text-primary"
                     )}
@@ -180,6 +210,42 @@ export default function CoursesPage() {
                     {cat.name}
                   </button>
                 ))}
+                {additionalTags.map(tag => (
+                  <button
+                    key={tag}
+                    onClick={() => setSelectedTag(tag)}
+                    className={cn(
+                      "px-5 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border shadow-sm",
+                      selectedTag === tag 
+                        ? "bg-primary text-primary-foreground border-primary shadow-primary/20 scale-105" 
+                        : "bg-background/80 text-muted-foreground border-border hover:border-primary/30 hover:text-primary"
+                    )}
+                  >
+                    {tag.charAt(0).toUpperCase() + tag.slice(1)}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setSelectedTag("free")}
+                  className={cn(
+                    "px-5 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border shadow-sm",
+                    selectedTag === "free"
+                      ? "bg-primary text-primary-foreground border-primary shadow-primary/20 scale-105" 
+                      : "bg-background/80 text-muted-foreground border-border hover:border-primary/30 hover:text-primary"
+                  )}
+                >
+                  Free Courses
+                </button>
+                <button
+                  onClick={() => setSelectedTag("webinar")}
+                  className={cn(
+                    "px-5 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border shadow-sm",
+                    selectedTag === "webinar"
+                      ? "bg-primary text-primary-foreground border-primary shadow-primary/20 scale-105" 
+                      : "bg-background/80 text-muted-foreground border-border hover:border-primary/30 hover:text-primary"
+                  )}
+                >
+                  Webinar
+                </button>
               </div>
             </div>
 
@@ -368,7 +434,7 @@ export default function CoursesPage() {
                 <Button 
                   variant="outline" 
                   className="mt-8 rounded-xl"
-                  onClick={() => {setSearchQuery(""); setSelectedCategory(null)}}
+                  onClick={() => {setSearchQuery(""); setSelectedTag("all")}}
                 >
                   Clear all filters
                 </Button>

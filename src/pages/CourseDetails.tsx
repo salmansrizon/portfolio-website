@@ -60,9 +60,11 @@ interface Course {
   sections?: CourseSection[];
   start_date?: string;
   updated_at?: string;
+  video_url?: string | null;
   faqs?: { question: string; answer: string }[];
-  course_includes?: string[];
-  instructor_id?: string | null;
+  what_you_will_learn?: { title: string; description: string }[];
+  course_type?: string;
+  created_at?: string;
 }
 
 interface Instructor {
@@ -120,6 +122,7 @@ export default function CourseDetails() {
   // Enrollment Modal state
   const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
+  const [playingVideo, setPlayingVideo] = useState(false);
 
   // Review state
   const [reviewData, setReviewData] = useState({ student_name: "", student_email: "", rating: 5, review_text: "" });
@@ -509,21 +512,29 @@ export default function CourseDetails() {
             
             {activeTab === 'overview' && (
               <div className="space-y-8 animate-in fade-in duration-500">
-                <div className="bg-card border border-border/50 rounded-2xl p-6 sm:p-8 shadow-sm scale-in duration-500">
+                <div className="px-2">
+                   <h3 className="text-2xl font-bold mb-5">Description</h3>
+                   <div className="text-muted-foreground leading-relaxed whitespace-pre-wrap text-base sm:text-lg">{course.description}</div>
+                </div>
+                <div className="bg-card border border-border/50 rounded-2xl p-6 sm:p-8 shadow-sm scale-in duration-500 overflow-hidden">
                   <h3 className="text-xl font-bold mb-6 flex items-center gap-3 text-foreground">📚 What you'll learn</h3>
-                  <div className="grid sm:grid-cols-2 gap-4 gap-x-8">
+                  <div className="grid sm:grid-cols-2 gap-4 gap-y-6 sm:gap-x-12">
                     {(course.learning_outcomes && course.learning_outcomes.length > 0) ? (
                       course.learning_outcomes.map((outcome, idx) => (
-                        <div key={idx} className="flex items-start gap-3 group">
-                          <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-                          <span className="text-sm font-medium text-muted-foreground leading-relaxed group-hover:text-foreground transition-colors">{outcome}</span>
+                        <div key={idx} className="flex items-start gap-4 group">
+                          <CheckCircle2 className="w-5 h-5 text-[#10b981] shrink-0 mt-1 transition-transform group-hover:scale-110" />
+                          <span className="text-base font-semibold text-slate-700 dark:text-slate-300 leading-tight transition-colors group-hover:text-foreground">
+                            {outcome}
+                          </span>
                         </div>
                       ))
                     ) : (
                       course.technologies?.map((tech, idx) => (
-                        <div key={idx} className="flex items-start gap-3 group">
-                          <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-                          <span className="text-sm font-medium text-muted-foreground leading-relaxed group-hover:text-foreground transition-colors">Master {tech} concepts and build projects.</span>
+                        <div key={idx} className="flex items-start gap-4 group">
+                          <CheckCircle2 className="w-5 h-5 text-[#10b981] shrink-0 mt-1 transition-transform group-hover:scale-110" />
+                          <span className="text-base font-semibold text-slate-700 dark:text-slate-300 leading-tight transition-colors group-hover:text-foreground">
+                            Master {tech} concepts and build projects.
+                          </span>
                         </div>
                       ))
                     )}
@@ -537,10 +548,6 @@ export default function CourseDetails() {
                     </ul>
                   </div>
                 )}
-                <div className="px-2">
-                   <h3 className="text-2xl font-bold mb-5">Description</h3>
-                   <div className="text-muted-foreground leading-relaxed whitespace-pre-wrap text-base sm:text-lg">{course.description}</div>
-                </div>
               </div>
             )}
 
@@ -622,12 +629,43 @@ export default function CourseDetails() {
           </div>
 
           <div className="w-full lg:w-[35%] relative">
-            <div className="sticky top-24 bg-card/80 backdrop-blur-md border border-border/60 rounded-2xl overflow-hidden shadow-xl mb-8">
-               <div className="relative h-60 bg-muted flex items-center justify-center overflow-hidden group cursor-pointer">
-                 {course.banner_image ? <img src={course.banner_image} alt={course.title} className="w-full h-full object-cover" decoding="async" /> : <div className="w-full h-full bg-gradient-to-br from-primary to-blue-500" />}
-                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex flex-col items-center justify-center text-white"><Play className="w-16 h-16 fill-white opacity-60 group-hover:opacity-100 transition-all" /></div>
-               </div>
-               <div className="p-7">
+            <div className="bg-card border border-border/50 rounded-3xl overflow-hidden shadow-xl sticky top-28">
+              <div className="relative aspect-video bg-slate-900 group">
+                {playingVideo && course.video_url ? (
+                  <div className="w-full h-full relative">
+                    {course.video_url.includes('youtube.com') || course.video_url.includes('youtu.be') ? (
+                      <iframe
+                        src={`https://www.youtube.com/embed/${course.video_url.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})/)?.[1]}?autoplay=1&rel=0&modestbranding=1`}
+                        className="absolute inset-0 w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        title="Course Preview"
+                      />
+                    ) : (
+                      <video 
+                        src={course.video_url} 
+                        className="w-full h-full object-cover"
+                        controls
+                        autoPlay
+                      />
+                    )}
+                  </div>
+                ) : course.banner_image ? (
+                  <div className="w-full h-full relative cursor-pointer" onClick={() => course.video_url ? setPlayingVideo(true) : setShowEnrollmentModal(true)}>
+                    <img src={course.banner_image} alt={course.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all flex items-center justify-center">
+                      <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center border border-white/30 group-hover:scale-110 transition-all">
+                        <Play className="h-8 w-8 text-white fill-current translate-x-0.5" />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Layout className="w-12 h-12 text-muted-foreground/20" />
+                  </div>
+                )}
+              </div>
+              <div className="p-7">
                  <div className="flex items-end gap-3 mb-6"><span className="text-4xl font-extrabold">৳{course.discounted_price || course.price}</span></div>
                  <div className="flex gap-3 mb-6">
                     <Button size="lg" className="flex-1 bg-[#d91d79] hover:bg-[#b0145e] h-14 rounded-xl text-white font-bold" onClick={() => setShowEnrollmentModal(true)}>Start course</Button>

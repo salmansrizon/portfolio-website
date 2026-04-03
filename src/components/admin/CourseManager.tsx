@@ -90,7 +90,9 @@ interface Course {
   sections?: CourseSection[];
   student_count?: number;
   rating?: number;
-  faqs?: { question: string; answer: string }[];
+  what_you_will_learn?: { title: string; description: string }[];
+  course_type?: string;
+  video_url?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -164,6 +166,9 @@ interface FormData {
   course_includes: string[];
   instructor_id: string | null;
   faqs: { question: string; answer: string }[];
+  what_you_will_learn: { title: string; description: string }[];
+  course_type: string;
+  video_url: string;
 }
 
 const initialFormData: FormData = {
@@ -190,6 +195,9 @@ const initialFormData: FormData = {
   course_includes: [],
   instructor_id: null,
   faqs: [],
+  what_you_will_learn: [],
+  course_type: "regular",
+  video_url: "",
 };
 
 export default function CourseManager() {
@@ -200,6 +208,8 @@ export default function CourseManager() {
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [newTechnology, setNewTechnology] = useState("");
+  const [showCustomType, setShowCustomType] = useState(false);
+  const [customTypeName, setCustomTypeName] = useState("");
   const [isLoadingSections, setIsLoadingSections] = useState(false);
   const [instructorsList, setInstructorsList] = useState<any[]>([]);
 
@@ -225,7 +235,11 @@ export default function CourseManager() {
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      setCourses((data || []).map((c: any) => ({ ...c, faqs: Array.isArray(c.faqs) ? c.faqs : [] })) as Course[]);
+      setCourses((data || []).map((c: any) => ({ 
+        ...c, 
+        faqs: Array.isArray(c.faqs) ? c.faqs : [],
+        what_you_will_learn: Array.isArray(c.what_you_will_learn) ? c.what_you_will_learn : []
+      })) as Course[]);
     } catch (error: any) {
       console.error("Error fetching courses:", error);
       showError(error?.message || "Failed to load courses");
@@ -264,6 +278,9 @@ export default function CourseManager() {
             course_includes: formData.course_includes,
             instructor_id: formData.instructor_id || null,
             faqs: formData.faqs || [],
+            what_you_will_learn: formData.what_you_will_learn || [],
+            course_type: formData.course_type || 'regular',
+            video_url: formData.video_url || null,
           })
           .eq('id', courseId);
         if (courseError) throw courseError;
@@ -294,6 +311,9 @@ export default function CourseManager() {
             course_includes: formData.course_includes,
             instructor_id: formData.instructor_id || null,
             faqs: formData.faqs || [],
+            what_you_will_learn: formData.what_you_will_learn || [],
+            course_type: formData.course_type || 'regular',
+            video_url: formData.video_url || null,
           })
           .select('id')
           .single();
@@ -672,6 +692,9 @@ export default function CourseManager() {
         course_includes: courseData.course_includes || [],
         instructor_id: courseData.instructor_id || null,
         faqs: courseData.faqs || [],
+        what_you_will_learn: courseData.what_you_will_learn || [],
+        course_type: courseData.course_type || 'regular',
+        video_url: courseData.video_url || "",
       });
       setShowDialog(true);
     } catch (error) {
@@ -765,6 +788,15 @@ export default function CourseManager() {
                         rows={2}
                       />
                     </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="video_url">Intro/Promo Video URL (YouTube, Vimeo, etc.)</Label>
+                      <Input 
+                        id="video_url" 
+                        value={formData.video_url} 
+                        onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+                        placeholder="e.g., https://www.youtube.com/watch?v=..."
+                      />
+                    </div>
                     <div>
                       <Label htmlFor="price">Price (৳)</Label>
                       <Input
@@ -798,6 +830,60 @@ export default function CourseManager() {
                         onChange={(e) => handleDiscountPercentageChange(e.target.value)}
                         placeholder="e.g. 25"
                       />
+                    </div>
+                    <div>
+                      <Label htmlFor="course_type">Course Type</Label>
+                      <div className="space-y-2">
+                        <Select
+                          value={showCustomType ? "custom" : formData.course_type}
+                          onValueChange={(value) => {
+                            if (value === "custom") {
+                              setShowCustomType(true);
+                            } else {
+                              setShowCustomType(false);
+                              setFormData({ ...formData, course_type: value });
+                            }
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="regular">Regular Course</SelectItem>
+                            <SelectItem value="bootcamp">Bootcamp</SelectItem>
+                            <SelectItem value="workshop">Workshop</SelectItem>
+                            <SelectItem value="mentorship">Mentorship</SelectItem>
+                            {formData.course_type && !["regular", "bootcamp", "workshop", "mentorship"].includes(formData.course_type) && (
+                              <SelectItem value={formData.course_type}>{formData.course_type.charAt(0).toUpperCase() + formData.course_type.slice(1)}</SelectItem>
+                            )}
+                            <SelectItem value="custom">+ Add New Type...</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        
+                        {showCustomType && (
+                          <div className="flex gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
+                            <Input 
+                              placeholder="Enter custom type name..."
+                              value={customTypeName}
+                              onChange={(e) => setCustomTypeName(e.target.value)}
+                              className="h-10"
+                            />
+                            <Button 
+                              type="button" 
+                              variant="secondary"
+                              onClick={() => {
+                                if (customTypeName.trim()) {
+                                  setFormData({ ...formData, course_type: customTypeName.trim().toLowerCase() });
+                                  setShowCustomType(false);
+                                  setCustomTypeName("");
+                                }
+                              }}
+                            >
+                              Apply
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div>
                       <Label htmlFor="difficulty_level">Difficulty Level</Label>
@@ -1058,6 +1144,7 @@ export default function CourseManager() {
                     )}
                   </div>
                 </div>
+
 
                 {/* Course Content Management */}
                 <div className="border rounded-lg p-4 space-y-4">
