@@ -519,7 +519,13 @@ const SQLChallenge = () => {
                     <PanelGroup direction="vertical">
                       <Panel defaultSize={65} minSize={30}>
                          <div className="h-full flex flex-col relative">
-                           <div className="h-8 shrink-0 flex items-center px-4 justify-between bg-muted/50 border-b border-border"><div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground"><Layout className="w-3.5 h-3.5 text-primary" />Terminal</div></div>
+                           <div className="h-8 shrink-0 flex items-center px-4 justify-between bg-muted/50 border-b border-border">
+                             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground"><Layout className="w-3.5 h-3.5 text-primary" />Terminal</div>
+                             <Button size="sm" onClick={handleRun} disabled={!envReady} variant="ghost" className="h-6 px-3 text-[10px] font-black uppercase tracking-widest gap-1.5 text-primary hover:bg-primary/10 rounded-lg">
+                               {envBooting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" fill="currentColor" />}
+                               Run
+                             </Button>
+                           </div>
                            <div className="flex-1"><Editor height="100%" defaultLanguage="sql" theme=" mission-dark" beforeMount={defineCustomThemes} value={code} onChange={v => setCode(v || '')} options={{ minimap: { enabled: false }, fontSize: 15, padding: { top: 20, bottom: 20 }, wordWrap: 'on' }} /></div>
                          </div>
                       </Panel>

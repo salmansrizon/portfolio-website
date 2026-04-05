@@ -564,6 +564,7 @@ export type Database = {
           banner_image: string | null
           category_id: string | null
           course_includes: string[] | null
+          course_type: string | null
           created_at: string
           description: string
           difficulty_level: string | null
@@ -586,11 +587,14 @@ export type Database = {
           technologies: string[]
           title: string
           updated_at: string
+          video_url: string | null
+          what_you_will_learn: Json | null
         }
         Insert: {
           banner_image?: string | null
           category_id?: string | null
           course_includes?: string[] | null
+          course_type?: string | null
           created_at?: string
           description: string
           difficulty_level?: string | null
@@ -613,11 +617,14 @@ export type Database = {
           technologies?: string[]
           title: string
           updated_at?: string
+          video_url?: string | null
+          what_you_will_learn?: Json | null
         }
         Update: {
           banner_image?: string | null
           category_id?: string | null
           course_includes?: string[] | null
+          course_type?: string | null
           created_at?: string
           description?: string
           difficulty_level?: string | null
@@ -640,6 +647,8 @@ export type Database = {
           technologies?: string[]
           title?: string
           updated_at?: string
+          video_url?: string | null
+          what_you_will_learn?: Json | null
         }
         Relationships: [
           {
