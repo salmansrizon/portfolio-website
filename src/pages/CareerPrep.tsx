@@ -1,16 +1,17 @@
 import * as React from 'react';
-const { useState, useEffect, useMemo } = React;
+const { useState, useEffect, useMemo, useCallback } = React;
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import Navbar from '@/components/Navbar';
-import { Search, Trophy, Loader2, CheckCircle2, Circle, ChevronRight, Lock, Sparkles } from 'lucide-react';
+import { Search, Trophy, Loader2, CheckCircle2, Circle, ChevronRight, ChevronLeft, Lock, Sparkles } from 'lucide-react';
 import { useQuestions, useCompletedMissions, useXPStats } from '@/hooks/useCareerPrep';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -106,6 +107,22 @@ const CareerPrep = () => {
       return matchesSearch;
     });
   }, [shuffledQuestions, activeType, searchQuery]);
+
+  // Pagination
+  const isMobile = useIsMobile();
+  const pageSize = isMobile ? 10 : 20;
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeType, searchQuery, activeTab]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredQuestions.length / pageSize));
+  const paginatedQuestions = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredQuestions.slice(start, start + pageSize);
+  }, [filteredQuestions, currentPage, pageSize]);
 
   // Statistics
   const stats = useMemo(() => {
@@ -331,7 +348,7 @@ const CareerPrep = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredQuestions.map((q) => (
+                    paginatedQuestions.map((q) => (
                       <TableRow 
                         key={q.id} 
                         className="cursor-pointer hover:bg-accent/30 group transition-colors"
@@ -367,6 +384,59 @@ const CareerPrep = () => {
                 </TableBody>
               </Table>
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between pt-4">
+                <span className="text-xs text-muted-foreground font-medium">
+                  Showing {((currentPage - 1) * pageSize) + 1}–{Math.min(currentPage * pageSize, filteredQuestions.length)} of {filteredQuestions.length}
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(p => p - 1)}
+                    className="h-8 px-3"
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-1" /> Prev
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                      .reduce<(number | string)[]>((acc, p, idx, arr) => {
+                        if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('...');
+                        acc.push(p);
+                        return acc;
+                      }, [])
+                      .map((p, i) =>
+                        typeof p === 'string' ? (
+                          <span key={`dots-${i}`} className="px-1 text-muted-foreground text-xs">…</span>
+                        ) : (
+                          <Button
+                            key={p}
+                            variant={currentPage === p ? 'default' : 'outline'}
+                            size="sm"
+                            className="h-8 w-8 p-0 text-xs"
+                            onClick={() => setCurrentPage(p)}
+                          >
+                            {p}
+                          </Button>
+                        )
+                      )}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(p => p + 1)}
+                    className="h-8 px-3"
+                  >
+                    Next <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            )}
             
           </div>
 
