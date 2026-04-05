@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import Navbar from '@/components/Navbar';
-import { Search, Trophy, Loader2, CheckCircle2, Circle, ChevronRight, Lock, Sparkles } from 'lucide-react';
+import { Search, Trophy, Loader2, CheckCircle2, Circle, ChevronRight, ChevronLeft, Lock, Sparkles } from 'lucide-react';
 import { useQuestions, useCompletedMissions, useXPStats } from '@/hooks/useCareerPrep';
 import { supabase } from '@/integrations/supabase/client';
 
