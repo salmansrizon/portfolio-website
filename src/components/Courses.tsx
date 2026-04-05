@@ -205,7 +205,7 @@ export default function Courses() {
                         Join for Free
                       </>
                     ) : (
-                      "Claim Your Seat"
+                      "Enroll Now"
                     )}
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
