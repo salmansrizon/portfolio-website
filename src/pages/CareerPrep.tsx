@@ -348,7 +348,7 @@ const CareerPrep = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredQuestions.map((q) => (
+                    paginatedQuestions.map((q) => (
                       <TableRow 
                         key={q.id} 
                         className="cursor-pointer hover:bg-accent/30 group transition-colors"
