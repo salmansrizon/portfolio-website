@@ -130,8 +130,9 @@ const Services = () => {
 
                   <Button 
                     className="w-full bg-primary hover:bg-primary-hover text-primary-foreground group-hover:shadow-hover transition-all"
+                    onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
                   >
-                    <a href="/#contact">Get Started</a>
+                    Get Started
                     <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </CardContent>
