@@ -163,6 +163,6 @@ Deno.serve(async (req: Request) => {
 
   } catch (err) {
     console.error(`[${requestId}] Critical Error:`, err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }), { status: 500 });
   }
 });
