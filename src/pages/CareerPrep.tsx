@@ -108,6 +108,22 @@ const CareerPrep = () => {
     });
   }, [shuffledQuestions, activeType, searchQuery]);
 
+  // Pagination
+  const isMobile = useIsMobile();
+  const pageSize = isMobile ? 10 : 20;
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeType, searchQuery, activeTab]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredQuestions.length / pageSize));
+  const paginatedQuestions = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredQuestions.slice(start, start + pageSize);
+  }, [filteredQuestions, currentPage, pageSize]);
+
   // Statistics
   const stats = useMemo(() => {
     const topLevel = questions.filter(q => !q.parent_id);
