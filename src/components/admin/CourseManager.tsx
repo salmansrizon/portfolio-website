@@ -1439,6 +1439,24 @@ export default function CourseManager() {
                                             className="min-h-[80px] text-xs"
                                           />
                                         </div>
+                                        <div>
+                                          <Label className="text-xs">YouTube Video URL</Label>
+                                          <Input
+                                            value={(content.content_data as any)?.video_url || ''}
+                                            onChange={(e) => {
+                                              const newSections = [...(formData.sections || [])];
+                                              const contents = [...(section.contents || [])];
+                                              contents[contentIndex] = {
+                                                ...content,
+                                                content_data: { ...(content.content_data || {}), video_url: e.target.value }
+                                              };
+                                              newSections[sectionIndex] = { ...section, contents };
+                                              setFormData({ ...formData, sections: newSections });
+                                            }}
+                                            placeholder="https://www.youtube.com/watch?v=..."
+                                            className="h-8 text-xs"
+                                          />
+                                        </div>
                                         <div className="flex items-center gap-2">
                                           <Badge variant={content.content_type === 'video' ? 'default' : 'secondary'} className="text-xs">
                                             {content.content_type}
