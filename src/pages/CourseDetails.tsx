@@ -588,7 +588,46 @@ export default function CourseDetails() {
                                 </AccordionTrigger>
                                 <AccordionContent className="px-4 sm:px-14 pb-4 pt-0">
                                   <div className="space-y-3 border-l-2 border-primary/20 pl-6 py-2 mt-2 bg-muted/5 rounded-r-lg relative">
-                                    {item.description && <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{item.description}</p>}
+                                     {item.description && <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{item.description}</p>}
+                                     {(() => {
+                                       const videoUrl = (item.content_data as any)?.video_url;
+                                       if (!videoUrl) return null;
+                                       const ytMatch = videoUrl.match(/(?:v=|\/embed\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+                                       const ytId = ytMatch?.[1];
+                                       if (!ytId) return null;
+                                       
+                                       if (item.is_free) {
+                                         return (
+                                           <div className="mt-3 rounded-xl overflow-hidden border border-border/50 shadow-sm">
+                                             <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                                               <iframe
+                                                 src={`https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1`}
+                                                 className="absolute inset-0 w-full h-full"
+                                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                 allowFullScreen
+                                                 title={item.title}
+                                               />
+                                             </div>
+                                           </div>
+                                         );
+                                       } else {
+                                         return (
+                                           <div className="mt-3 rounded-xl overflow-hidden border border-border/50 shadow-sm relative">
+                                             <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                                               <img
+                                                 src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`}
+                                                 alt={item.title}
+                                                 className="absolute inset-0 w-full h-full object-cover blur-sm brightness-50"
+                                               />
+                                               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background/60 backdrop-blur-sm">
+                                                 <Lock className="w-8 h-8 text-muted-foreground" />
+                                                 <p className="text-sm font-semibold text-foreground">Enroll to unlock this video</p>
+                                               </div>
+                                             </div>
+                                           </div>
+                                         );
+                                       }
+                                     })()}
                                   </div>
                                 </AccordionContent>
                               </AccordionItem>
