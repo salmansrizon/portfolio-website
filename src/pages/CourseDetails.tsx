@@ -600,13 +600,13 @@ export default function CourseDetails() {
                                          return (
                                            <div className="mt-3 rounded-xl overflow-hidden border border-border/50 shadow-sm">
                                              <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-                                               <iframe
-                                                 src={`https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1`}
-                                                 className="absolute inset-0 w-full h-full"
-                                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                                 allowFullScreen
-                                                 title={item.title}
-                                               />
+                                                <iframe
+                                                  src={`https://www.youtube-nocookie.com/embed/${ytId}?rel=0&modestbranding=1&showinfo=0&controls=1&disablekb=0&fs=1&iv_load_policy=3`}
+                                                  className="absolute inset-0 w-full h-full"
+                                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                  allowFullScreen
+                                                  title={item.title}
+                                                />
                                              </div>
                                            </div>
                                          );
