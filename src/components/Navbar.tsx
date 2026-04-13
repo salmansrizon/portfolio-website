@@ -10,6 +10,7 @@ const Navbar = () => {
 
   const navItems = [
     { name: "Career Prep", href: "/career-prep", highlight: true },
+    { name: "Roadmaps", href: "/roadmaps" },
     { name: "Services", href: "/#services" },
     { name: "All Courses", href: "/courses" },
     { name: "Portfolio", href: "/portfolio" },

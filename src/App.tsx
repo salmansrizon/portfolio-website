@@ -19,6 +19,8 @@ import NotFound from "./pages/NotFound";
 import CareerPrep from "./pages/CareerPrep";
 import SQLChallenge from "./pages/SQLChallenge";
 import WebinarLanding from "./pages/WebinarLanding";
+import RoadmapsPage from "./pages/RoadmapsPage";
+import RoadmapDetailPage from "./pages/RoadmapDetailPage";
 import FloatingContact from "@/components/FloatingContact";
 import WebinarFloatingButton from "@/components/WebinarFloatingButton";
 
@@ -47,6 +49,8 @@ const App = () => (
               <Route path="/career-prep" element={<CareerPrep />} />
               <Route path="/career-prep/solve/:slug" element={<SQLProvider><SQLChallenge /></SQLProvider>} />
               <Route path="/webinar/:id" element={<WebinarLanding />} />
+              <Route path="/roadmaps" element={<RoadmapsPage />} />
+              <Route path="/roadmaps/:slug" element={<RoadmapDetailPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
