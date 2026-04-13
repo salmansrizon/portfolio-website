@@ -39,17 +39,17 @@ const RoadmapsPage = () => {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="pt-24 pb-16 px-4">
+      <div className="pt-20 sm:pt-24 pb-12 sm:pb-16 px-3 sm:px-4">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">Career Roadmaps</h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <div className="text-center mb-8 sm:mb-12">
+            <h1 className="text-2xl sm:text-4xl font-bold mb-2 sm:mb-4">Career Roadmaps</h1>
+            <p className="text-sm sm:text-lg text-muted-foreground max-w-2xl mx-auto">
               Step-by-step learning paths to help you navigate your tech career journey.
             </p>
           </div>
 
           {loading ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {[1, 2, 3].map((i) => (
                 <Skeleton key={i} className="h-48 rounded-xl" />
               ))}
@@ -57,16 +57,16 @@ const RoadmapsPage = () => {
           ) : roadmaps.length === 0 ? (
             <p className="text-center text-muted-foreground py-16">No roadmaps available yet. Check back soon!</p>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {roadmaps.map((r) => (
                 <Link key={r.id} to={`/roadmaps/${r.slug}`}>
                   <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 h-full border-primary/10 hover:border-primary/30">
                     {r.banner_image && (
-                      <div className="h-32 overflow-hidden rounded-t-xl">
+                      <div className="h-28 sm:h-32 overflow-hidden rounded-t-xl">
                         <img src={r.banner_image} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                       </div>
                     )}
-                    <CardContent className="p-6">
+                    <CardContent className="p-4 sm:p-6">
                       <div className="flex items-start gap-3 mb-3">
                         <div className="p-2 rounded-lg bg-primary/10">
                           <Map className="h-5 w-5 text-primary" />
