@@ -826,6 +826,48 @@ export type Database = {
         }
         Relationships: []
       }
+      roadmaps: {
+        Row: {
+          banner_image: string | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          markdown_content: string
+          order_index: number
+          slug: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          banner_image?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          markdown_content?: string
+          order_index?: number
+          slug: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          banner_image?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          markdown_content?: string
+          order_index?: number
+          slug?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       services: {
         Row: {
           created_at: string
