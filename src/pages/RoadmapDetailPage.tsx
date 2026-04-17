@@ -9,6 +9,8 @@ import RoadmapAccordionView from '@/components/roadmap/RoadmapAccordionView';
 import { TreePine, List, ArrowLeft } from 'lucide-react';
 import { usePageView } from '@/hooks/usePageView';
 import { Skeleton } from '@/components/ui/skeleton';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Roadmap {
   id: string;
@@ -86,7 +88,9 @@ const RoadmapDetailPage = () => {
             </Link>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1.5 sm:mb-2">{roadmap.title}</h1>
             {roadmap.description && (
-              <p className="text-sm sm:text-lg text-muted-foreground">{roadmap.description}</p>
+              <div className="prose prose-sm sm:prose-base dark:prose-invert max-w-none text-muted-foreground prose-headings:text-foreground prose-strong:text-foreground prose-a:text-primary">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{roadmap.description}</ReactMarkdown>
+              </div>
             )}
           </div>
 
