@@ -179,8 +179,13 @@ const RoadmapManager = () => {
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium">Description</label>
-              <Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+              <label className="text-sm font-medium">Description (supports markdown)</label>
+              <Textarea
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                rows={6}
+                placeholder={`Brief intro paragraph.\n\n## Section heading\n\n- Bullet one\n- Bullet two\n\n**Bold text** and [links](https://example.com).`}
+              />
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
