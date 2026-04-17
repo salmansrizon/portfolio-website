@@ -24,8 +24,8 @@ const SubTopicBox = ({ node }: { node: RoadmapNode }) => {
       <button
         onClick={() => hasDetails && setExpanded(!expanded)}
         className={cn(
-          'w-full text-left px-3 py-2 rounded-md border-2 border-foreground/80',
-          'bg-[hsl(35_95%_75%)] dark:bg-[hsl(35_70%_55%)] text-foreground',
+          'w-full text-left px-3 py-2 rounded-md border-2 border-accent/60',
+          'bg-accent/15 hover:bg-accent/25 text-foreground',
           'font-medium text-xs sm:text-sm shadow-sm hover:shadow-md transition-all',
           'flex items-center justify-between gap-2',
           hasDetails && 'cursor-pointer',
@@ -95,8 +95,8 @@ const MainSection = ({ node, index }: { node: RoadmapNode; index: number }) => {
       <div className="relative z-10 flex justify-center">
         <div
           className={cn(
-            'px-4 py-2.5 sm:px-6 sm:py-3 rounded-md border-2 border-foreground/80',
-            'bg-[hsl(55_95%_70%)] dark:bg-[hsl(50_85%_55%)] text-foreground',
+            'px-4 py-2.5 sm:px-6 sm:py-3 rounded-md border-2 border-primary',
+            'bg-primary text-primary-foreground',
             'font-bold text-sm sm:text-base shadow-md text-center min-w-[180px] sm:min-w-[220px] max-w-[280px]',
           )}
         >
