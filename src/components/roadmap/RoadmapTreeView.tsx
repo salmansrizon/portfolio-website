@@ -24,8 +24,8 @@ const SubTopicBox = ({ node }: { node: RoadmapNode }) => {
       <button
         onClick={() => hasDetails && setExpanded(!expanded)}
         className={cn(
-          'w-full text-left px-3 py-2 rounded-md border-2 border-foreground/80',
-          'bg-[hsl(35_95%_75%)] dark:bg-[hsl(35_70%_55%)] text-foreground',
+          'w-full text-left px-3 py-2 rounded-md border-2 border-accent/60',
+          'bg-accent/15 hover:bg-accent/25 text-foreground',
           'font-medium text-xs sm:text-sm shadow-sm hover:shadow-md transition-all',
           'flex items-center justify-between gap-2',
           hasDetails && 'cursor-pointer',
