@@ -49,9 +49,9 @@ export function parseRoadmapMarkdown(md: string): RoadmapNode[] {
       continue;
     }
 
-    // Non-empty non-heading line
+    // Non-empty non-heading line (skip horizontal rules / separators)
     const trimmed = line.trim();
-    if (trimmed && stack.length > 1) {
+    if (trimmed && !/^[-*_]{3,}$/.test(trimmed) && stack.length > 1) {
       stack[stack.length - 1].content.push(trimmed);
     }
   }
