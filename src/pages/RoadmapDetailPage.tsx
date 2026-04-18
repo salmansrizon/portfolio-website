@@ -184,6 +184,36 @@ const RoadmapDetailPage = () => {
           )}
         </div>
       </div>
+
+      {/* Guest Gate Modal */}
+      <Dialog open={showGate} onOpenChange={(open) => { if (!open && localStorage.getItem('careerprep_guest') !== 'true') return; setShowGate(open); }}>
+        <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+              <Sparkles className="w-6 h-6 text-primary" />
+            </div>
+            <DialogTitle className="text-center text-xl">Unlock the Full Roadmap</DialogTitle>
+            <DialogDescription className="text-center">
+              Enter your details to access this career roadmap. Free, no spam — just stay updated on new content.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleGuestSubmit} className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="gate-email">Email</Label>
+              <Input id="gate-email" type="email" placeholder="you@example.com" value={guestEmail} onChange={(e) => setGuestEmail(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gate-whatsapp">WhatsApp Number</Label>
+              <Input id="gate-whatsapp" type="tel" placeholder="+8801712345678" value={guestWhatsapp} onChange={(e) => setGuestWhatsapp(e.target.value)} required />
+            </div>
+            <DialogFooter>
+              <Button type="submit" className="w-full" disabled={guestSaving}>
+                {guestSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : 'Continue to Roadmap'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
