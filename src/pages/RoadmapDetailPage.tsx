@@ -221,4 +221,35 @@ const RoadmapDetailPage = () => {
   );
 };
 
+const ShareButton = ({ title }: { title: string }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    const shareData = { title, text: `Check out this roadmap: ${title}`, url };
+    if (typeof navigator !== 'undefined' && (navigator as any).share) {
+      try {
+        await (navigator as any).share(shareData);
+        return;
+      } catch {
+        // fall through to clipboard
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
+
+  return (
+    <Button variant="outline" size="sm" onClick={handleShare} className="gap-1.5 shrink-0 mt-1">
+      {copied ? <Check className="h-4 w-4 text-green-500" /> : <Share2 className="h-4 w-4" />}
+      <span className="hidden sm:inline">{copied ? 'Copied!' : 'Share'}</span>
+    </Button>
+  );
+};
+
 export default RoadmapDetailPage;
