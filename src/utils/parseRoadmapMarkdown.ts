@@ -42,17 +42,13 @@ export function parseRoadmapMarkdown(md: string): RoadmapNode[] {
       continue;
     }
 
-    // List item or content line
-    const listMatch = line.match(/^[-*+]\s+(.+)/);
-    if (listMatch && stack.length > 1) {
-      stack[stack.length - 1].content.push(listMatch[1].trim());
-      continue;
-    }
-
-    // Non-empty non-heading line (skip horizontal rules / separators)
+    // Preserve raw lines (bullets, table rows, paragraphs) so BlockMarkdown can render them.
+    // Skip horizontal rules.
     const trimmed = line.trim();
-    if (trimmed && !/^[-*_]{3,}$/.test(trimmed) && stack.length > 1) {
-      stack[stack.length - 1].content.push(trimmed);
+    if (!trimmed) continue;
+    if (/^[-*_]{3,}$/.test(trimmed)) continue;
+    if (stack.length > 1) {
+      stack[stack.length - 1].content.push(line.replace(/\s+$/, ''));
     }
   }
 
