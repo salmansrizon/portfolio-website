@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { RoadmapNode } from '@/utils/parseRoadmapMarkdown';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import InlineMarkdown from './InlineMarkdown';
 
 interface RoadmapTreeViewProps {
   nodes: RoadmapNode[];
@@ -31,7 +32,7 @@ const SubTopicBox = ({ node }: { node: RoadmapNode }) => {
           hasDetails && 'cursor-pointer',
         )}
       >
-        <span className="break-words">{node.title}</span>
+        <span className="break-words"><InlineMarkdown>{node.title}</InlineMarkdown></span>
         {hasDetails && (
           <ChevronDown
             className={cn('h-3.5 w-3.5 shrink-0 transition-transform', expanded && 'rotate-180')}
@@ -44,33 +45,33 @@ const SubTopicBox = ({ node }: { node: RoadmapNode }) => {
           {node.content.map((item, i) => (
             <div key={i} className="flex items-start gap-2 text-xs sm:text-sm">
               <span className="text-primary mt-0.5">•</span>
-              <span className="break-words">{item}</span>
+              <span className="break-words"><InlineMarkdown>{item}</InlineMarkdown></span>
             </div>
           ))}
           {node.children.map((child) => (
             <div key={child.id} className="pl-2">
               <div className="text-xs sm:text-sm font-semibold text-foreground/90 mt-1.5 mb-1">
-                {child.title}
+                <InlineMarkdown>{child.title}</InlineMarkdown>
               </div>
               {child.content.length > 0 && (
                 <ul className="space-y-0.5 pl-3">
                   {child.content.map((c, i) => (
                     <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
                       <span className="text-primary mt-0.5">•</span>
-                      <span className="break-words">{c}</span>
+                      <span className="break-words"><InlineMarkdown>{c}</InlineMarkdown></span>
                     </li>
                   ))}
                 </ul>
               )}
               {child.children.map((g) => (
                 <div key={g.id} className="pl-3 mt-1">
-                  <div className="text-xs font-medium text-foreground/80">{g.title}</div>
+                  <div className="text-xs font-medium text-foreground/80"><InlineMarkdown>{g.title}</InlineMarkdown></div>
                   {g.content.length > 0 && (
                     <ul className="space-y-0.5 pl-3">
                       {g.content.map((c, i) => (
                         <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
                           <span className="text-primary mt-0.5">•</span>
-                          <span className="break-words">{c}</span>
+                          <span className="break-words"><InlineMarkdown>{c}</InlineMarkdown></span>
                         </li>
                       ))}
                     </ul>
@@ -100,7 +101,7 @@ const MainSection = ({ node, index }: { node: RoadmapNode; index: number }) => {
             'font-bold text-sm sm:text-base shadow-md text-center min-w-[180px] sm:min-w-[220px] max-w-[280px]',
           )}
         >
-          {node.title}
+          <InlineMarkdown>{node.title}</InlineMarkdown>
         </div>
       </div>
 
@@ -140,7 +141,7 @@ const MainSection = ({ node, index }: { node: RoadmapNode; index: number }) => {
             {node.content.map((item, i) => (
               <li key={i} className="flex items-start gap-2 text-xs sm:text-sm text-muted-foreground">
                 <span className="text-primary mt-0.5">•</span>
-                <span className="break-words">{item}</span>
+                <span className="break-words"><InlineMarkdown>{item}</InlineMarkdown></span>
               </li>
             ))}
           </ul>

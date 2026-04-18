@@ -6,6 +6,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Circle } from 'lucide-react';
+import InlineMarkdown from './InlineMarkdown';
 
 interface RoadmapAccordionViewProps {
   nodes: RoadmapNode[];
@@ -18,7 +19,7 @@ const AccordionNode = ({ node, depth = 0 }: { node: RoadmapNode; depth?: number 
     return (
       <div className="flex items-center gap-2 py-2 px-4 text-sm text-muted-foreground">
         <Circle className="h-2.5 w-2.5 shrink-0 fill-current" />
-        <span>{node.title}</span>
+        <span><InlineMarkdown>{node.title}</InlineMarkdown></span>
       </div>
     );
   }
@@ -32,7 +33,7 @@ const AccordionNode = ({ node, depth = 0 }: { node: RoadmapNode; depth?: number 
           <div className={`h-3 w-3 rounded-full shrink-0 ${
             depth === 0 ? 'bg-primary' : depth === 1 ? 'bg-blue-500' : 'bg-emerald-500'
           }`} />
-          {node.title}
+          <InlineMarkdown>{node.title}</InlineMarkdown>
         </div>
       </AccordionTrigger>
       <AccordionContent className="pl-6">
@@ -41,7 +42,7 @@ const AccordionNode = ({ node, depth = 0 }: { node: RoadmapNode; depth?: number 
             {node.content.map((item, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground py-0.5">
                 <Circle className="h-2 w-2 shrink-0 mt-1.5 text-muted-foreground/50" />
-                <span>{item}</span>
+                <span><InlineMarkdown>{item}</InlineMarkdown></span>
               </li>
             ))}
           </ul>
