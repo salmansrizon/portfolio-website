@@ -3,14 +3,18 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { parseRoadmapMarkdown } from '@/utils/parseRoadmapMarkdown';
 import RoadmapTreeView from '@/components/roadmap/RoadmapTreeView';
 import RoadmapAccordionView from '@/components/roadmap/RoadmapAccordionView';
-import { TreePine, List, ArrowLeft } from 'lucide-react';
+import { TreePine, List, ArrowLeft, Sparkles, Loader2 } from 'lucide-react';
 import { usePageView } from '@/hooks/usePageView';
 import { Skeleton } from '@/components/ui/skeleton';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Roadmap {
   id: string;
@@ -23,10 +27,66 @@ interface Roadmap {
 
 const RoadmapDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
+  const { session } = useAuth();
   const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'tree' | 'accordion'>('tree');
   usePageView(`/roadmaps/${slug}`);
+
+  // Guest gate (reuses careerprep_guests + same localStorage keys)
+  const [showGate, setShowGate] = useState(false);
+  const [guestEmail, setGuestEmail] = useState('');
+  const [guestWhatsapp, setGuestWhatsapp] = useState('');
+  const [guestSaving, setGuestSaving] = useState(false);
+
+  useEffect(() => {
+    if (session?.user) return;
+    const isGuest = localStorage.getItem('careerprep_guest') === 'true';
+    if (!isGuest) setShowGate(true);
+    if (!localStorage.getItem('careerprep_session_id')) {
+      localStorage.setItem('careerprep_session_id', Math.random().toString(36).substring(2, 15));
+    }
+  }, [session]);
+
+  const handleGuestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(guestEmail)) {
+      alert('Please enter a valid email address.');
+      return;
+    }
+    const cleanPhone = guestWhatsapp.replace(/[\s-]/g, '');
+    const phoneRegex = /^\+?[0-9]{10,15}$/;
+    if (!phoneRegex.test(cleanPhone)) {
+      alert('Please enter a valid WhatsApp number (e.g. +8801712345678).');
+      return;
+    }
+
+    setGuestSaving(true);
+    try {
+      const payload = {
+        email: guestEmail.trim().toLowerCase(),
+        whatsapp: cleanPhone,
+        last_active_at: new Date().toISOString(),
+      };
+      const { error } = await supabase
+        .from('careerprep_guests')
+        .upsert(payload, { onConflict: 'email' });
+      if (error) {
+        alert(`Could not save your info: ${error.message}`);
+        setGuestSaving(false);
+        return;
+      }
+      localStorage.setItem('careerprep_guest', 'true');
+      localStorage.setItem('careerprep_guest_email', payload.email);
+      localStorage.setItem('careerprep_guest_whatsapp', cleanPhone);
+      setShowGate(false);
+    } catch (err) {
+      alert('Something went wrong. Please try again.');
+    } finally {
+      setGuestSaving(false);
+    }
+  };
 
   useEffect(() => {
     const fetch = async () => {
@@ -124,6 +184,36 @@ const RoadmapDetailPage = () => {
           )}
         </div>
       </div>
+
+      {/* Guest Gate Modal */}
+      <Dialog open={showGate} onOpenChange={(open) => { if (!open && localStorage.getItem('careerprep_guest') !== 'true') return; setShowGate(open); }}>
+        <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+              <Sparkles className="w-6 h-6 text-primary" />
+            </div>
+            <DialogTitle className="text-center text-xl">Unlock the Full Roadmap</DialogTitle>
+            <DialogDescription className="text-center">
+              Enter your details to access this career roadmap. Free, no spam — just stay updated on new content.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleGuestSubmit} className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="gate-email">Email</Label>
+              <Input id="gate-email" type="email" placeholder="you@example.com" value={guestEmail} onChange={(e) => setGuestEmail(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gate-whatsapp">WhatsApp Number</Label>
+              <Input id="gate-whatsapp" type="tel" placeholder="+8801712345678" value={guestWhatsapp} onChange={(e) => setGuestWhatsapp(e.target.value)} required />
+            </div>
+            <DialogFooter>
+              <Button type="submit" className="w-full" disabled={guestSaving}>
+                {guestSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : 'Continue to Roadmap'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
