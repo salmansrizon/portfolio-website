@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { parseRoadmapMarkdown } from '@/utils/parseRoadmapMarkdown';
 import RoadmapTreeView from '@/components/roadmap/RoadmapTreeView';
 import RoadmapAccordionView from '@/components/roadmap/RoadmapAccordionView';
-import { TreePine, List, ArrowLeft, Sparkles, Loader2 } from 'lucide-react';
+import { TreePine, List, ArrowLeft, Sparkles, Loader2, Share2, Check } from 'lucide-react';
 import { usePageView } from '@/hooks/usePageView';
 import { Skeleton } from '@/components/ui/skeleton';
 import ReactMarkdown from 'react-markdown';
@@ -146,7 +146,10 @@ const RoadmapDetailPage = () => {
             <Link to="/roadmaps" className="inline-flex items-center text-xs sm:text-sm text-muted-foreground hover:text-primary mb-3 sm:mb-4 transition-colors">
               <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" /> All Roadmaps
             </Link>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1.5 sm:mb-2">{roadmap.title}</h1>
+            <div className="flex items-start justify-between gap-3 mb-1.5 sm:mb-2">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold flex-1 min-w-0 break-words">{roadmap.title}</h1>
+              <ShareButton title={roadmap.title} />
+            </div>
             {roadmap.description && (
               <div className="prose prose-sm sm:prose-base dark:prose-invert max-w-none text-muted-foreground prose-headings:text-foreground prose-strong:text-foreground prose-a:text-primary">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{roadmap.description}</ReactMarkdown>
