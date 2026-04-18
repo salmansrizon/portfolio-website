@@ -246,7 +246,7 @@ const ShareButton = ({ title }: { title: string }) => {
 
   return (
     <Button variant="outline" size="sm" onClick={handleShare} className="gap-1.5 shrink-0 mt-1">
-      {copied ? <Check className="h-4 w-4 text-green-500" /> : <Share2 className="h-4 w-4" />}
+      {copied ? <Check className="h-4 w-4 text-primary" /> : <Share2 className="h-4 w-4" />}
       <span className="hidden sm:inline">{copied ? 'Copied!' : 'Share'}</span>
     </Button>
   );
