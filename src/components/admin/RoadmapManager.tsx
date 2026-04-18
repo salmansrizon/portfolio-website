@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Pencil, Trash2, Eye, Map } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, Map, Upload, Loader2, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface Roadmap {
@@ -199,8 +199,8 @@ const RoadmapManager = () => {
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium">Icon (optional)</label>
-                <Input value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} placeholder="e.g. Brain, Code" />
+                <label className="text-sm font-medium">Icon</label>
+                <IconUploader value={form.icon} onChange={(url) => setForm({ ...form, icon: url })} />
               </div>
               <div>
                 <label className="text-sm font-medium">Order</label>
@@ -231,6 +231,73 @@ const RoadmapManager = () => {
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+};
+
+const IconUploader = ({ value, onChange }: { value: string; onChange: (url: string) => void }) => {
+  const [uploading, setUploading] = useState(false);
+  const { toast } = useToast();
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleFile = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Invalid file', description: 'Please upload an image.', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: 'Too large', description: 'Max 2MB.', variant: 'destructive' });
+      return;
+    }
+    setUploading(true);
+    const ext = file.name.split('.').pop() || 'png';
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await supabase.storage.from('roadmap-icons').upload(path, file, { upsert: false });
+    if (error) {
+      toast({ title: 'Upload failed', description: error.message, variant: 'destructive' });
+    } else {
+      const { data } = supabase.storage.from('roadmap-icons').getPublicUrl(path);
+      onChange(data.publicUrl);
+      toast({ title: 'Icon uploaded' });
+    }
+    setUploading(false);
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+      />
+      {value ? (
+        <div className="relative group">
+          <img src={value} alt="icon" className="h-10 w-10 rounded-md border object-cover bg-white" />
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      ) : (
+        <div className="h-10 w-10 rounded-md border border-dashed flex items-center justify-center bg-muted/30">
+          <Map className="h-4 w-4 text-muted-foreground" />
+        </div>
+      )}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => inputRef.current?.click()}
+        disabled={uploading}
+      >
+        {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5 mr-1" />}
+        {value ? 'Replace' : 'Upload'}
+      </Button>
     </div>
   );
 };

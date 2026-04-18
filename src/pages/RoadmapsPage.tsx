@@ -68,8 +68,12 @@ const RoadmapsPage = () => {
                     )}
                     <CardContent className="p-4 sm:p-6">
                       <div className="flex items-start gap-3 mb-3">
-                        <div className="p-2 rounded-lg bg-primary/10">
-                          <Map className="h-5 w-5 text-primary" />
+                        <div className="p-2 rounded-lg bg-primary/10 shrink-0 overflow-hidden">
+                          {r.icon && /^https?:\/\//.test(r.icon) ? (
+                            <img src={r.icon} alt="" className="h-5 w-5 object-contain" />
+                          ) : (
+                            <Map className="h-5 w-5 text-primary" />
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-bold text-lg group-hover:text-primary transition-colors">{r.title}</h3>
