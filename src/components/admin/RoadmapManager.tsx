@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Pencil, Trash2, Eye, Map } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, Map, Upload, Loader2, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface Roadmap {
@@ -199,8 +199,8 @@ const RoadmapManager = () => {
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium">Icon (optional)</label>
-                <Input value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} placeholder="e.g. Brain, Code" />
+                <label className="text-sm font-medium">Icon</label>
+                <IconUploader value={form.icon} onChange={(url) => setForm({ ...form, icon: url })} />
               </div>
               <div>
                 <label className="text-sm font-medium">Order</label>
