@@ -39,8 +39,8 @@ const About = () => {
             <div>
               <h3 className="text-2xl font-bold text-foreground mb-4 text-center sm:text-left">Professional Journey</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Currently serving as a Data Analytics Manager at Wagely Bangladesh, I specialize in 
-                transforming complex Financial and business data into actionable insights. 
+                Currently serving as Head of Business Intelligence at Cartup Limited, I specialize in 
+                transforming complex financial and business data into actionable insights. 
                 With over 7 years of experience across Fintech, consulting, and education 
                 sectors, I've helped organizations optimize their data strategies and make 
                 informed decisions.
