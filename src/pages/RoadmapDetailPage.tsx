@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { parseRoadmapMarkdown } from '@/utils/parseRoadmapMarkdown';
 import RoadmapTreeView from '@/components/roadmap/RoadmapTreeView';
 import RoadmapAccordionView from '@/components/roadmap/RoadmapAccordionView';
-import { TreePine, List, ArrowLeft, Sparkles, Loader2, Share2, Check } from 'lucide-react';
+import { TreePine, List, ArrowLeft, Sparkles, Loader2, Share2, Check, MessageCircleQuestion, ArrowRight } from 'lucide-react';
 import { usePageView } from '@/hooks/usePageView';
 import { Skeleton } from '@/components/ui/skeleton';
 import ReactMarkdown from 'react-markdown';
@@ -184,6 +184,24 @@ const RoadmapDetailPage = () => {
             <RoadmapTreeView nodes={nodes} />
           ) : (
             <RoadmapAccordionView nodes={nodes} />
+          )}
+
+          {/* Customize Guideline CTA */}
+          {nodes.length > 0 && (
+            <div className="mt-10 sm:mt-14 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-accent/5 to-background p-6 sm:p-8 text-center shadow-sm">
+              <div className="mx-auto w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center mb-3">
+                <MessageCircleQuestion className="w-6 h-6 text-primary" />
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold mb-2">Need Customize Guideline?</h2>
+              <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto mb-5">
+                Get a personalized roadmap tailored to your goals, background, and timeline. Book a 1:1 session to plan your career journey.
+              </p>
+              <Button asChild size="lg" className="gap-2">
+                <Link to="/book-session">
+                  Book a Session <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
           )}
         </div>
       </div>
