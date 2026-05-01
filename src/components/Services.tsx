@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BarChart3, Database, Brain, ArrowRight, Loader2 ,ChartArea} from "lucide-react";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { RealtimeChannel } from '@supabase/supabase-js';
 import ScrollReveal from "./ScrollReveal";
