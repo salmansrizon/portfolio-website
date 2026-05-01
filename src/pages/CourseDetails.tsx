@@ -374,6 +374,8 @@ export default function CourseDetails() {
     );
   }
 
+  const isFree = course.is_free || (!course.price && !course.discounted_price);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-accent/30 pb-20 relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
