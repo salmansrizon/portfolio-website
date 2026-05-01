@@ -150,12 +150,13 @@ const Services = () => {
             <p className="text-lg mb-6 opacity-90">
               Let's discuss your specific requirements and create a tailored solution for your business.
             </p>
-            <Button 
-              variant="secondary" 
+            <Button
+              asChild
+              variant="secondary"
               size="lg"
               className="bg-white text-primary hover:bg-gray-100 font-semibold"
             >
-              <a href="/#contact">Schedule a Consultation</a>
+              <Link to="/book-session">Schedule a Consultation</Link>
             </Button>
           </CardContent>
         </Card>
