@@ -400,17 +400,18 @@ export default function CourseDetails() {
               </div>
             </div>
 
-            <h1 className="text-3xl md:text-4xl lg:text-[42px] font-bold text-foreground mb-5 leading-tight flex flex-wrap items-center gap-4">
+            {course.is_free && (
+              <Badge className="mb-3 inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 text-xs font-bold border-none shadow-md w-fit">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                </span>
+                FREE
+              </Badge>
+            )}
+
+            <h1 className="text-3xl md:text-4xl lg:text-[42px] font-bold text-foreground mb-4 leading-tight">
               {course.title}
-              {course.is_free && (
-                <Badge className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 flex items-center gap-2 text-sm font-bold border-none shadow-md animate-in fade-in slide-in-from-left-2 duration-500">
-                  <div className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-                  </div>
-                  FREE
-                </Badge>
-              )}
             </h1>
             
             <div className="flex items-center flex-wrap gap-4 text-sm mb-6">
