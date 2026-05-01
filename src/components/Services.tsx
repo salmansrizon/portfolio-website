@@ -101,36 +101,36 @@ const Services = () => {
             const IconComponent = service.icon ? iconMap[service.icon] : BarChart3;
             return (
               <ScrollReveal key={index} direction="up" delay={index * 0.1}>
-                <Card className="shadow-card hover:shadow-hover transition-all duration-300 group hover:scale-[1.02] hover:border-primary/30">
+                <Card className="h-full flex flex-col shadow-card hover:shadow-hover transition-all duration-300 group hover:scale-[1.02] hover:border-primary/30">
                 <CardHeader className="text-center pb-4">
                   <div className="w-16 h-16 bg-gradient-hero rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                     {IconComponent ? (
                       <IconComponent className="h-8 w-8 text-white" />
                     ) : null}
                   </div>
-                  <CardTitle className="text-2xl font-bold text-foreground">
+                  <CardTitle className="text-xl sm:text-2xl font-bold text-foreground break-words">
                     {service.title}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  <p className="text-muted-foreground leading-relaxed">
+                <CardContent className="flex-1 flex flex-col space-y-6">
+                  <p className="text-sm sm:text-base text-muted-foreground leading-relaxed break-words">
                     {service.description}
                   </p>
-                  
-                  <div>
+
+                  <div className="flex-1">
                     <h4 className="font-semibold text-foreground mb-3">What's Included:</h4>
                     <ul className="space-y-2">
                       {service.features.map((feature, featureIndex) => (
-                        <li key={featureIndex} className="flex items-center text-muted-foreground">
-                          <div className="w-2 h-2 bg-primary rounded-full mr-3 flex-shrink-0"></div>
-                          {feature}
+                        <li key={featureIndex} className="flex items-start text-sm sm:text-base text-muted-foreground">
+                          <div className="w-2 h-2 bg-primary rounded-full mr-3 mt-2 flex-shrink-0"></div>
+                          <span className="break-words leading-relaxed">{feature}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
 
-                  <Button 
-                    className="w-full bg-primary hover:bg-primary-hover text-primary-foreground group-hover:shadow-hover transition-all"
+                  <Button
+                    className="w-full mt-auto bg-primary hover:bg-primary-hover text-primary-foreground group-hover:shadow-hover transition-all"
                     onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
                   >
                     Get Started
