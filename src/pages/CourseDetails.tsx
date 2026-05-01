@@ -402,7 +402,7 @@ export default function CourseDetails() {
               </div>
             </div>
 
-            {course.is_free && (
+            {isFree && (
               <Badge className="mb-3 inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 text-xs font-bold border-none shadow-md w-fit">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
@@ -709,9 +709,8 @@ export default function CourseDetails() {
                 )}
               </div>
               <div className="p-7">
-                 {(() => {
-                   const isFree = course.is_free || (!course.price && !course.discounted_price);
-                   if (isFree) {
+                {(() => {
+                  if (isFree) {
                      return (
                        <div className="flex items-end gap-3 mb-6">
                          <span className="text-4xl font-extrabold text-emerald-600">FREE</span>
@@ -789,8 +788,8 @@ export default function CourseDetails() {
           open={showEnrollmentModal}
           onOpenChange={setShowEnrollmentModal}
           title={`Enroll in ${course.title}`}
-          isFree={course.is_free}
-          priceLabel={course.is_free ? undefined : (course.price ? `৳${course.discounted_price || course.price}` : undefined)}
+          isFree={isFree}
+          priceLabel={isFree ? undefined : (course.price ? `৳${course.discounted_price || course.price}` : undefined)}
           onSubmit={handleEnrollment}
           extraFields={[
             { key: 'profession', label: 'Profession', placeholder: 'e.g. Student, Engineer', required: true },
