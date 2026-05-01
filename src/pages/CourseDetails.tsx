@@ -778,7 +778,7 @@ export default function CourseDetails() {
           onOpenChange={setShowEnrollmentModal}
           title={`Enroll in ${course.title}`}
           isFree={course.is_free}
-          priceLabel={course.price ? `৳${course.discounted_price || course.price}` : undefined}
+          priceLabel={course.is_free ? undefined : (course.price ? `৳${course.discounted_price || course.price}` : undefined)}
           onSubmit={handleEnrollment}
           extraFields={[
             { key: 'profession', label: 'Profession', placeholder: 'e.g. Student, Engineer', required: true },
