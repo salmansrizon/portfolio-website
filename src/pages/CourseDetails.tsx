@@ -600,22 +600,48 @@ export default function CourseDetails() {
                                        const ytId = ytMatch?.[1];
                                        if (!ytId) return null;
                                        
-                                       if (item.is_free) {
-                                         return (
-                                            <div className="mt-3 rounded-xl overflow-hidden border border-border/50 shadow-sm">
-                                              <div className="relative w-full overflow-hidden" style={{ paddingBottom: '56.25%' }}>
-                                                 <div className="absolute inset-0 pointer-events-none z-10" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 18%)' }} />
-                                                 <iframe
-                                                   src={`https://www.youtube-nocookie.com/embed/${ytId}?rel=0&modestbranding=1&showinfo=0&controls=1&disablekb=0&fs=1&iv_load_policy=3&cc_load_policy=0&playsinline=1&autoplay=0`}
-                                                   className="absolute inset-0 w-full h-full"
-                                                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                                   allowFullScreen
-                                                   title={item.title}
-                                                 />
-                                              </div>
-                                            </div>
-                                         );
-                                       } else {
+                                        if (item.is_free) {
+                                          const isPlaying = playingLessons.has(item.id);
+                                          return (
+                                             <div className="mt-3 rounded-xl overflow-hidden border border-border/50 shadow-sm bg-black">
+                                               <div className="relative w-full overflow-hidden" style={{ paddingBottom: '56.25%' }}>
+                                                  {isPlaying ? (
+                                                    <>
+                                                      <iframe
+                                                        src={`https://www.youtube-nocookie.com/embed/${ytId}?rel=0&modestbranding=1&showinfo=0&controls=1&disablekb=1&fs=0&iv_load_policy=3&cc_load_policy=0&playsinline=1&autoplay=1`}
+                                                        className="absolute inset-0 w-full h-full"
+                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                        allowFullScreen
+                                                        title={item.title}
+                                                      />
+                                                      {/* Mask YouTube chrome (top title bar & bottom watch-on-yt) */}
+                                                      <div className="absolute top-0 left-0 right-0 h-14 bg-black pointer-events-none z-10" />
+                                                      <div className="absolute bottom-0 right-0 h-12 w-40 bg-black pointer-events-none z-10" />
+                                                    </>
+                                                  ) : (
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => setPlayingLessons(prev => { const n = new Set(prev); n.add(item.id); return n; })}
+                                                      className="absolute inset-0 w-full h-full group/play"
+                                                      aria-label={`Play ${item.title}`}
+                                                    >
+                                                      <img
+                                                        src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`}
+                                                        alt={item.title}
+                                                        className="absolute inset-0 w-full h-full object-cover"
+                                                      />
+                                                      <div className="absolute inset-0 bg-black/30 group-hover/play:bg-black/40 transition-colors" />
+                                                      <div className="absolute inset-0 flex items-center justify-center">
+                                                        <div className="w-16 h-16 rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center shadow-2xl ring-4 ring-white/20 group-hover/play:scale-110 transition-transform">
+                                                          <Play className="w-7 h-7 text-white fill-current ml-1" />
+                                                        </div>
+                                                      </div>
+                                                    </button>
+                                                  )}
+                                               </div>
+                                             </div>
+                                          );
+                                        } else {
                                          return (
                                            <div className="mt-3 rounded-xl overflow-hidden border border-border/50 shadow-sm relative">
                                              <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
