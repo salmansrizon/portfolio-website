@@ -123,6 +123,7 @@ export default function CourseDetails() {
   const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
   const [playingVideo, setPlayingVideo] = useState(false);
+  const [playingLessons, setPlayingLessons] = useState<Set<string>>(new Set());
 
   // Review state
   const [reviewData, setReviewData] = useState({ student_name: "", student_email: "", rating: 5, review_text: "" });
