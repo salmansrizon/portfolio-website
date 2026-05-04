@@ -166,21 +166,19 @@ export default function Courses() {
                       <span className="text-xs font-medium">{course.duration_hours ? `${course.duration_hours}h` : 'N/A'}</span>
                     </div>
                     <div className="flex items-center gap-2 font-bold text-gray-900 dark:text-foreground">
-                      {course.discounted_price ? (
+                      {(course.is_free || (!course.price && !course.discounted_price)) ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500 text-white text-xs font-bold tracking-wide shadow-sm">
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                          </span>
+                          FREE
+                        </span>
+                      ) : course.discounted_price ? (
                         <>
                           <span>৳ {course.discounted_price}</span>
                           <span className="text-xs text-gray-400 line-through font-normal">৳ {course.price}</span>
                         </>
-                      ) : course.is_free ? (
-                        <div className="flex items-center gap-2">
-                           <span className="text-red-600 font-black flex items-center gap-1.5 animate-pulse">
-                              <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
-                              </span>
-                              FREE
-                           </span>
-                        </div>
                       ) : (
                         <span>৳ {course.price}</span>
                       )}
