@@ -306,7 +306,11 @@ export default function CourseDetails() {
         title: "Success",
         description: "Successfully enrolled in the course!",
       });
-      
+
+      if (course?.is_free || (!course?.price && !course?.discounted_price)) {
+        setCookie(`free_course_unlocked_${courseId}`, '1');
+        setFreeUnlocked(true);
+      }
       // Modal success state is handled internally by PaymentModal
     } catch (error) {
       console.error("Error enrolling in course:", error);
