@@ -124,6 +124,25 @@ export default function CourseDetails() {
   const [enrolling, setEnrolling] = useState(false);
   const [playingVideo, setPlayingVideo] = useState(false);
   const [playingLessons, setPlayingLessons] = useState<Set<string>>(new Set());
+  const [freeUnlocked, setFreeUnlocked] = useState(false);
+
+  // Cookie helpers for free course unlock tracking
+  const getCookie = (name: string) => {
+    if (typeof document === 'undefined') return null;
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    return match ? decodeURIComponent(match[2]) : null;
+  };
+  const setCookie = (name: string, value: string, days = 365) => {
+    if (typeof document === 'undefined') return;
+    const expires = new Date(Date.now() + days * 864e5).toUTCString();
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+  };
+
+  useEffect(() => {
+    if (courseId && getCookie(`free_course_unlocked_${courseId}`) === '1') {
+      setFreeUnlocked(true);
+    }
+  }, [courseId]);
 
   // Review state
   const [reviewData, setReviewData] = useState({ student_name: "", student_email: "", rating: 5, review_text: "" });
