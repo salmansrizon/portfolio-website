@@ -124,6 +124,25 @@ export default function CourseDetails() {
   const [enrolling, setEnrolling] = useState(false);
   const [playingVideo, setPlayingVideo] = useState(false);
   const [playingLessons, setPlayingLessons] = useState<Set<string>>(new Set());
+  const [freeUnlocked, setFreeUnlocked] = useState(false);
+
+  // Cookie helpers for free course unlock tracking
+  const getCookie = (name: string) => {
+    if (typeof document === 'undefined') return null;
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    return match ? decodeURIComponent(match[2]) : null;
+  };
+  const setCookie = (name: string, value: string, days = 365) => {
+    if (typeof document === 'undefined') return;
+    const expires = new Date(Date.now() + days * 864e5).toUTCString();
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+  };
+
+  useEffect(() => {
+    if (courseId && getCookie(`free_course_unlocked_${courseId}`) === '1') {
+      setFreeUnlocked(true);
+    }
+  }, [courseId]);
 
   // Review state
   const [reviewData, setReviewData] = useState({ student_name: "", student_email: "", rating: 5, review_text: "" });
@@ -287,7 +306,11 @@ export default function CourseDetails() {
         title: "Success",
         description: "Successfully enrolled in the course!",
       });
-      
+
+      if (course?.is_free || (!course?.price && !course?.discounted_price)) {
+        setCookie(`free_course_unlocked_${courseId}`, '1');
+        setFreeUnlocked(true);
+      }
       // Modal success state is handled internally by PaymentModal
     } catch (error) {
       console.error("Error enrolling in course:", error);
@@ -586,7 +609,7 @@ export default function CourseDetails() {
                                       </p>
                                     </div>
                                     <div className="flex items-center gap-3 pl-4 shrink-0 mr-4">
-                                      {item.is_free ? <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"><Play className="w-3.5 h-3.5 text-primary fill-current" /></div> : <Lock className="w-4 h-4 text-muted-foreground/40 shrink-0" />}
+                                      {(item.is_free || (isFree && freeUnlocked)) ? <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"><Play className="w-3.5 h-3.5 text-primary fill-current" /></div> : <Lock className="w-4 h-4 text-muted-foreground/40 shrink-0" />}
                                     </div>
                                   </div>
                                 </AccordionTrigger>
@@ -600,7 +623,7 @@ export default function CourseDetails() {
                                        const ytId = ytMatch?.[1];
                                        if (!ytId) return null;
                                        
-                                        if (item.is_free) {
+                                        if (item.is_free || (isFree && freeUnlocked)) {
                                           const isPlaying = playingLessons.has(item.id);
                                           return (
                                              <div className="mt-3 rounded-xl overflow-hidden border border-border/50 shadow-sm bg-black">
