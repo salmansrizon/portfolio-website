@@ -608,7 +608,7 @@ export default function CourseDetails() {
                                                   {isPlaying ? (
                                                     <>
                                                       <iframe
-                                                        src={`https://www.youtube-nocookie.com/embed/${ytId}?rel=0&modestbranding=1&showinfo=0&controls=1&disablekb=1&fs=0&iv_load_policy=3&cc_load_policy=0&playsinline=1&autoplay=1`}
+                                                        src={`https://www.youtube-nocookie.com/embed/${ytId}?rel=0&modestbranding=1&showinfo=0&controls=1&fs=1&iv_load_policy=3&cc_load_policy=0&playsinline=1&autoplay=1`}
                                                         className="absolute inset-0 w-full h-full"
                                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                                         allowFullScreen
