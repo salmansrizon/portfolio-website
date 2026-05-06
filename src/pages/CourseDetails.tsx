@@ -609,7 +609,7 @@ export default function CourseDetails() {
                                       </p>
                                     </div>
                                     <div className="flex items-center gap-3 pl-4 shrink-0 mr-4">
-                                      {(item.is_free || (isFree && freeUnlocked)) ? <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"><Play className="w-3.5 h-3.5 text-primary fill-current" /></div> : <Lock className="w-4 h-4 text-muted-foreground/40 shrink-0" />}
+                                      {(isFree ? freeUnlocked : item.is_free) ? <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"><Play className="w-3.5 h-3.5 text-primary fill-current" /></div> : <Lock className="w-4 h-4 text-muted-foreground/40 shrink-0" />}
                                     </div>
                                   </div>
                                 </AccordionTrigger>
@@ -623,7 +623,7 @@ export default function CourseDetails() {
                                        const ytId = ytMatch?.[1];
                                        if (!ytId) return null;
                                        
-                                        if (item.is_free || (isFree && freeUnlocked)) {
+                                        if (isFree ? freeUnlocked : item.is_free) {
                                           const isPlaying = playingLessons.has(item.id);
                                           return (
                                              <div className="mt-3 rounded-xl overflow-hidden border border-border/50 shadow-sm bg-black">
