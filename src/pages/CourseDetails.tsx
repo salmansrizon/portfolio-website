@@ -623,7 +623,7 @@ export default function CourseDetails() {
                                        const ytId = ytMatch?.[1];
                                        if (!ytId) return null;
                                        
-                                        if (item.is_free || (isFree && freeUnlocked)) {
+                                        if (isFree ? freeUnlocked : item.is_free) {
                                           const isPlaying = playingLessons.has(item.id);
                                           return (
                                              <div className="mt-3 rounded-xl overflow-hidden border border-border/50 shadow-sm bg-black">
