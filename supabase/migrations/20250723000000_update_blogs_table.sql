@@ -3,7 +3,7 @@ DROP TABLE IF EXISTS public.blogs;
 
 -- Create the new blogs table
 CREATE TABLE IF NOT EXISTS public.blogs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title TEXT NOT NULL,
     slug TEXT NOT NULL UNIQUE,
     content JSONB NOT NULL,
