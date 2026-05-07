@@ -7,10 +7,14 @@ CREATE TABLE IF NOT EXISTS public.blogs (
   content TEXT NOT NULL,
   excerpt TEXT,
   featured_image TEXT,
+  -- Ensure the published column exists; if the table already existed without it, add it below
   published BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
+
+-- Add the published column if the table existed without it
+ALTER TABLE public.blogs ADD COLUMN IF NOT EXISTS published BOOLEAN NOT NULL DEFAULT false;
 
 -- Create portfolio sections table
 CREATE TABLE public.portfolio_sections (
