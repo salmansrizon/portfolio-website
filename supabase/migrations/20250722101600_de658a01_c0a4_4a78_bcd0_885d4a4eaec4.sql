@@ -1,5 +1,6 @@
 -- Create blogs table
-CREATE TABLE public.blogs (
+-- Use IF NOT EXISTS to avoid duplicate table errors when the simple blogs table already exists
+CREATE TABLE IF NOT EXISTS public.blogs (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   title TEXT NOT NULL,
   slug TEXT NOT NULL UNIQUE,
