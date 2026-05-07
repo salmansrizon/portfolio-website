@@ -1,3 +1,6 @@
+-- Ensure uuid_generate_v4 function is available
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 create table projects (
   id uuid primary key default uuid_generate_v4(),
   title text not null,
