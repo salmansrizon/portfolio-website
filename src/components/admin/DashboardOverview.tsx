@@ -16,6 +16,41 @@ interface DashboardStats {
   todayViews: number;
 }
 
+interface PagePerformance {
+  page_path: string;
+  page_title: string;
+  views: number;
+  unique_visitors: number;
+  avg_time_on_page: number;
+  bounce_rate: number;
+}
+
+// Helper to get human-readable page titles from paths
+function getPageTitle(path: string): string {
+  const routeMap: Record<string, string> = {
+    '/': 'Home',
+    '/portfolio': 'Portfolio',
+    '/blog': 'Blog',
+    '/blog/': 'Blog Post',
+    '/courses': 'Courses',
+    '/roadmaps': 'Roadmaps',
+    '/career-prep': 'Career Prep',
+    '/book-session': 'Book Session',
+    '/webinar': 'Webinar',
+    '/sql-challenge': 'SQL Challenge',
+  };
+
+  // Check for exact match
+  if (routeMap[path]) return routeMap[path];
+  
+  // Check for blog post pattern
+  if (path.startsWith('/blog/')) return 'Blog Post';
+  if (path.startsWith('/courses/')) return 'Course Details';
+  if (path.startsWith('/roadmaps/')) return 'Roadmap Details';
+  
+  return path;
+}
+
 interface ActivityItem {
   id: string;
   title: string;
@@ -38,6 +73,7 @@ export default function DashboardOverview() {
   });
   const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
   const [dailyViews, setDailyViews] = useState<{ date: string; views: number; visitors: number }[]>([]);
+  const [pagePerformance, setPagePerformance] = useState<PagePerformance[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,6 +91,7 @@ export default function DashboardOverview() {
           { data: visitorData },
           { count: todayViewsCount },
           { data: chartData },
+          { data: pagePerformanceData },
         ] = await Promise.all([
           supabase.from('session_bookings').select('*', { count: 'exact', head: true }),
           supabase.from('session_bookings').select('*', { count: 'exact', head: true }).eq('booking_status', 'pending'),
@@ -67,6 +104,7 @@ export default function DashboardOverview() {
           supabase.from('page_views').select('visitor_id'),
           supabase.from('page_views').select('*', { count: 'exact', head: true }).gte('created_at', new Date(new Date().setHours(0,0,0,0)).toISOString()),
           supabase.from('page_views').select('created_at, visitor_id').gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
+          supabase.from('page_views').select('page_path, visitor_id').gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
         ]);
 
         const uniqueVisitors = new Set((visitorData || []).map((r: any) => r.visitor_id)).size;
@@ -93,6 +131,29 @@ export default function DashboardOverview() {
             visitors: visitorSet.size,
           }))
         );
+
+        // Process page performance data (GA4-style)
+        const pageMap = new Map<string, { views: number; visitorSet: Set<string> }>();
+        (pagePerformanceData || []).forEach((row: any) => {
+          const path = row.page_path;
+          if (!pageMap.has(path)) {
+            pageMap.set(path, { views: 0, visitorSet: new Set() });
+          }
+          const entry = pageMap.get(path)!;
+          entry.views++;
+          entry.visitorSet.add(row.visitor_id);
+        });
+
+        const pagePerfArray: PagePerformance[] = Array.from(pageMap.entries()).map(([page_path, data]) => ({
+          page_path,
+          page_title: getPageTitle(page_path),
+          views: data.views,
+          unique_visitors: data.visitorSet.size,
+          avg_time_on_page: 0, // Would need additional tracking
+          bounce_rate: 0, // Would need additional tracking
+        })).sort((a, b) => b.views - a.views).slice(0, 10); // Top 10 pages
+
+        setPagePerformance(pagePerfArray);
 
         if (bookingsError) throw bookingsError;
         if (pendingError) throw pendingError;
@@ -279,6 +340,80 @@ export default function DashboardOverview() {
                 <Area type="monotone" dataKey="visitors" name="Unique Visitors" stroke="hsl(var(--accent-foreground))" fill="url(#visitorsGradient)" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* GA4-style Page Performance Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">Page Performance (Last 30 Days)</CardTitle>
+          <p className="text-sm text-muted-foreground mt-1">
+            GA4-style insights for your top pages
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-3 px-2 font-medium text-muted-foreground">Page</th>
+                  <th className="text-right py-3 px-2 font-medium text-muted-foreground">Views</th>
+                  <th className="text-right py-3 px-2 font-medium text-muted-foreground">Unique Visitors</th>
+                  <th className="text-right py-3 px-2 font-medium text-muted-foreground">Views per Visitor</th>
+                  <th className="text-left py-3 px-2 font-medium text-muted-foreground">Performance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pagePerformance.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="text-center py-8 text-muted-foreground">
+                      No page view data available yet
+                    </td>
+                  </tr>
+                ) : (
+                  pagePerformance.map((page, index) => (
+                    <tr key={page.page_path} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
+                      <td className="py-3 px-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground text-xs">{index + 1}</span>
+                          <div>
+                            <div className="font-medium">{page.page_title}</div>
+                            <div className="text-xs text-muted-foreground">{page.page_path}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="text-right py-3 px-2 font-mono">
+                        {page.views.toLocaleString()}
+                      </td>
+                      <td className="text-right py-3 px-2 font-mono">
+                        {page.unique_visitors.toLocaleString()}
+                      </td>
+                      <td className="text-right py-3 px-2 font-mono">
+                        {(page.views / page.unique_visitors).toFixed(1)}
+                      </td>
+                      <td className="py-3 px-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
+                            <div 
+                              className="bg-primary h-full rounded-full transition-all duration-500"
+                              style={{ width: `${Math.min((page.views / pagePerformance[0].views) * 100, 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-muted-foreground w-12 text-right">
+                            {((page.views / pagePerformance[0].views) * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-4 pt-4 border-t flex items-center justify-between text-xs text-muted-foreground">
+            <span>Showing top {pagePerformance.length} pages by views</span>
+            <span>Data from last 30 days</span>
           </div>
         </CardContent>
       </Card>
