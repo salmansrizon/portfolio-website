@@ -55,30 +55,47 @@ const ProjectManager = () => {
   };
 
   const onSubmit = async (formData: any) => {
+    console.log('Form data received:', formData);
     setSaving(true);
     try {
       const projectData = {
-        ...formData,
-        technologies: formData.technologies.split(',').map((t: string) => t.trim()).filter(Boolean)
+        title: formData.title,
+        description: formData.description,
+        technologies: formData.technologies ? formData.technologies.split(',').map((t: string) => t.trim()).filter(Boolean) : [],
+        image_url: formData.image_url || null,
+        demo_url: formData.demo_url || null,
+        github_url: formData.github_url || null
       };
 
+      console.log('Project data to save:', projectData);
+
       if (editingProject) {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('projects')
           .update(projectData)
-          .eq('id', editingProject.id);
+          .eq('id', editingProject.id)
+          .select();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Update error:', error);
+          throw error;
+        }
+        console.log('Update result:', data);
         toast({
           title: "Success",
           description: "Project updated successfully!",
         });
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('projects')
-          .insert([projectData]);
+          .insert([projectData])
+          .select();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Insert error:', error);
+          throw error;
+        }
+        console.log('Insert result:', data);
         toast({
           title: "Success",
           description: "Project created successfully!",
@@ -89,10 +106,22 @@ const ProjectManager = () => {
       setIsDialogOpen(false);
       setEditingProject(null);
       reset();
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Full error object:', error);
+      
+      // Extract error message
+      let errorMessage = "Failed to save project";
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.error?.message) {
+        errorMessage = error.error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to save project",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

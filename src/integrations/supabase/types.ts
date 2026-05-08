@@ -42,7 +42,7 @@ export type Database = {
         Row: {
           banner_url: string | null
           categories: string[] | null
-          content: string | null
+          content: Json | null
           created_at: string | null
           excerpt: string | null
           featured_image: string | null
@@ -57,7 +57,7 @@ export type Database = {
         Insert: {
           banner_url?: string | null
           categories?: string[] | null
-          content?: string | null
+          content?: Json | null
           created_at?: string | null
           excerpt?: string | null
           featured_image?: string | null
@@ -72,7 +72,7 @@ export type Database = {
         Update: {
           banner_url?: string | null
           categories?: string[] | null
-          content?: string | null
+          content?: Json | null
           created_at?: string | null
           excerpt?: string | null
           featured_image?: string | null

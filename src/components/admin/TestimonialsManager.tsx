@@ -56,6 +56,7 @@ const TestimonialsManager = () => {
   };
 
   const onSubmit = async (formData: any) => {
+    console.log('Testimonial form data received:', formData);
     setSaving(true);
     try {
       const testimonialData = {
@@ -65,23 +66,35 @@ const TestimonialsManager = () => {
         rating: formData.rating ? parseInt(formData.rating) : null
       };
 
+      console.log('Testimonial data to save:', testimonialData);
+
       if (editingTestimonial) {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('testimonials')
           .update(testimonialData)
-          .eq('id', editingTestimonial.id);
+          .eq('id', editingTestimonial.id)
+          .select();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Update error:', error);
+          throw error;
+        }
+        console.log('Update result:', data);
         toast({
           title: "Success",
           description: "Testimonial updated successfully!",
         });
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('testimonials')
-          .insert([testimonialData]);
+          .insert([testimonialData])
+          .select();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Insert error:', error);
+          throw error;
+        }
+        console.log('Insert result:', data);
         toast({
           title: "Success",
           description: "Testimonial created successfully!",
@@ -92,10 +105,22 @@ const TestimonialsManager = () => {
       setEditingTestimonial(null);
       reset();
       fetchTestimonials();
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Full error object:', error);
+      
+      // Extract error message
+      let errorMessage = "Failed to save testimonial";
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.error?.message) {
+        errorMessage = error.error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to save testimonial",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

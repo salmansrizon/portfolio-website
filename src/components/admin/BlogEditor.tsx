@@ -80,20 +80,50 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
   };
 
   const handleImageUpload = async (file: File): Promise<string> => {
-    const fileName = `${Date.now()}-${file.name}`;
-    const { data, error } = await supabase.storage
-      .from('blog-images')
-      .upload(fileName, file);
+    try {
+      // Check if bucket exists, if not create it
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const blogImagesBucket = buckets?.find(b => b.name === 'blog-images');
+      
+      if (!blogImagesBucket) {
+        console.log('Creating blog-images bucket...');
+        const { error: bucketError } = await supabase.storage.createBucket('blog-images', {
+          public: true,
+          allowedMimeTypes: ['image/*'],
+          fileSizeLimit: 5242880, // 5MB
+        });
+        
+        if (bucketError) {
+          console.error('Error creating bucket:', bucketError);
+          throw new Error('Failed to create storage bucket');
+        }
+      }
 
-    if (error) {
-      throw error;
+      const fileName = `${Date.now()}-${file.name}`;
+      console.log('Uploading image:', fileName);
+      
+      const { data, error } = await supabase.storage
+        .from('blog-images')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (error) {
+        console.error('Upload error:', error);
+        throw error;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('blog-images')
+        .getPublicUrl(data.path);
+
+      console.log('Image uploaded successfully:', publicUrl);
+      return publicUrl;
+    } catch (error: any) {
+      console.error('Error in handleImageUpload:', error);
+      throw new Error(error.message || 'Failed to upload image');
     }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('blog-images')
-      .getPublicUrl(data.path);
-
-    return publicUrl;
   };
 
   const handleSave = async () => {
@@ -114,7 +144,7 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '');
 
-      const blogData = {
+      const blogData: any = {
         title,
         slug,
         excerpt,
@@ -123,22 +153,39 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
         content,
         source_type: sourceType,
         source_url: sourceUrl,
-        categories,
       };
 
+      // Only add categories if the column exists in the database
+      // You may need to add this column to your Supabase blogs table
+      if (categories.length > 0) {
+        blogData.categories = categories;
+      }
+
+      console.log('Attempting to save blog data:', blogData);
+
       if (initialData?.id) {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('blogs')
-          .update(blogData as any)
-          .eq('id', initialData.id);
+          .update(blogData)
+          .eq('id', initialData.id)
+          .select();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase update error:', error);
+          throw error;
+        }
+        console.log('Blog updated successfully:', data);
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('blogs')
-          .insert(blogData as any);
+          .insert(blogData)
+          .select();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase insert error:', error);
+          throw error;
+        }
+        console.log('Blog created successfully:', data);
       }
 
       toast({
@@ -149,11 +196,11 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
       if (onSave) {
         onSave(blogData as BlogPost);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving blog:', error);
       toast({
         title: "Error",
-        description: "Failed to save blog post",
+        description: error?.message || "Failed to save blog post",
         variant: "destructive",
       });
     } finally {

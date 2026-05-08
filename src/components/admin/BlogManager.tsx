@@ -116,41 +116,15 @@ const BlogManager = () => {
   };
 
   const handleSave = async (blogData: BlogPost) => {
-    try {
-      if (editingBlog?.id) {
-        const { error } = await supabase
-          .from('blogs')
-          .update(blogData as any)
-          .eq('id', editingBlog.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Success",
-          description: "Blog post updated successfully",
-        });
-      } else {
-        const { error } = await supabase
-          .from('blogs')
-          .insert([blogData as any]);
-
-        if (error) throw error;
-
-        toast({
-          title: "Success",
-          description: "Blog post created successfully",
-        });
-      }
-
-      setIsDialogOpen(false);
-      setEditingBlog(null);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save blog post",
-        variant: "destructive",
-      });
-    }
+    // The BlogEditor already saves to Supabase, so we just need to refresh the list and close the dialog
+    toast({
+      title: "Success",
+      description: "Blog post saved successfully",
+    });
+    
+    setIsDialogOpen(false);
+    setEditingBlog(null);
+    fetchBlogs(); // Refresh the blog list
   };
 
   if (loading) {
