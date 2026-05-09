@@ -93,7 +93,7 @@ export default function CourseContentManager() {
         .order("order_index");
 
       if (error) throw error;
-      setContents(data || []);
+      setContents((data || []) as unknown as Content[]);
     } catch (error) {
       console.error("Error fetching contents:", error);
       toast({

@@ -32,7 +32,7 @@ const Index = () => {
           .limit(6);
 
         if (error) throw error;
-        setFeaturedBlogs((data || []) as BlogPost[]);
+        setFeaturedBlogs((data || []) as unknown as BlogPost[]);
       } catch (error) {
         console.error('Error fetching featured blogs:', error);
       } finally {
