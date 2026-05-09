@@ -40,7 +40,7 @@ const Blogs = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setBlogs((data || []) as BlogPost[]);
+      setBlogs((data || []) as unknown as BlogPost[]);
     } catch (error) {
       console.error('Error fetching blogs:', error);
     } finally {

@@ -57,7 +57,7 @@ const BlogManager = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setBlogs((data || []) as BlogPost[]);
+      setBlogs((data || []) as unknown as BlogPost[]);
     } catch (error) {
       toast({
         title: "Error",

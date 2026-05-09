@@ -27,7 +27,7 @@ const BlogPostPage = () => {
           .single();
 
         if (error) throw error;
-        setBlog(data as BlogPost);
+        setBlog(data as unknown as BlogPost);
       } catch (error) {
         console.error('Error fetching blog post:', error);
         navigate('/blog'); // Redirect to blog list if post not found
