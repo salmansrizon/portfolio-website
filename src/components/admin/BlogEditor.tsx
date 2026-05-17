@@ -45,9 +45,52 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
   const [published, setPublished] = useState(initialData?.published || false);
   const [sourceType, setSourceType] = useState<BlogPost['source_type']>(initialData?.source_type || 'local');
   const [sourceUrl, setSourceUrl] = useState(initialData?.source_url || '');
-  const [content, setContent] = useState<BlogContent[]>(initialData?.content || []);
+  // Supabase may return the `content` field as a JSON string; ensure we always store an array
+  const initialContent = (() => {
+    if (!initialData?.content) return [] as BlogContent[];
+    return Array.isArray(initialData.content)
+      ? (initialData.content as BlogContent[])
+      : // try to parse if it's a JSON string
+        (typeof initialData.content === 'string'
+          ? (JSON.parse(initialData.content) as BlogContent[])
+          : [] as BlogContent[]);
+  })();
+  const [content, setContent] = useState<BlogContent[]>(initialContent);
   const [categories, setCategories] = useState<string[]>(initialData?.categories || []);
   const [openCategoryDropdown, setOpenCategoryDropdown] = useState(false);
+
+  // Sync state with incoming initialData when editing a blog post
+  useEffect(() => {
+    if (initialData) {
+      setTitle(initialData.title || '');
+      setExcerpt(initialData.excerpt || '');
+      setFeaturedImage(initialData.featured_image || '');
+      setPublished(initialData.published || false);
+      setSourceType(initialData.source_type || 'local');
+      setSourceUrl(initialData.source_url || '');
+      // Ensure content is an array regardless of how Supabase returns it
+      const parsedContent = (() => {
+        if (!initialData.content) return [] as BlogContent[];
+        return Array.isArray(initialData.content)
+          ? (initialData.content as BlogContent[])
+          : typeof initialData.content === 'string'
+          ? (JSON.parse(initialData.content) as BlogContent[])
+          : [] as BlogContent[];
+      })();
+      setContent(parsedContent);
+      setCategories(initialData.categories || []);
+    } else {
+      // Reset to defaults for creating a new blog post
+      setTitle('');
+      setExcerpt('');
+      setFeaturedImage('');
+      setPublished(false);
+      setSourceType('local');
+      setSourceUrl('');
+      setContent([]);
+      setCategories([]);
+    }
+  }, [initialData]);
 
   const handleAddContent = (type: BlogContent['type']) => {
     let newContent: BlogContent;

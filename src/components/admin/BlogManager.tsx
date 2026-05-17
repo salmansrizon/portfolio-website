@@ -84,6 +84,8 @@ const BlogManager = () => {
         title: "Success",
         description: "Blog post deleted successfully",
       });
+      // Refresh the list after deletion to reflect changes immediately
+      fetchBlogs();
     } catch (error) {
       toast({
         title: "Error",
@@ -106,6 +108,8 @@ const BlogManager = () => {
         title: "Success",
         description: `Blog post ${!blog.published ? 'published' : 'unpublished'} successfully`,
       });
+      // Refresh the list to reflect the new published state
+      fetchBlogs();
     } catch (error) {
       toast({
         title: "Error",
@@ -222,7 +226,8 @@ const BlogManager = () => {
       </CardContent>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        {/* Updated modal dimensions for improved width/content ratio */}
+        <DialogContent className="w-full max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[80vh] overflow-y-auto">
           <BlogEditor
             initialData={editingBlog || undefined}
             onSave={(blogData) => {

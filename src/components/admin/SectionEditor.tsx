@@ -80,11 +80,25 @@ interface CertificationsContent {
   description: string;
 }
 
-type SectionContent = HeroContent | AboutContent | ContactContent | ServicesContent | PortfolioContent | TestimonialsContent | CertificationsContent;
+// New section for Teaching, Mentoring and Technical Expertise
+interface TeachingContent {
+  title: string;
+  subtitle: string;
+  description: string;
+}
+
+// New section for Teaching, Mentoring and Technical Expertise
+interface TeachingContent {
+  title: string;
+  subtitle: string;
+  description: string;
+}
+
+type SectionContent = HeroContent | AboutContent | ContactContent | ServicesContent | PortfolioContent | TestimonialsContent | CertificationsContent | TeachingContent;
 
 interface SectionData {
   id: string;
-  section_name: 'hero' | 'about' | 'contact' | 'services' | 'portfolio' | 'testimonials' | 'certifications';
+  section_name: 'hero' | 'about' | 'contact' | 'services' | 'portfolio' | 'testimonials' | 'certifications' | 'teaching';
   content: SectionContent;
 }
 
@@ -197,6 +211,13 @@ const SectionEditor = () => {
           location: formData.location || existingContent.location || ''
         };
         updatedContent = contactContent;
+      } else if (sectionName === 'teaching') {
+        const teachingContent: TeachingContent = {
+          title: formData.title || existingContent.title || '',
+          subtitle: formData.subtitle || existingContent.subtitle || '',
+          description: formData.description || existingContent.description || ''
+        };
+        updatedContent = teachingContent;
       } else {
         // Handle other section types with generic structure
         updatedContent = {
@@ -257,6 +278,7 @@ const SectionEditor = () => {
         <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
         <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
         <TabsTrigger value="certifications">Certifications</TabsTrigger>
+        <TabsTrigger value="teaching">Teaching & Mentoring</TabsTrigger>
       </TabsList>
 
       <TabsContent value="hero">
@@ -742,6 +764,56 @@ const SectionEditor = () => {
                     defaultValue={(sections.find(s => s.section_name === 'certifications')?.content as any)?.description || ''}
                     rows={3}
                     placeholder="Certifications section description"
+                  />
+                </div>
+                
+                <Button type="submit" disabled={saving}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  Save Changes
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+      </TabsContent>
+
+      {/* Teaching & Mentoring Section */}
+      <TabsContent value="teaching">
+        {sections.find(s => s.section_name === 'teaching') && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Teaching & Mentoring Section</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit((data) => onSubmit(data, 'teaching'))} className="space-y-4">
+                <div>
+                  <Label htmlFor="teaching_title">Title</Label>
+                  <Input
+                    id="teaching_title"
+                    {...register('title')}
+                    defaultValue={(sections.find(s => s.section_name === 'teaching')?.content as any)?.title || ''}
+                    placeholder="Teaching & Mentoring section title"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="teaching_subtitle">Subtitle</Label>
+                  <Input
+                    id="teaching_subtitle"
+                    {...register('subtitle')}
+                    defaultValue={(sections.find(s => s.section_name === 'teaching')?.content as any)?.subtitle || ''}
+                    placeholder="Teaching & Mentoring section subtitle"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="teaching_description">Description</Label>
+                  <Textarea
+                    id="teaching_description"
+                    {...register('description')}
+                    defaultValue={(sections.find(s => s.section_name === 'teaching')?.content as any)?.description || ''}
+                    rows={5}
+                    placeholder="Describe your teaching and mentoring experience, technical expertise, and how you help others grow."
                   />
                 </div>
                 
