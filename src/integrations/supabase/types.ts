@@ -816,20 +816,32 @@ export type Database = {
       portfolio_sections: {
         Row: {
           content: Json | null
+          custom_fields: Json | null
           id: string
+          order_index: number | null
           section_name: string
+          section_type: string
+          status: string
           updated_at: string | null
         }
         Insert: {
           content?: Json | null
+          custom_fields?: Json | null
           id?: string
+          order_index?: number | null
           section_name: string
+          section_type?: string
+          status?: string
           updated_at?: string | null
         }
         Update: {
           content?: Json | null
+          custom_fields?: Json | null
           id?: string
+          order_index?: number | null
           section_name?: string
+          section_type?: string
+          status?: string
           updated_at?: string | null
         }
         Relationships: []

@@ -1,17 +1,64 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import profileImage from "@/assets/formal.jpg";
 import ScrollReveal from "./ScrollReveal";
 import BrandLogos from "./BrandLogos";
+import { supabase } from "@/integrations/supabase/client";
+
+interface AboutContent {
+  title: string;
+  subtitle: string;
+  professionalJourney: {
+    title: string;
+    description: string;
+  };
+  stats: Array<{
+    number: string;
+    label: string;
+  }>;
+  skills: Array<{
+    name: string;
+    percentage: number;
+  }>;
+  expertise: string[];
+}
 
 const About = () => {
-  const stats = [
+  const [aboutContent, setAboutContent] = useState<AboutContent | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAboutContent = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("portfolio_sections")
+          .select("content")
+          .eq("section_name", "about")
+          .eq("status", "published")
+          .single();
+
+        if (error) throw error;
+        if (data?.content) {
+          setAboutContent(data.content as AboutContent);
+        }
+      } catch (error) {
+        console.error("Failed to fetch about content:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAboutContent();
+  }, []);
+
+  const stats = aboutContent?.stats || [
     { number: "7+", label: "Years Experience" },
     { number: "30+", label: "Successful Projects" },
     { number: "10+", label: "Satisfied Clients" },
     { number: "4+", label: "Industry Catered" },
   ];
 
-  const skills = [
+  const skills = aboutContent?.skills || [
     { name: "Power BI", percentage: 95 },
     { name: "Tableau", percentage: 80 },
     { name: "Metabase", percentage: 90 },
@@ -20,14 +67,29 @@ const About = () => {
     { name: "Data Visualization", percentage: 95 },
   ];
 
+  if (loading) {
+    return (
+      <section id="about" className="py-20 bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </section>
+    );
+  }
+
+  const title = aboutContent?.title || "About Me";
+  const subtitle = aboutContent?.subtitle || "Turning complex data into clear, actionable insights";
+  const journeyTitle = aboutContent?.professionalJourney?.title || "Professional Journey";
+  const journeyDescription = aboutContent?.professionalJourney?.description || "Currently serving as Head of Business Intelligence at Cartup Limited, I specialize in transforming complex financial and business data into actionable insights. With over 7 years of experience across Fintech, consulting, and education sectors, I've helped organizations optimize their data strategies and make informed decisions.";
+
   return (
     <section id="about" className="py-20 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal direction="up">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-foreground mb-4">About Me</h2>
+            <h2 className="text-4xl font-bold text-foreground mb-4">{title}</h2>
             <p className="text-xl text-primary font-semibold">
-              Turning complex data into clear, actionable insights
+              {subtitle}
             </p>
           </div>
         </ScrollReveal>
@@ -37,13 +99,9 @@ const About = () => {
           <ScrollReveal direction="left">
             <div className="space-y-8">
             <div>
-              <h3 className="text-2xl font-bold text-foreground mb-4 text-center sm:text-left">Professional Journey</h3>
+              <h3 className="text-2xl font-bold text-foreground mb-4 text-center sm:text-left">{journeyTitle}</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Currently serving as Head of Business Intelligence at Cartup Limited, I specialize in 
-                transforming complex financial and business data into actionable insights. 
-                With over 7 years of experience across Fintech, consulting, and education 
-                sectors, I've helped organizations optimize their data strategies and make 
-                informed decisions.
+                {journeyDescription}
               </p>
             </div>
 

@@ -182,14 +182,13 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
         return;
       }
 
-      const slug = title
+      let slug = title
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '');
 
       const blogData: any = {
         title,
-        slug,
         excerpt,
         featured_image: featuredImage,
         published,
@@ -203,6 +202,34 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
       if (categories.length > 0) {
         blogData.categories = categories;
       }
+
+      // For new posts, ensure slug is unique
+      if (!initialData?.id) {
+        let uniqueSlug = slug;
+        let counter = 1;
+
+        while (true) {
+          const { data: existing, error: checkError } = await supabase
+            .from('blogs')
+            .select('id')
+            .eq('slug', uniqueSlug)
+            .single();
+
+          if (checkError?.code === 'PGRST116') {
+            // No row found - slug is unique
+            slug = uniqueSlug;
+            break;
+          } else if (checkError && checkError.code !== 'PGRST116') {
+            throw checkError;
+          } else if (existing) {
+            // Slug exists, try next number
+            uniqueSlug = `${slug}-${counter}`;
+            counter++;
+          }
+        }
+      }
+
+      blogData.slug = slug;
 
       console.log('Attempting to save blog data:', blogData);
 
