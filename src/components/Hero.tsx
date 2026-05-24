@@ -95,7 +95,7 @@ const Hero = () => {
           <div className="lg:col-span-5 flex justify-center items-center animate-fade-in-up delay-500">
             <LottieAnimation
               src="https://assets-v2.lottiefiles.com/a/f979121a-1808-11ee-9147-7358b38a246f/AefZhAiGJP.lottie"
-              className="w-full max-w-[500px] sm:max-w-[600px] lg:max-w-[700px] aspect-square drop-shadow-[0_0_48px_rgba(59,130,246,0.2)]"
+              className="w-full max-w-[800px] sm:max-w-[1000px] lg:max-w-[1200px] aspect-square filter hue-rotate-[190deg] saturate-200 drop-shadow-[0_0_48px_rgba(59,130,246,0.25)]"
             />
           </div>
         </div>
