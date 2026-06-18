@@ -35,7 +35,7 @@ export const testBlogInsert = async () => {
     
     const { data, error } = await supabase
       .from('blogs')
-      .insert([testBlog])
+      .insert([testBlog as any])
       .select();
     
     if (error) {

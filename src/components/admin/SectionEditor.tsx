@@ -242,11 +242,11 @@ const SectionEditor = () => {
         .from('portfolio_sections')
         .insert({
           section_name: createSectionName.toLowerCase(),
-          content: initialContent,
+          content: initialContent as any,
           status: 'published',
           section_type: createSectionType,
           order_index: sections.length,
-        })
+        } as any)
         .select();
 
       if (error) throw error;

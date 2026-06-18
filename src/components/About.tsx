@@ -39,7 +39,7 @@ const About = () => {
 
         if (error) throw error;
         if (data?.content) {
-          setAboutContent(data.content as AboutContent);
+          setAboutContent(data.content as unknown as AboutContent);
         }
       } catch (error) {
         console.error("Failed to fetch about content:", error);
