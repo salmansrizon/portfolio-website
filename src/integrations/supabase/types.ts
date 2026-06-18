@@ -42,7 +42,7 @@ export type Database = {
         Row: {
           banner_url: string | null
           categories: string[] | null
-          content: Json | null
+          content: string | null
           created_at: string | null
           excerpt: string | null
           featured_image: string | null
@@ -57,7 +57,7 @@ export type Database = {
         Insert: {
           banner_url?: string | null
           categories?: string[] | null
-          content?: Json | null
+          content?: string | null
           created_at?: string | null
           excerpt?: string | null
           featured_image?: string | null
@@ -72,7 +72,7 @@ export type Database = {
         Update: {
           banner_url?: string | null
           categories?: string[] | null
-          content?: Json | null
+          content?: string | null
           created_at?: string | null
           excerpt?: string | null
           featured_image?: string | null
@@ -816,32 +816,20 @@ export type Database = {
       portfolio_sections: {
         Row: {
           content: Json | null
-          custom_fields: Json | null
           id: string
-          order_index: number | null
           section_name: string
-          section_type: string
-          status: string
           updated_at: string | null
         }
         Insert: {
           content?: Json | null
-          custom_fields?: Json | null
           id?: string
-          order_index?: number | null
           section_name: string
-          section_type?: string
-          status?: string
           updated_at?: string | null
         }
         Update: {
           content?: Json | null
-          custom_fields?: Json | null
           id?: string
-          order_index?: number | null
           section_name?: string
-          section_type?: string
-          status?: string
           updated_at?: string | null
         }
         Relationships: []
