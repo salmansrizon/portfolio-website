@@ -1,5 +1,5 @@
 // Test Supabase connection and blogs table
-import { supabase } from './integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 
 export const testSupabaseConnection = async () => {
   try {
