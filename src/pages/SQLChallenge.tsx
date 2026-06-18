@@ -22,7 +22,9 @@ import {
   Star,
   BookOpen,
   RotateCcw,
-  XCircle
+  XCircle,
+  Info,
+  History
 } from 'lucide-react';
 import {
   Dialog,
@@ -38,14 +40,15 @@ import { useQuestion, useSubmitCode, useSubmissions } from '@/hooks/useCareerPre
 import Navbar from '@/components/Navbar';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useTheme } from 'next-themes';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 // ── Performance Memoization ──────────────────────────────────────────────
 const MemoizedMarkdown = React.memo(({ content }: { content: string }) => (
-  <div className="prose prose-sm max-w-none dark:prose-invert text-muted-foreground whitespace-pre-wrap">
-    <ReactMarkdown>{content}</ReactMarkdown>
+  <div className="prose prose-sm max-w-none dark:prose-invert prose-code:before:content-none prose-code:after:content-none prose-pre:bg-muted prose-pre:border prose-pre:border-border prose-pre:rounded-xl prose-table:text-sm prose-th:bg-muted/50 prose-th:p-3 prose-td:p-3 prose-h1:text-xl prose-h1:font-black prose-h2:text-lg prose-h2:font-black prose-h3:text-base prose-h3:font-bold prose-strong:text-foreground prose-headings:text-foreground prose-a:text-primary text-muted-foreground whitespace-pre-wrap leading-relaxed [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+    <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
   </div>
 ));
 MemoizedMarkdown.displayName = 'MemoizedMarkdown';
@@ -481,8 +484,47 @@ const SQLChallenge = () => {
                 </div>
                 <div className="flex-1 overflow-auto p-6">
                   {activeTab === 'description' ? <MemoizedMarkdown content={currentQ?.content_md || question?.content_md || ''} /> : 
-                   activeTab === 'schema' ? <pre className="bg-muted rounded-xl p-5 border border-border font-mono text-[11px] text-muted-foreground overflow-x-auto">{currentQ?.schema_sql || 'Standard environment.'}</pre> :
-                   <div className="space-y-4">{submissions.map(sub => <div key={sub.id} className="p-4 rounded-xl border border-border bg-muted/50"><div className="flex justify-between items-center mb-2"><Badge className={sub.is_correct ? 'bg-green-500/10 text-green-500 border-0' : 'bg-red-500/10 text-red-500 border-0'}>{sub.is_correct ? 'ACCEPTED' : 'FAILED'}</Badge></div><code className="text-[11px] text-muted-foreground block truncate">{sub.submitted_code}</code></div>)}</div>}
+activeTab === 'schema' ? <pre className="bg-muted rounded-xl p-5 border border-border font-mono text-[11px] text-muted-foreground overflow-x-auto">{currentQ?.schema_sql || 'Standard environment.'}</pre> :
+                    <div className="space-y-6 p-4">
+                      <div className="bg-muted/40 rounded-2xl border border-border/60 p-6 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Info className="w-4 h-4 text-primary" />
+                          <span className="text-[10px] font-black uppercase tracking-[0.25em] text-foreground">Submission Policy</span>
+                        </div>
+                        <div className="text-[12px] text-muted-foreground leading-relaxed space-y-2">
+                          <p>Your query will be validated by executing it against our test database and comparing the result set with the expected solution. Both result sets are sorted and stringified before comparison — <strong className="text-foreground">row order does not matter</strong>.</p>
+                          <ul className="list-disc pl-5 space-y-1">
+                            <li>Each failed attempt reveals a progressive hint (if available).</li>
+                            <li>The full solution is revealed after 5 failed attempts.</li>
+                            <li>Only <strong className="text-foreground">correct</strong> submissions are recorded — failed attempts do not count toward your XP.</li>
+                            <li>Your output must match the expected columns and data exactly.</li>
+                          </ul>
+                        </div>
+                      </div>
+                      {submissions.length > 0 && (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <History className="w-3.5 h-3.5 text-muted-foreground" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground">Submission History ({submissions.length})</span>
+                          </div>
+                          {submissions.map(sub => (
+                            <div key={sub.id} className="p-4 rounded-xl border border-border bg-muted/30 hover:bg-muted/50 transition-colors">
+                              <div className="flex justify-between items-center mb-3">
+                                <Badge className={sub.is_correct ? 'bg-green-500/10 text-green-500 border-0' : 'bg-red-500/10 text-red-500 border-0'}>{sub.is_correct ? 'ACCEPTED' : 'FAILED'}</Badge>
+                                <span className="text-[9px] font-mono text-muted-foreground">{new Date(sub.created_at).toLocaleString()}</span>
+                              </div>
+                              <pre className="text-[11px] font-mono text-foreground/80 bg-muted/50 p-3 rounded-lg border border-border/50 overflow-x-auto whitespace-pre-wrap">{sub.submitted_code}</pre>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {submissions.length === 0 && (
+                        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
+                          <Send className="w-8 h-8 opacity-20" />
+                          <p className="text-[11px] font-medium">No submissions yet for this question.</p>
+                        </div>
+                      )}
+                    </div>}
                 </div>
               </div>
             </Panel>
@@ -505,12 +547,15 @@ const SQLChallenge = () => {
                           <div className="space-y-4">
                              <div className="flex items-center gap-4 px-2"><div className="h-px flex-1 bg-border/50" /><span className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Select Solution</span><div className="h-px flex-1 bg-border/50" /></div>
                              <div className="flex flex-col gap-3">
-                                {currentQ.options?.map((opt: any) => (
-                                  <button key={opt.label} onClick={() => setMcqAnswer(opt.label)} className={`flex items-start gap-4 p-5 rounded-3xl border-2 transition-all duration-300 text-left relative ${mcqAnswer === opt.label ? 'border-primary bg-primary/5 shadow-xl' : 'border-border/50 bg-card/30 hover:border-primary/30'}`}>
-                                    <div className={`shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm transition-all ${mcqAnswer === opt.label ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>{opt.label}</div>
-                                    <div className="pt-2 text-[14px] font-bold text-foreground">{opt.text}</div>
-                                  </button>
-                                ))}
+{currentQ.options?.map((opt: any, idx: number) => {
+                                   const optionLabel = opt.label || String.fromCharCode(65 + idx);
+                                   return (
+                                   <button key={`${currentQ.id}-${idx}`} onClick={() => setMcqAnswer(optionLabel)} className={`flex items-start gap-4 p-5 rounded-3xl border-2 transition-all duration-300 text-left relative ${mcqAnswer === optionLabel ? 'border-primary bg-primary/5 shadow-xl' : 'border-border/50 bg-card/30 hover:border-primary/30'}`}>
+                                     <div className={`shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm transition-all ${mcqAnswer === optionLabel ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>{optionLabel}</div>
+                                     <div className="pt-2 text-[14px] font-bold text-foreground">{opt.text}</div>
+                                   </button>
+                                   );
+                                 })}
                              </div>
                           </div>
                        </div>
