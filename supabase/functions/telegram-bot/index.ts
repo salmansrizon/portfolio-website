@@ -7,34 +7,57 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
 
 const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
 
-async function sendTelegramMessage(chatId: string, text: string, inlineKeyboard: any[] = []) {
-  if (!BOT_TOKEN) {
-    console.error("TELEGRAM_BOT_TOKEN not configured");
-    return null;
-  }
+const TG_API = `https://api.telegram.org/bot${BOT_TOKEN}`
 
-  try {
-    const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text,
-        parse_mode: 'HTML',
-        reply_markup: inlineKeyboard.length > 0 ? { inline_keyboard: inlineKeyboard } : undefined
-      })
-    });
-
-    const data = await response.json();
-    if (!data.ok) {
-      console.error("Telegram API error:", data);
-      return null;
-    }
-    return data.result.message_id;
-  } catch (err) {
-    console.error("Failed to send Telegram message:", err);
-    return null;
+async function tg(method: string, body: Record<string, unknown>) {
+  const res = await fetch(`${TG_API}/${method}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const json = await res.json();
+  if (!res.ok || !json.ok) {
+    console.error(`Telegram ${method} failed:`, JSON.stringify(json));
   }
+  return json;
+}
+
+function escapeHtml(s: unknown): string {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function buildMessage(table: string, record: Record<string, any>): { text: string; type: string } | null {
+  if (table === "course_enrollments") {
+    const text =
+      `🎓 <b>New Course Enrollment</b>\n\n` +
+      `<b>Name:</b> ${escapeHtml(record.user_name)}\n` +
+      `<b>Email:</b> ${escapeHtml(record.user_email)}\n` +
+      `<b>WhatsApp:</b> ${escapeHtml(record.whatsapp_number || "—")}\n` +
+      `<b>Institute:</b> ${escapeHtml(record.institute_name || "—")}\n` +
+      `<b>Profession:</b> ${escapeHtml(record.profession || "—")}\n` +
+      `<b>Payment:</b> ${escapeHtml(record.payment_method)}\n` +
+      `<b>Txn ID:</b> ${escapeHtml(record.transaction_id || "—")}\n` +
+      `<b>Status:</b> ${escapeHtml(record.status)}\n` +
+      `<b>ID:</b> <code>${escapeHtml(record.id)}</code>`;
+    return { text, type: "enrollment" };
+  }
+  if (table === "session_bookings") {
+    const text =
+      `📅 <b>New Session Booking</b>\n\n` +
+      `<b>Name:</b> ${escapeHtml(record.full_name || record.user_name)}\n` +
+      `<b>Email:</b> ${escapeHtml(record.email || record.user_email)}\n` +
+      `<b>Phone:</b> ${escapeHtml(record.phone || record.whatsapp_number || "—")}\n` +
+      `<b>Date:</b> ${escapeHtml(record.booking_date)}\n` +
+      `<b>Time:</b> ${escapeHtml(record.booking_time)}\n` +
+      `<b>Payment:</b> ${escapeHtml(record.payment_method || "—")}\n` +
+      `<b>Txn ID:</b> ${escapeHtml(record.transaction_id || "—")}\n` +
+      `<b>ID:</b> <code>${escapeHtml(record.id)}</code>`;
+    return { text, type: "booking" };
+  }
+  return null;
 }
 
 Deno.serve(async (req: Request) => {
@@ -42,100 +65,74 @@ Deno.serve(async (req: Request) => {
 
   try {
     const payload = await req.json();
-    console.log(`[${requestId}] Payload:`, JSON.stringify(payload, null, 2));
+    console.log(`[${requestId}] Payload:`, JSON.stringify(payload));
 
-    // Handle Telegram Callback (Approve/Reject buttons)
+    // Telegram callback (Approve/Reject buttons)
     if (payload.callback_query) {
-      const { data, id } = payload.callback_query;
-      console.log(`[${requestId}] Callback: ${data}`);
+      const cb = payload.callback_query;
+      const data: string = cb.data || "";
+      const callbackId = cb.id;
+      const message = cb.message;
 
-      // Answer the callback immediately
-      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/answerCallbackQuery`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ callback_query_id: id, text: "Processing..." })
-      });
+      await tg("answerCallbackQuery", { callback_query_id: callbackId, text: "Processing..." });
 
-      // Parse callback data: "action:type:recordId"
-      const parts = data.split(':');
-      const action = parts[0];
-      const type = parts[1];
-      const recordId = parts[2];
-
-      let updatePayload: Record<string, any> = {};
+      const [action, type, recordId] = data.split(":");
       let table = "";
-      let statusField = "";
+      let updatePayload: Record<string, any> = {};
 
-      if (type === 'enrollment') {
-        table = 'course_enrollments';
-        statusField = 'status';
-        updatePayload = { status: action === 'approve' ? 'active' : 'rejected' };
-      } else if (type === 'booking') {
-        table = 'session_bookings';
-        statusField = 'booking_status';
-        updatePayload = { booking_status: action === 'approve' ? 'confirmed' : 'cancelled' };
+      if (type === "enrollment") {
+        table = "course_enrollments";
+        updatePayload = { status: action === "approve" ? "active" : "rejected" };
+      } else if (type === "booking") {
+        table = "session_bookings";
+        updatePayload = { booking_status: action === "approve" ? "confirmed" : "cancelled" };
       }
 
       if (table && recordId) {
-        const { error } = await supabase
-          .from(table)
-          .update(updatePayload)
-          .eq('id', recordId);
-
+        const { error } = await supabase.from(table).update(updatePayload).eq("id", recordId);
         if (error) {
-          console.error(`[${requestId}] DB Error:`, error);
+          console.error(`[${requestId}] DB update error:`, error);
+          await tg("answerCallbackQuery", {
+            callback_query_id: callbackId,
+            text: `❌ Update failed: ${error.message}`,
+            show_alert: true,
+          });
         } else {
-          console.log(`[${requestId}] Updated ${table} ${recordId} - ${statusField}: ${updatePayload[statusField]}`);
+          const verdict = action === "approve" ? "✅ APPROVED" : "❌ REJECTED";
+          if (message?.chat?.id && message?.message_id) {
+            await tg("editMessageText", {
+              chat_id: message.chat.id,
+              message_id: message.message_id,
+              text: `${message.text || ""}\n\n<b>${verdict}</b>`,
+              parse_mode: "HTML",
+            });
+          }
         }
       }
+
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
     }
-    // Handle new booking/enrollment notifications from database trigger
-    else if (payload.table && payload.record) {
-      const { table, record } = payload;
-      console.log(`[${requestId}] New ${table} notification`);
 
-      if (!ADMIN_CHAT_ID) {
-        console.error("ADMIN_CHAT_ID not configured");
-        return new Response(JSON.stringify({ ok: true }), { status: 200 });
-      }
-
-      if (table === 'session_bookings') {
-        const booking = record;
-        const text = `🎯 <b>New Session Booking</b>\n\n` +
-          `👤 <b>${booking.user_name}</b>\n` +
-          `📧 ${booking.user_email}\n` +
-          `📱 ${booking.phone_number || booking.whatsapp_number || 'N/A'}\n` +
-          `📅 ${booking.booking_date} at ${booking.time_slot}\n` +
-          `💰 Fee: ৳${booking.fee_amount}\n` +
-          `💳 Method: ${booking.payment_method}\n` +
-          `Status: <code>${booking.booking_status}</code>`;
-
-        const keyboard = [[
-          { text: '✅ Approve', callback_data: `approve:booking:${booking.id}` },
-          { text: '❌ Reject', callback_data: `reject:booking:${booking.id}` }
-        ]];
-
-        await sendTelegramMessage(ADMIN_CHAT_ID, text, keyboard);
-      }
-      else if (table === 'course_enrollments') {
-        const enrollment = record;
-        const text = `📚 <b>New Course Enrollment</b>\n\n` +
-          `👤 <b>${enrollment.user_name}</b>\n` +
-          `📧 ${enrollment.email}\n` +
-          `Status: <code>${enrollment.status}</code>`;
-
-        const keyboard = [[
-          { text: '✅ Approve', callback_data: `approve:enrollment:${enrollment.id}` },
-          { text: '❌ Reject', callback_data: `reject:enrollment:${enrollment.id}` }
-        ]];
-
-        await sendTelegramMessage(ADMIN_CHAT_ID, text, keyboard);
+    // Database webhook payload: { table, record }
+    if (payload.table && payload.record && ADMIN_CHAT_ID) {
+      const built = buildMessage(payload.table, payload.record);
+      if (built) {
+        const recordId = payload.record.id;
+        await tg("sendMessage", {
+          chat_id: ADMIN_CHAT_ID,
+          text: built.text,
+          parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: [[
+              { text: "✅ Approve", callback_data: `approve:${built.type}:${recordId}` },
+              { text: "❌ Reject", callback_data: `reject:${built.type}:${recordId}` },
+            ]],
+          },
+        });
       }
     }
 
-    // Always return 200
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
-
   } catch (err) {
     console.error(`[${requestId}] Error:`, err);
     return new Response(JSON.stringify({ ok: true }), { status: 200 });

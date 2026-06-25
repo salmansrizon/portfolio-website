@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, ImageOff } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from "@/components/Navbar";
 import { BlogPost } from '@/types/blog';
 import { CodeBlock, dracula } from 'react-code-blocks';
 import { usePageView } from "@/hooks/usePageView";
+import defaultFeaturedImage from "@/assets/default-blog-featured.webp";
 
 const BlogPostPage = () => {
   const { slug } = useParams();
@@ -70,12 +71,23 @@ const BlogPostPage = () => {
             Back to Blog
           </Button>
 
-          {blog.featured_image && (
+          {blog.featured_image ? (
             <div className="aspect-video overflow-hidden rounded-lg mb-8">
               <img
                 src={blog.featured_image}
                 alt={blog.title}
                 className="w-full h-full object-cover"
+                loading="lazy"
+                decoding="async"
+                onError={(e) => { (e.target as HTMLImageElement).src = defaultFeaturedImage; }}
+              />
+            </div>
+          ) : (
+            <div className="aspect-video overflow-hidden rounded-lg mb-8 bg-muted flex items-center justify-center">
+              <img
+                src={defaultFeaturedImage}
+                alt={blog.title}
+                className="w-full h-full object-cover opacity-60"
                 loading="lazy"
                 decoding="async"
               />
@@ -106,13 +118,21 @@ const BlogPostPage = () => {
                   case 'image':
                     return (
                       <figure key={index} className="my-8">
-                        <img
-                          src={item.url}
-                          alt={item.alt}
-                          className="rounded-lg w-full"
-                          loading="lazy"
-                          decoding="async"
-                        />
+                        {item.url ? (
+                          <img
+                            src={item.url}
+                            alt={item.alt || blog.title}
+                            className="rounded-lg w-full"
+                            loading="lazy"
+                            decoding="async"
+                            onError={(e) => { (e.target as HTMLImageElement).src = defaultFeaturedImage; }}
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center rounded-lg w-full aspect-video bg-muted text-muted-foreground flex-col gap-2">
+                            <ImageOff className="w-8 h-8" />
+                            <span className="text-sm">Image not available</span>
+                          </div>
+                        )}
                         {item.caption && (
                           <figcaption className="text-center text-muted-foreground mt-2">
                             {item.caption}

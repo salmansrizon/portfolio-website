@@ -1,6 +1,7 @@
 import { useLocation } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { Home, ArrowLeft, Search, RefreshCw } from "lucide-react"
+import LottieAnimation from "@/components/LottieAnimation"
 
 const NotFound = () => {
   const location = useLocation()
@@ -44,10 +45,11 @@ const NotFound = () => {
         </div>
 
         {/* Illustration */}
-        <div className="mb-8">
-          <div className="w-32 h-32 mx-auto bg-gradient-to-br from-blue-100 to-indigo-200 rounded-full flex items-center justify-center mb-4 animate-bounce">
-            <Search className="w-16 h-16 text-blue-600" />
-          </div>
+        <div className="mb-8 flex justify-center">
+          <LottieAnimation
+            src="https://assets5.lottiefiles.com/packages/lf20_kji3m1gf.json"
+            className="w-72 h-72 drop-shadow-[0_0_32px_rgba(59,130,246,0.15)] filter hue-rotate-[220deg] saturate-150"
+          />
         </div>
 
         {/* Action buttons */}

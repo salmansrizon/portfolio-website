@@ -15,7 +15,7 @@ import {
   GraduationCap, Rocket, BookOpen, Layout, Linkedin,
   HelpCircle, Quote, ArrowRight, Zap
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -453,42 +453,36 @@ export default function CourseDetails() {
               {course.short_description || `${course.description.substring(0, 160)}...`}
             </p>
             
-            {/* Instructor & Date Info - Sleek One-liner */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-y border-border/50 py-4 mb-8 text-sm gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold overflow-hidden shrink-0 border border-border/50 shadow-sm">
-                  {instructor?.avatar_url ? (
-                    <img src={instructor.avatar_url} alt={instructor.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <UserCircle className="w-7 h-7" />
-                  )}
-                </div>
-                <div className="flex flex-wrap items-center gap-y-1 gap-x-4">
-                  <div>
-                    <p className="text-[10px] text-primary font-black uppercase tracking-widest leading-none mb-1">Instructor</p>
-                    <p className="font-bold text-foreground flex items-center gap-2 leading-none">
-                      {instructor?.name || 'To be announced'}
-                      {instructor?.specialization && <span className="text-muted-foreground font-medium text-xs">• {instructor.specialization}</span>}
-                    </p>
-                  </div>
-                  {instructor?.linkedin_url && (
-                    <a 
-                      href={instructor.linkedin_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="flex items-center gap-1.5 text-[11px] font-black text-[#0077b5] hover:text-white hover:bg-[#0077b5] bg-[#0077b5]/5 px-3 py-1 rounded-full border border-[#0077b5]/10 transition-all"
-                    >
-                      <Linkedin className="w-3 h-3" /> 
-                      <span>VIEW PROFILE</span>
-                    </a>
-                  )}
-                </div>
+          <Card className="border border-primary/20 shadow-card hover:shadow-hover transition-shadow mb-8">
+            <CardHeader className="flex flex-col sm:flex-row items-center gap-4 p-6">
+              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-primary/20 bg-primary/10 flex items-center justify-center">
+                {instructor?.avatar_url ? (
+                  <img src={instructor.avatar_url} alt={instructor.name} className="w-full h-full object-cover" />
+                ) : (
+                  <UserCircle className="w-8 h-8 text-primary" />
+                )}
               </div>
-              <div className="flex items-center gap-2 text-muted-foreground/60 bg-muted/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-border/30">
+              <div className="flex-1">
+                <p className="text-sm text-primary font-semibold uppercase tracking-wider mb-1">Instructor</p>
+                <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
+                  {instructor?.name || 'To be announced'}
+                  {instructor?.specialization && (
+                    <span className="text-muted-foreground text-sm font-medium">• {instructor.specialization}</span>
+                  )}
+                </h3>
+                {instructor?.linkedin_url && (
+                  <a href={instructor.linkedin_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-2 text-sm font-medium text-[#0077b5] hover:bg-[#0077b5] hover:text-white bg-[#0077b5]/10 px-3 py-1 rounded-full border border-[#0077b5]/20 transition-colors">
+                    <Linkedin className="w-4 h-4" />
+                    <span>VIEW PROFILE</span>
+                  </a>
+                )}
+              </div>
+              <div className="flex items-center gap-1 text-muted-foreground bg-muted/10 px-3 py-1 rounded-full text-sm border border-border/30">
                 <Info className="w-3 h-3" />
-                <span>Last updated {new Date(course.updated_at || Date.now()).toLocaleDateString('en-US', { month: '2-digit', year: 'numeric' })}</span>
+                <span>Updated {new Date(course.updated_at || Date.now()).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}</span>
               </div>
-            </div>
+            </CardHeader>
+          </Card>
             
             <div className="flex space-x-1 border border-border/50 bg-muted/30 rounded-xl p-1 mb-8 overflow-x-auto no-scrollbar relative min-h-[48px]">
               {['overview', 'content', 'reviews', 'faq'].map(tab => (

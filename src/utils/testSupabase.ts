@@ -1,5 +1,5 @@
 // Test Supabase connection and blogs table
-import { supabase } from './integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 
 export const testSupabaseConnection = async () => {
   try {
@@ -35,7 +35,7 @@ export const testBlogInsert = async () => {
     
     const { data, error } = await supabase
       .from('blogs')
-      .insert([testBlog])
+      .insert([testBlog as any])
       .select();
     
     if (error) {
