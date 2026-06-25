@@ -7,20 +7,28 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { RealtimeChannel } from '@supabase/supabase-js';
+import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, Plus, Edit, Trash2, ExternalLink } from 'lucide-react';
 import { BlogPost } from '@/types/blog';
 import BlogEditor from './BlogEditor';
+import { createRepository } from '@/integrations/supabase/repository';
+import { blogPostConfig } from '@/adapters/entityConfigs';
+
+// Create repository instance for blogs
+const blogRepository = createRepository(blogPostConfig);
 
 const BlogManager = () => {
-  const [blogs, setBlogs] = useState<BlogPost[]>([]);
-  const [loading, setLoading] = useState(true);
   const [editingBlog, setEditingBlog] = useState<BlogPost | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Use repository hook for data fetching
+  const { data: blogs = [], isLoading: loading } = blogRepository.useFindAll();
+  const { mutate: deleteBlog, isPending: isDeleting } = blogRepository.useDelete();
+  const { mutate: updateBlog } = blogRepository.useUpdate();
 
   useEffect(() => {
-    fetchBlogs();
-    
     let blogsSubscription: RealtimeChannel;
 
     const setupRealtimeSubscription = async () => {
@@ -34,7 +42,7 @@ const BlogManager = () => {
             table: 'blogs'
           },
           () => {
-            fetchBlogs();
+            queryClient.invalidateQueries({ queryKey: ['blogs'] });
           }
         )
         .subscribe();
@@ -47,80 +55,49 @@ const BlogManager = () => {
         supabase.removeChannel(blogsSubscription);
       }
     };
-  }, []);
-
-  const fetchBlogs = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('blogs')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setBlogs((data || []) as unknown as BlogPost[]);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch blogs",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [queryClient]);
 
   const handleDeleteBlog = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this blog post?')) return;
 
-    try {
-      const { error } = await supabase
-        .from('blogs')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Blog post deleted successfully",
-      });
-      // Refresh the list after deletion to reflect changes immediately
-      fetchBlogs();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete blog post",
-        variant: "destructive",
-      });
-    }
+    deleteBlog(id, {
+      onSuccess: () => {
+        toast({
+          title: "Success",
+          description: "Blog post deleted successfully",
+        });
+      },
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Failed to delete blog post",
+          variant: "destructive",
+        });
+      },
+    });
   };
 
   const handleTogglePublished = async (blog: BlogPost) => {
-    try {
-      const { error } = await supabase
-        .from('blogs')
-        .update({ published: !blog.published })
-        .eq('id', blog.id);
+    if (!blog.id) return;
 
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: `Blog post ${!blog.published ? 'published' : 'unpublished'} successfully`,
-      });
-      // Refresh the list to reflect the new published state
-      fetchBlogs();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update blog post",
-        variant: "destructive",
-      });
-    }
+    updateBlog({ id: blog.id, item: { published: !blog.published } as any }, {
+      onSuccess: () => {
+        toast({
+          title: "Success",
+          description: `Blog post ${!blog.published ? 'published' : 'unpublished'} successfully`,
+        });
+      },
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Failed to update blog post",
+          variant: "destructive",
+        });
+      },
+    });
   };
 
   const handleSave = async (blogData: BlogPost) => {
-    // The BlogEditor already saves to Supabase, so we just need to refresh the list and close the dialog
     toast({
       title: "Success",
       description: "Blog post saved successfully",
@@ -128,7 +105,7 @@ const BlogManager = () => {
     
     setIsDialogOpen(false);
     setEditingBlog(null);
-    fetchBlogs(); // Refresh the blog list
+    queryClient.invalidateQueries({ queryKey: ['blogs'] });
   };
 
   if (loading) {
