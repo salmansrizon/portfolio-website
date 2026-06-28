@@ -120,7 +120,10 @@ class ConsoleAnalyticsAdapter implements AnalyticsService {
 }
 
 // ── Singleton Analytics Service ───────────────────────────────────────────────
-// Export a singleton instance. Configure once in App.tsx or main.tsx.
+// Use createService factory for dependency injection.
+// Configure once in App.tsx or main.tsx.
+
+import { createAnalyticsService as createService } from './createService';
 
 let analyticsInstance: AnalyticsService | null = null;
 
@@ -132,9 +135,10 @@ export function getAnalytics(): AnalyticsService {
   if (!analyticsInstance) {
     // Default to Supabase in prod, Console in test/dev
     const isDev = import.meta.env.DEV;
-    analyticsInstance = isDev
+    const defaultAdapter = isDev
       ? new ConsoleAnalyticsAdapter()
       : new SupabaseAnalyticsAdapter();
+    analyticsInstance = createService(defaultAdapter);
   }
   return analyticsInstance;
 }
