@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,11 +9,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Calendar, Users, DollarSign, Layout, ChevronDown, ChevronUp, CheckCircle2, MessageCircle, UserPlus, X } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar, Users, ChevronDown, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { createRepository } from "@/integrations/supabase/repository";
+import { webinarConfig } from "@/adapters/entityConfigs";
+
+const webinarRepository = createRepository(webinarConfig);
 
 interface WebinarContentBlock {
     id: string;
@@ -51,44 +54,16 @@ interface Booking {
 }
 
 export default function WebinarManager() {
-    const [webinars, setWebinars] = useState<Webinar[]>([]);
-    const [bookings, setBookings] = useState<Booking[]>([]);
+    const [bookings, setBookings] = useState<any[]>([]);
     const [instructors, setInstructors] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [currentWebinar, setCurrentWebinar] = useState<Partial<Webinar> | null>(null);
+    const [currentWebinar, setCurrentWebinar] = useState<any>(null);
     const { toast } = useToast();
 
-    useEffect(() => {
-        fetchWebinars();
-        fetchBookings();
-        fetchInstructors();
-    }, []);
-
-    const fetchInstructors = async () => {
-        const { data, error } = await supabase.from('instructors').select('*').eq('is_active', true);
-        if (data) setInstructors(data);
-    };
-
-    const fetchWebinars = async () => {
-        setIsLoading(true);
-        const { data, error } = await (supabase.from('webinars' as any).select('*').order('created_at', { ascending: false }) as any);
-        if (error) {
-            toast({ title: "Error fetching webinars", description: error.message, variant: "destructive" });
-        } else {
-            setWebinars(data || []);
-        }
-        setIsLoading(false);
-    };
-
-    const fetchBookings = async () => {
-        const { data, error } = await (supabase.from('webinar_bookings' as any).select('*').order('booking_date', { ascending: false }) as any);
-        if (error) {
-            toast({ title: "Error fetching bookings", description: error.message, variant: "destructive" });
-        } else {
-            setBookings(data || []);
-        }
-    };
+    const { data: webinars = [], isLoading } = webinarRepository.useFindAll();
+    const { mutate: deleteWebinar } = webinarRepository.useDelete();
+    const { mutate: createWebinar } = webinarRepository.useCreate();
+    const { mutate: updateWebinar } = webinarRepository.useUpdate();
 
     const handleSaveWebinar = async () => {
         if (!currentWebinar?.title || !currentWebinar?.webinar_date) {
@@ -109,32 +84,27 @@ export default function WebinarManager() {
         };
 
         if (currentWebinar.id) {
-            const { error } = await (supabase.from('webinars' as any).update(payload).eq('id', currentWebinar.id) as any);
-            if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-            else {
-                toast({ title: "Success", description: "Webinar updated successfully" });
-                setIsDialogOpen(false);
-                fetchWebinars();
-            }
+            updateWebinar(
+                { id: currentWebinar.id, item: payload },
+                {
+                    onSuccess: () => { toast({ title: "Success", description: "Webinar updated successfully" }); setIsDialogOpen(false); },
+                    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+                }
+            );
         } else {
-            const { error } = await (supabase.from('webinars' as any).insert([payload]) as any);
-            if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-            else {
-                toast({ title: "Success", description: "Webinar created successfully" });
-                setIsDialogOpen(false);
-                fetchWebinars();
-            }
+            createWebinar(payload, {
+                onSuccess: () => { toast({ title: "Success", description: "Webinar created successfully" }); setIsDialogOpen(false); },
+                onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+            });
         }
     };
 
-    const handleDeleteWebinar = async (id: string) => {
+    const handleDeleteWebinar = (id: string) => {
         if (!confirm("Are you sure you want to delete this webinar?")) return;
-        const { error } = await (supabase.from('webinars' as any).delete().eq('id', id) as any);
-        if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-        else {
-            toast({ title: "Success", description: "Webinar deleted" });
-            fetchWebinars();
-        }
+        deleteWebinar(id, {
+            onSuccess: () => toast({ title: "Success", description: "Webinar deleted" }),
+            onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+        });
     };
 
     const addBlock = (type: WebinarContentBlock['type']) => {

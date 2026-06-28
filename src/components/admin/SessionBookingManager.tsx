@@ -1,15 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
@@ -23,6 +21,10 @@ import {
   CalendarIcon, CalendarX
 } from "lucide-react";
 import { format } from "date-fns";
+import { createRepository } from "@/integrations/supabase/repository";
+import { sessionBookingConfig } from "@/adapters/entityConfigs";
+
+const bookingRepository = createRepository(sessionBookingConfig);
 
 // ── Types ────────────────────────────────────────────────────
 interface SessionType {
@@ -91,15 +93,19 @@ const SessionBookingManager = () => {
   const [activeTab, setActiveTab] = useState('bookings');
 
   // ── Data state ─────────────────────────────────────────────
-  const [sessionTypes, setSessionTypes] = useState<SessionType[]>([]);
-  const [bookings, setBookings] = useState<SessionBooking[]>([]);
-  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null);
-  const [unavailableSlots, setUnavailableSlots] = useState<UnavailableSlot[]>([]);
-  const [availabilitySettings, setAvailabilitySettings] = useState<AvailabilitySettings | null>(null);
+  const [sessionTypes, setSessionTypes] = useState<any[]>([]);
+  const [paymentSettings, setPaymentSettings] = useState<any>(null);
+  const [unavailableSlots, setUnavailableSlots] = useState<any[]>([]);
+  const [availabilitySettings, setAvailabilitySettings] = useState<any>(null);
+
+  const { data: bookings = [], isLoading } = bookingRepository.useFindAll();
+  const { mutate: deleteBooking } = bookingRepository.useDelete();
+  const { mutate: updateBooking } = bookingRepository.useUpdate();
+  const { mutate: createBooking } = bookingRepository.useCreate();
 
   // ── Edit state ─────────────────────────────────────────────
-  const [editingBooking, setEditingBooking] = useState<SessionBooking | null>(null);
-  const [editingType, setEditingType] = useState<SessionType | null>(null);
+  const [editingBooking, setEditingBooking] = useState<any>(null);
+  const [editingType, setEditingType] = useState<any>(null);
   const [newType, setNewType] = useState({ title: '', description: '', duration_minutes: 60, fee: 0, is_paid: true });
   const [showNewTypeForm, setShowNewTypeForm] = useState(false);
 
@@ -110,24 +116,6 @@ const SessionBookingManager = () => {
     reason: '',
     isFullDay: false
   });
-
-  // ── Fetch everything ───────────────────────────────────────
-  const fetchAll = async () => {
-    const [stRes, bkRes, psRes, usRes, asRes] = await Promise.all([
-      supabase.from('session_types').select('*'),
-      supabase.from('session_bookings').select('*').order('created_at', { ascending: false }),
-      supabase.from('payment_settings').select('*').limit(1).single(),
-      supabase.from('unavailable_slots').select('*').order('date', { ascending: true }),
-      supabase.from('availability_settings').select('*').limit(1).single(),
-    ]);
-    if (stRes.data) setSessionTypes(stRes.data as SessionType[]);
-    if (bkRes.data) setBookings(bkRes.data as SessionBooking[]);
-    if (psRes.data) setPaymentSettings(psRes.data as PaymentSettings);
-    if (usRes.data) setUnavailableSlots(usRes.data as UnavailableSlot[]);
-    if (asRes.data) setAvailabilitySettings(asRes.data as AvailabilitySettings);
-  };
-
-  useEffect(() => { fetchAll(); }, []);
 
   // ═══════════════════════════════════════════════════════════
   // Session Types CRUD
