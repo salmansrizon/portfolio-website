@@ -1,10 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
@@ -17,26 +15,16 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { 
   CalendarIcon, 
-  Clock, 
   Plus, 
-  Trash2, 
-  CalendarX 
+  Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { createRepository } from "@/integrations/supabase/repository";
+import { unavailableSlotConfig } from "@/adapters/entityConfigs";
+
+const slotRepository = createRepository(unavailableSlotConfig);
 
 interface UnavailableSlot {
   id: string;
@@ -47,8 +35,6 @@ interface UnavailableSlot {
 }
 
 const UnavailableSlotsManager = () => {
-  const [unavailableSlots, setUnavailableSlots] = useState<UnavailableSlot[]>([]);
-  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     date: undefined as Date | undefined,
     time_slot: '',
@@ -57,36 +43,16 @@ const UnavailableSlotsManager = () => {
   });
   const { toast } = useToast();
 
+  const { data: unavailableSlots = [], isLoading: loading } = slotRepository.useFindAll();
+  const { mutate: deleteSlot } = slotRepository.useDelete();
+  const { mutate: createSlot } = slotRepository.useCreate();
+
   // Available time slots
   const timeSlots = [
     '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
     '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
     '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'
   ];
-
-  useEffect(() => {
-    fetchUnavailableSlots();
-  }, []);
-
-  const fetchUnavailableSlots = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('unavailable_slots')
-        .select('*')
-        .order('date', { ascending: true });
-
-      if (error) throw error;
-      setUnavailableSlots(data || []);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch unavailable slots",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSubmit = async () => {
     if (!formData.date) {
@@ -107,55 +73,27 @@ const UnavailableSlotsManager = () => {
       return;
     }
 
-    try {
-      const { error } = await supabase
-        .from('unavailable_slots')
-        .insert({
-          date: format(formData.date, 'yyyy-MM-dd'),
-          time_slot: formData.isFullDay ? null : formData.time_slot,
-          reason: formData.reason || null
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Unavailable slot added successfully"
-      });
-
-      // Reset form
-      setFormData({
-        date: undefined,
-        time_slot: '',
-        reason: '',
-        isFullDay: false
-      });
-
-      fetchUnavailableSlots();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to add unavailable slot",
-        variant: "destructive"
-      });
-    }
+    createSlot(
+      {
+        date: format(formData.date, 'yyyy-MM-dd'),
+        time_slot: formData.isFullDay ? null : formData.time_slot,
+        reason: formData.reason || null
+      },
+      {
+        onSuccess: () => {
+          toast({ title: "Success", description: "Unavailable slot added successfully" });
+          setFormData({ date: undefined, time_slot: '', reason: '', isFullDay: false });
+        },
+        onError: () => toast({ title: "Error", description: "Failed to add unavailable slot", variant: "destructive" }),
+      }
+    );
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('unavailable_slots')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Unavailable slot removed successfully"
-      });
-
-      fetchUnavailableSlots();
+  const handleDelete = (id: string) => {
+    deleteSlot(id, {
+      onSuccess: () => toast({ title: "Success", description: "Unavailable slot removed successfully" }),
+      onError: () => toast({ title: "Error", description: "Failed to remove unavailable slot", variant: "destructive" }),
+    });
     } catch (error: any) {
       toast({
         title: "Error",
