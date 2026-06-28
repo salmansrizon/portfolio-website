@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,8 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Plus, Edit, Trash2, X } from 'lucide-react';
+import { createRepository } from '@/integrations/supabase/repository';
+import { serviceConfig } from '@/adapters/entityConfigs';
+
+const serviceRepository = createRepository(serviceConfig);
 
 interface Service {
   id: string;
@@ -20,10 +23,7 @@ interface Service {
 }
 
 const ServicesManager = () => {
-  const [services, setServices] = useState<Service[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [editingService, setEditingService] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
   const { register, handleSubmit, reset, control, setValue } = useForm({
@@ -40,112 +40,61 @@ const ServicesManager = () => {
     name: 'features'
   });
 
-  useEffect(() => {
-    fetchServices();
-  }, []);
-
-  const fetchServices = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('services')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setServices(data || []);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch services",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: services = [], isLoading: loading } = serviceRepository.useFindAll();
+  const { mutate: deleteService } = serviceRepository.useDelete();
+  const { mutate: createService } = serviceRepository.useCreate();
+  const { mutate: updateService } = serviceRepository.useUpdate();
 
   const onSubmit = async (formData: any) => {
-    setSaving(true);
-    try {
-      const serviceData = {
-        title: formData.title,
-        description: formData.description,
-        icon: formData.icon,
-        features: formData.features.map((f: any) => f.value).filter((f: string) => f.trim() !== '')
-      };
+    const serviceData = {
+      title: formData.title,
+      description: formData.description,
+      icon: formData.icon,
+      features: formData.features.map((f: any) => f.value).filter((f: string) => f.trim() !== '')
+    };
 
-      if (editingService) {
-        const { error } = await supabase
-          .from('services')
-          .update(serviceData)
-          .eq('id', editingService.id);
-
-        if (error) throw error;
-        toast({
-          title: "Success",
-          description: "Service updated successfully!",
-        });
-      } else {
-        const { error } = await supabase
-          .from('services')
-          .insert([serviceData]);
-
-        if (error) throw error;
-        toast({
-          title: "Success",
-          description: "Service created successfully!",
-        });
-      }
-
-      // Fetch updated services after modification
-      await fetchServices();
-      setIsDialogOpen(false);
-      setEditingService(null);
-      reset();
-      fetchServices();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save service",
-        variant: "destructive",
+    if (editingService) {
+      updateService(
+        { id: editingService.id, item: serviceData },
+        {
+          onSuccess: () => {
+            toast({ title: "Success", description: "Service updated successfully!" });
+            setIsDialogOpen(false);
+            setEditingService(null);
+            reset();
+          },
+          onError: () => toast({ title: "Error", description: "Failed to save service", variant: "destructive" }),
+        }
+      );
+    } else {
+      createService(serviceData, {
+        onSuccess: () => {
+          toast({ title: "Success", description: "Service created successfully!" });
+          setIsDialogOpen(false);
+          setEditingService(null);
+          reset();
+        },
+        onError: () => toast({ title: "Error", description: "Failed to save service", variant: "destructive" }),
       });
-    } finally {
-      setSaving(false);
     }
   };
 
-  const handleEdit = (service: Service) => {
+  const handleEdit = (service: any) => {
     setEditingService(service);
     setValue('title', service.title);
     setValue('description', service.description);
     setValue('icon', service.icon || '');
-    setValue('features', service.features.map(f => ({ value: f })));
+    setValue('features', service.features.map((f: any) => ({ value: f })));
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (serviceId: string) => {
+  const handleDelete = (serviceId: string) => {
     if (!confirm('Are you sure you want to delete this service?')) return;
 
-    try {
-      const { error } = await supabase
-        .from('services')
-        .delete()
-        .eq('id', serviceId);
-
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Service deleted successfully!",
-      });
-      fetchServices();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete service",
-        variant: "destructive",
-      });
-    }
+    deleteService(serviceId, {
+      onSuccess: () => toast({ title: "Success", description: "Service deleted successfully!" }),
+      onError: () => toast({ title: "Error", description: "Failed to delete service", variant: "destructive" }),
+    });
   };
 
   const handleNewService = () => {
