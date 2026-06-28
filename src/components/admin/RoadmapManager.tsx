@@ -1,6 +1,5 @@
 import * as React from 'react';
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,8 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Pencil, Trash2, Eye, Map, Upload, Loader2, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Map, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { createRepository } from '@/integrations/supabase/repository';
+import { roadmapConfig } from '@/adapters/entityConfigs';
+
+const roadmapRepository = createRepository(roadmapConfig);
 
 interface Roadmap {
   id: string;
@@ -26,11 +29,14 @@ interface Roadmap {
 }
 
 const RoadmapManager = () => {
-  const [roadmaps, setRoadmaps] = useState<Roadmap[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingRoadmap, setEditingRoadmap] = useState<Roadmap | null>(null);
+  const [editingRoadmap, setEditingRoadmap] = useState<any>(null);
   const { toast } = useToast();
+
+  const { data: roadmaps = [], isLoading: loading } = roadmapRepository.useFindAll();
+  const { mutate: deleteRoadmap } = roadmapRepository.useDelete();
+  const { mutate: createRoadmap } = roadmapRepository.useCreate();
+  const { mutate: updateRoadmap } = roadmapRepository.useUpdate();
 
   const [form, setForm] = useState({
     title: '',
@@ -43,23 +49,6 @@ const RoadmapManager = () => {
     order_index: 0,
   });
 
-  useEffect(() => {
-    fetchRoadmaps();
-  }, []);
-
-  const fetchRoadmaps = async () => {
-    const { data, error } = await supabase
-      .from('roadmaps')
-      .select('*')
-      .order('order_index');
-    if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    } else {
-      setRoadmaps((data || []) as Roadmap[]);
-    }
-    setLoading(false);
-  };
-
   const generateSlug = (title: string) =>
     title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
@@ -69,7 +58,7 @@ const RoadmapManager = () => {
     setIsDialogOpen(true);
   };
 
-  const openEdit = (r: Roadmap) => {
+  const openEdit = (r: any) => {
     setEditingRoadmap(r);
     setForm({
       title: r.title,
@@ -96,28 +85,34 @@ const RoadmapManager = () => {
       order_index: form.order_index,
     };
 
-    let error;
     if (editingRoadmap) {
-      ({ error } = await supabase.from('roadmaps').update(payload).eq('id', editingRoadmap.id));
+      updateRoadmap(
+        { id: editingRoadmap.id, item: payload },
+        {
+          onSuccess: () => {
+            toast({ title: 'Updated', description: 'Roadmap saved successfully.' });
+            setIsDialogOpen(false);
+          },
+          onError: (error: any) => toast({ title: 'Error', description: error.message, variant: 'destructive' }),
+        }
+      );
     } else {
-      ({ error } = await supabase.from('roadmaps').insert(payload));
-    }
-
-    if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: editingRoadmap ? 'Updated' : 'Created', description: 'Roadmap saved successfully.' });
-      setIsDialogOpen(false);
-      fetchRoadmaps();
+      createRoadmap(payload, {
+        onSuccess: () => {
+          toast({ title: 'Created', description: 'Roadmap saved successfully.' });
+          setIsDialogOpen(false);
+        },
+        onError: (error: any) => toast({ title: 'Error', description: error.message, variant: 'destructive' }),
+      });
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!confirm('Delete this roadmap?')) return;
-    const { error } = await supabase.from('roadmaps').delete().eq('id', id);
-    if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    } else {
+    deleteRoadmap(id, {
+      onSuccess: () => toast({ title: 'Deleted', description: 'Roadmap removed.' }),
+      onError: (error: any) => toast({ title: 'Error', description: error.message, variant: 'destructive' }),
+    });
       toast({ title: 'Deleted' });
       fetchRoadmaps();
     }
