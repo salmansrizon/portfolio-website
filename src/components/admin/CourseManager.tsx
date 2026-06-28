@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,10 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, X } from "lucide-react";
-import { PostgrestError } from '@supabase/supabase-js';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CourseEnrollmentManager from "./CourseEnrollmentManager";
 import CourseCategoryManager from "./CourseCategoryManager";
+import { createRepository } from "@/integrations/supabase/repository";
+import { courseConfig } from "@/adapters/entityConfigs";
 
 // Using the exact variant types that the toast component expects
 type ToastVariant = 'default' | 'destructive';
@@ -202,7 +203,6 @@ const initialFormData: FormData = {
 
 export default function CourseManager() {
   const { toast, error: showError, success: showSuccess } = useTypedToast();
-  const [courses, setCourses] = useState<Course[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [showDialog, setShowDialog] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
@@ -213,38 +213,10 @@ export default function CourseManager() {
   const [isLoadingSections, setIsLoadingSections] = useState(false);
   const [instructorsList, setInstructorsList] = useState<any[]>([]);
 
-  useEffect(() => {
-    fetchCourses();
-    fetchInstructorsList();
-  }, []);
-
-  const fetchInstructorsList = async () => {
-    try {
-      const { data } = await (supabase.from("instructors" as any).select("id, name").eq("is_active", true).order("name") as any);
-      setInstructorsList(data || []);
-    } catch (e) { console.error(e); }
-  };
-
-  const fetchCourses = async () => {
-    try {
-      const { data: cats } = await supabase.from("course_categories" as any).select("*").order("name");
-      setCategories(cats || []);
-
-      const { data, error } = await supabase
-        .from("courses")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      setCourses((data || []).map((c: any) => ({ 
-        ...c, 
-        faqs: Array.isArray(c.faqs) ? c.faqs : [],
-        what_you_will_learn: Array.isArray(c.what_you_will_learn) ? c.what_you_will_learn : []
-      })) as Course[]);
-    } catch (error: any) {
-      console.error("Error fetching courses:", error);
-      showError(error?.message || "Failed to load courses");
-    }
-  };
+  const { data: courses = [], isLoading } = createRepository(courseConfig).useFindAll();
+  const { mutate: deleteCourse } = createRepository(courseConfig).useDelete();
+  const courseCreateMutation = createRepository(courseConfig).useCreate();
+  const courseUpdateMutation = createRepository(courseConfig).useUpdate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
