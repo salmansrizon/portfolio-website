@@ -6,8 +6,8 @@ import { Loader2, ArrowLeft, ImageOff } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from "@/components/Navbar";
 import { BlogPost } from '@/types/blog';
-import { CodeBlock, dracula } from 'react-code-blocks';
 import { usePageView } from "@/hooks/usePageView";
+import { BlogContentRenderer } from "@/components/BlogContentRenderer";
 import defaultFeaturedImage from "@/assets/default-blog-featured.webp";
 
 const BlogPostPage = () => {
@@ -106,61 +106,7 @@ const BlogPostPage = () => {
               </time>
             </div>
 
-            <div className="text-foreground leading-relaxed">
-              {blog.content.map((item, index) => {
-                switch (item.type) {
-                  case 'text':
-                    return (
-                      <div key={index} className="mb-6 whitespace-pre-wrap">
-                        {item.content}
-                      </div>
-                    );
-                  case 'image':
-                    return (
-                      <figure key={index} className="my-8">
-                        {item.url ? (
-                          <img
-                            src={item.url}
-                            alt={item.alt || blog.title}
-                            className="rounded-lg w-full"
-                            loading="lazy"
-                            decoding="async"
-                            onError={(e) => { (e.target as HTMLImageElement).src = defaultFeaturedImage; }}
-                          />
-                        ) : (
-                          <div className="flex items-center justify-center rounded-lg w-full aspect-video bg-muted text-muted-foreground flex-col gap-2">
-                            <ImageOff className="w-8 h-8" />
-                            <span className="text-sm">Image not available</span>
-                          </div>
-                        )}
-                        {item.caption && (
-                          <figcaption className="text-center text-muted-foreground mt-2">
-                            {item.caption}
-                          </figcaption>
-                        )}
-                      </figure>
-                    );
-                  case 'code':
-                    return (
-                      <div key={index} className="my-8">
-                        <CodeBlock
-                          text={item.code}
-                          language={item.language}
-                          theme={dracula}
-                          showLineNumbers
-                        />
-                        {item.caption && (
-                          <p className="text-center text-muted-foreground mt-2">
-                            {item.caption}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  default:
-                    return null;
-                }
-              })}
-            </div>
+            <BlogContentRenderer content={blog.content} />
           </div>
         </div>
       </article>

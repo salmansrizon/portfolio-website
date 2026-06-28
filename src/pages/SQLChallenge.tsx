@@ -102,12 +102,17 @@ const SQLChallenge = () => {
   const { submissions, loading: sLoading, refresh: refreshSubmissions } = useSubmissions(currentQ?.id || '');
   const [code, setCode] = useState('');
   const [mcqAnswer, setMcqAnswer] = useState<string | null>(null);
-  const pgRef = useRef<PGlite | null>(null);
   const [status, setStatus] = useState<'idle' | 'booting' | 'seeding' | 'ready' | 'error'>('idle');
   const [results, setResults] = useState<any[]>([]);
   const [columns, setColumns] = useState<string[]>([]);
   const [execError, setExecError] = useState<string | null>(null);
   const [executionTime, setExecutionTime] = useState<number | null>(null);
+
+  // Use extracted modules
+  const { execute, isExecuting } = useQueryExecutor();
+  const { timeLeft, timerActive, totalMistakes, formatTime, recordMistake, getTimeTaken, setTimerActive: setTimer } = useTimerController(question?.time_limit_secs);
+  const { missionQueue, cursorIdx, isMissionComplete, currentQuestion, advanceMission, resetMission } = useMissionRunner(question, children);
+  const { missionResults, recordMissionResults, shareResults, downloadShareImage, setShowShareDialog } = useResultRenderer();
   const [activeTab, setActiveTab] = useState<'description' | 'schema' | 'submission'>('description');
   const [missionResults, setMissionResults] = useState<{
     correctSteps: number;

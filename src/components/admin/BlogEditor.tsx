@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/components/ui/use-toast";
 import { BlogContent, BlogPost } from '@/types/blog';
+import { parseBlogContent, BlogContentRenderer } from '@/components/BlogContentRenderer';
 import CodeEditor from '@/components/ui/code-editor';
 
 const BLOG_CATEGORIES = [
@@ -45,16 +46,8 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
   const [published, setPublished] = useState(initialData?.published || false);
   const [sourceType, setSourceType] = useState<BlogPost['source_type']>(initialData?.source_type || 'local');
   const [sourceUrl, setSourceUrl] = useState(initialData?.source_url || '');
-  // Supabase may return the `content` field as a JSON string; ensure we always store an array
-  const initialContent = (() => {
-    if (!initialData?.content) return [] as BlogContent[];
-    return Array.isArray(initialData.content)
-      ? (initialData.content as BlogContent[])
-      : // try to parse if it's a JSON string
-        (typeof initialData.content === 'string'
-          ? (JSON.parse(initialData.content) as BlogContent[])
-          : [] as BlogContent[]);
-  })();
+  // Normalize content from Supabase (may be string or array)
+  const initialContent = parseBlogContent(initialData?.content);
   const [content, setContent] = useState<BlogContent[]>(initialContent);
   const [categories, setCategories] = useState<string[]>(initialData?.categories || []);
   const [openCategoryDropdown, setOpenCategoryDropdown] = useState(false);
@@ -68,15 +61,8 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
       setPublished(initialData.published || false);
       setSourceType(initialData.source_type || 'local');
       setSourceUrl(initialData.source_url || '');
-      // Ensure content is an array regardless of how Supabase returns it
-      const parsedContent = (() => {
-        if (!initialData.content) return [] as BlogContent[];
-        return Array.isArray(initialData.content)
-          ? (initialData.content as BlogContent[])
-          : typeof initialData.content === 'string'
-          ? (JSON.parse(initialData.content) as BlogContent[])
-          : [] as BlogContent[];
-      })();
+      // Normalize content from Supabase
+      const parsedContent = parseBlogContent(initialData.content);
       setContent(parsedContent);
       setCategories(initialData.categories || []);
     } else {
@@ -303,6 +289,7 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
         <Tabs defaultValue="content">
           <TabsList>
             <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="preview">Preview</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
@@ -529,6 +516,16 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
                 </Button>
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="preview" className="space-y-4">
+            <Card>
+              <CardContent className="pt-6">
+                <h2 className="text-2xl font-bold mb-4">{title || 'Untitled Post'}</h2>
+                {excerpt && <p className="text-muted-foreground mb-6">{excerpt}</p>}
+                <BlogContentRenderer content={content} />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="settings">
