@@ -1,6 +1,14 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import { createRepository } from '@/integrations/supabase/repository';
+import { sessionTypeConfig, paymentSettingsConfig, unavailableSlotConfig, availabilitySettingsConfig } from '@/adapters/entityConfigs';
+
+// Create repository instances for each table
+const sessionTypeRepository = createRepository(sessionTypeConfig);
+const paymentSettingsRepository = createRepository(paymentSettingsConfig);
+const unavailableSlotRepository = createRepository(unavailableSlotConfig);
+const availabilitySettingsRepository = createRepository(availabilitySettingsConfig);
 
 // ── Shared types ──────────────────────────────────────────────
 export interface SessionType {
@@ -68,47 +76,42 @@ export interface QuickBookingPayload {
 
 // ── Hook ──────────────────────────────────────────────────────
 export function useBookingData() {
-    const [sessionTypes, setSessionTypes] = useState<SessionType[]>([]);
-    const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null);
-    const [unavailableSlots, setUnavailableSlots] = useState<UnavailableSlot[]>([]);
-    const [bookedSlots, setBookedSlots] = useState<BookedSlot[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    // Use repository hooks for data fetching
+    const { data: sessionTypes = [], isLoading: isSessionTypesLoading } = sessionTypeRepository.useFindByFilter({ is_active: true });
+    const { data: paymentSettingsData = [], isLoading: isPaymentSettingsLoading } = paymentSettingsRepository.useFindAll();
+    const { data: unavailableSlots = [], isLoading: isUnavailableSlotsLoading } = unavailableSlotRepository.useFindAll();
+    const { data: availabilitySettingsData = [], isLoading: isAvailabilitySettingsLoading } = availabilitySettingsRepository.useFindAll();
 
-    const [availabilitySettings, setAvailabilitySettings] = useState<AvailabilitySettings>({
+    // For single-row tables, take the first result
+    const paymentSettings = paymentSettingsData[0] || null;
+    const availabilitySettings = availabilitySettingsData[0] || {
         available_weekdays: DEFAULT_WEEKDAYS,
         time_slots: DEFAULT_TIME_SLOTS
-    });
+    };
+
+    // Fetch booked slots separately (different table structure)
+    const [bookedSlots, setBookedSlots] = useState<BookedSlot[]>([]);
+    const [isBookingsLoading, setIsBookingsLoading] = useState(true);
 
     useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
-            const [sessRes, payRes, slotsRes, settingsRes, bookingsRes] = await Promise.all([
-                supabase.from('session_types').select('*').eq('is_active', true),
-                supabase.from('payment_settings').select('*').limit(1).single(),
-                supabase.from('unavailable_slots').select('*'),
-                supabase.from('availability_settings').select('*').limit(1).single(),
-                // Fetch active bookings to prevent double-booking
-                // Exclude cancelled/rejected — those slots become free again
-                supabase
-                    .from('session_bookings')
-                    .select('booking_date, time_slot, booking_status, payment_status')
-                    .in('booking_status', ['pending', 'confirmed'])
-                    .neq('payment_status', 'rejected'),
-            ]);
-            if (sessRes.data) setSessionTypes(sessRes.data as SessionType[]);
-            if (payRes.data) setPaymentSettings(payRes.data as PaymentSettings);
-            if (slotsRes.data) setUnavailableSlots(slotsRes.data as UnavailableSlot[]);
-            if (bookingsRes.data) setBookedSlots(bookingsRes.data as BookedSlot[]);
-
-            // Availability settings
-            if (settingsRes.data) {
-                setAvailabilitySettings(settingsRes.data as AvailabilitySettings);
+        const fetchBookedSlots = async () => {
+            const { data, error } = await supabase
+                .from('session_bookings')
+                .select('booking_date, time_slot, booking_status, payment_status')
+                .in('booking_status', ['pending', 'confirmed'])
+                .neq('payment_status', 'rejected');
+            
+            if (!error && data) {
+                setBookedSlots(data as BookedSlot[]);
             }
-
-            setIsLoading(false);
+            setIsBookingsLoading(false);
         };
-        fetchData();
+
+        fetchBookedSlots();
     }, []);
+
+    // Combined loading state
+    const isLoading = isSessionTypesLoading || isPaymentSettingsLoading || isUnavailableSlotsLoading || isAvailabilitySettingsLoading || isBookingsLoading;
 
     // Helpers ────────────────────────────────────────────────────
 

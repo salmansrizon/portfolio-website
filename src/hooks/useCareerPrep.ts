@@ -2,6 +2,11 @@ import * as React from 'react';
 const { useState, useEffect, useCallback } = React;
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { createRepository } from '@/integrations/supabase/repository';
+import { careerPrepQuestionConfig } from '@/adapters/entityConfigs';
+
+// Create repository instance for career prep questions
+const questionRepository = createRepository(careerPrepQuestionConfig);
 
 export type QuestionType = 'root' | 'code' | 'mcq' | 'case_study';
 
@@ -35,26 +40,13 @@ export interface CareerPrepQuestion {
 }
 
 export function useQuestions() {
-  const [questions, setQuestions] = useState<CareerPrepQuestion[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: questions = [], isLoading: loading, error } = questionRepository.useFindAll();
 
   useEffect(() => {
-    const fetchQuestions = async () => {
-      const { data, error } = await (supabase as any)
-        .from('careerprep_questions')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching questions. Has the table been created in Supabase Dashboard?', error);
-      } else {
-        setQuestions(data || []);
-      }
-      setLoading(false);
-    };
-
-    fetchQuestions();
-  }, []);
+    if (error) {
+      console.error('Error fetching questions. Has the table been created in Supabase Dashboard?', error);
+    }
+  }, [error]);
 
   return { questions, loading };
 }
