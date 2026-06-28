@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,51 +6,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { FolderTree, Plus, Edit, Trash2 } from "lucide-react";
+import { createRepository } from "@/integrations/supabase/repository";
+import { courseCategoryConfig } from "@/adapters/entityConfigs";
 
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  parent_id: string | null;
-  created_at: string;
-}
+const categoryRepository = createRepository(courseCategoryConfig);
 
 export default function CourseCategoryManager() {
   const { toast } = useToast();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingCategory, setEditingCategory] = useState<any>(null);
+
+  const { data: categories = [], isLoading } = categoryRepository.useFindAll();
+  const { mutate: deleteCategory } = categoryRepository.useDelete();
+  const { mutate: createCategory } = categoryRepository.useCreate();
+  const { mutate: updateCategory } = categoryRepository.useUpdate();
   
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
     parent_id: "none"
   });
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("course_categories" as any)
-        .select("*")
-        .order("name", { ascending: true });
-        
-      if (error) throw error;
-      setCategories((data as any[]) || []);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-      toast({ title: "Error", description: "Failed to load categories.", variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const name = e.target.value;
@@ -60,53 +36,47 @@ export default function CourseCategoryManager() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      if (!formData.name || !formData.slug) {
-        toast({ title: "Error", description: "Name and Slug are required.", variant: "destructive" });
-        return;
-      }
+    if (!formData.name || !formData.slug) {
+      toast({ title: "Error", description: "Name and Slug are required.", variant: "destructive" });
+      return;
+    }
 
-      const payload = {
-        name: formData.name,
-        slug: formData.slug,
-        parent_id: formData.parent_id === "none" ? null : formData.parent_id
-      };
+    const payload = {
+      name: formData.name,
+      slug: formData.slug,
+      parent_id: formData.parent_id === "none" ? null : formData.parent_id
+    };
 
-      if (editingCategory) {
-        const { error } = await supabase
-          .from("course_categories" as any)
-          .update(payload)
-          .eq("id", editingCategory.id);
-        if (error) throw error;
-        toast({ title: "Success", description: "Category updated!" });
-      } else {
-        const { error } = await supabase
-          .from("course_categories" as any)
-          .insert(payload);
-        if (error) throw error;
-        toast({ title: "Success", description: "Category created!" });
-      }
-
-      setShowDialog(false);
-      resetForm();
-      fetchCategories();
-    } catch (error: any) {
-      console.error("Error saving category:", error);
-      toast({ title: "Error", description: error.message || "Failed to save category.", variant: "destructive" });
+    if (editingCategory) {
+      updateCategory(
+        { id: editingCategory.id, item: payload },
+        {
+          onSuccess: () => {
+            toast({ title: "Success", description: "Category updated!" });
+            setShowDialog(false);
+            resetForm();
+          },
+          onError: (error: any) => toast({ title: "Error", description: error.message || "Failed to save category.", variant: "destructive" }),
+        }
+      );
+    } else {
+      createCategory(payload, {
+        onSuccess: () => {
+          toast({ title: "Success", description: "Category created!" });
+          setShowDialog(false);
+          resetForm();
+        },
+        onError: (error: any) => toast({ title: "Error", description: error.message || "Failed to save category.", variant: "destructive" }),
+      });
     }
   };
 
-  const deleteCategory = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!window.confirm("Are you sure? This might fail if courses are using this category or if it has child categories.")) return;
-    try {
-      const { error } = await supabase.from("course_categories" as any).delete().eq("id", id);
-      if (error) throw error;
-      toast({ title: "Success", description: "Category deleted!" });
-      fetchCategories();
-    } catch (error: any) {
-      console.error("Error deleting category:", error);
-      toast({ title: "Error", description: error.message || "Failed to delete category.", variant: "destructive" });
-    }
+    deleteCategory(id, {
+      onSuccess: () => toast({ title: "Success", description: "Category deleted!" }),
+      onError: (error: any) => toast({ title: "Error", description: error.message || "Failed to delete category.", variant: "destructive" }),
+    });
   };
 
   const resetForm = () => {
@@ -114,7 +84,7 @@ export default function CourseCategoryManager() {
     setFormData({ name: "", slug: "", parent_id: "none" });
   };
 
-  const handleEdit = (category: Category) => {
+  const handleEdit = (category: any) => {
     setEditingCategory(category);
     setFormData({
       name: category.name,
