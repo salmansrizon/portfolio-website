@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,27 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, UserPlus, Mail, Phone, GraduationCap, BookOpen, Search, Users } from "lucide-react";
+import { createRepository } from "@/integrations/supabase/repository";
+import { studentConfig } from "@/adapters/entityConfigs";
 
-interface Student {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  bio?: string;
-  avatar_url?: string;
-  institution?: string;
-  is_active: boolean;
-  enrolled_courses?: string[];
-  created_at?: string;
-}
-
-interface Course {
-  id: string;
-  title: string;
-}
+const studentRepository = createRepository(studentConfig);
 
 const initialFormData = {
   name: "",
@@ -42,40 +27,16 @@ const initialFormData = {
 
 export default function StudentManager() {
   const { toast } = useToast();
-  const [students, setStudents] = useState<Student[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] = useState<any[]>([]);
   const [formData, setFormData] = useState(initialFormData);
-  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [editingStudent, setEditingStudent] = useState<any | null>(null);
   const [showDialog, setShowDialog] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    fetchStudents();
-    fetchCourses();
-  }, []);
-
-  const fetchStudents = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await (supabase.from("students" as any).select("*").order("created_at", { ascending: false }) as any);
-      if (error) throw error;
-      setStudents((data || []) as Student[]);
-    } catch (error) {
-      console.error("Error fetching students:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchCourses = async () => {
-    try {
-      const { data } = await supabase.from("courses").select("id, title").order("title");
-      setCourses((data || []) as Course[]);
-    } catch (error) {
-      console.error("Error fetching courses:", error);
-    }
-  };
+  const { data: students = [], isLoading } = studentRepository.useFindAll();
+  const { mutate: deleteStudent } = studentRepository.useDelete();
+  const { mutate: createStudent } = studentRepository.useCreate();
+  const { mutate: updateStudent } = studentRepository.useUpdate();
 
   const handleSubmit = async () => {
     if (!formData.name || !formData.email) {
@@ -83,37 +44,42 @@ export default function StudentManager() {
       return;
     }
 
-    try {
-      const payload: any = {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone || null,
-        bio: formData.bio || null,
-        avatar_url: formData.avatar_url || null,
-        institution: formData.institution || null,
-        is_active: formData.is_active,
-        enrolled_courses: formData.enrolled_courses,
-      };
+    const payload = {
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone || null,
+      bio: formData.bio || null,
+      avatar_url: formData.avatar_url || null,
+      institution: formData.institution || null,
+      is_active: formData.is_active,
+      enrolled_courses: formData.enrolled_courses,
+    };
 
-      if (editingStudent) {
-        const { error } = await (supabase.from("students" as any).update(payload).eq("id", editingStudent.id) as any);
-        if (error) throw error;
-        toast({ title: "Success", description: "Student updated successfully." });
-      } else {
-        const { error } = await (supabase.from("students" as any).insert(payload) as any);
-        if (error) throw error;
-        toast({ title: "Success", description: "Student created successfully." });
-      }
-
-      setShowDialog(false);
-      resetForm();
-      fetchStudents();
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to save student.", variant: "destructive" });
+    if (editingStudent) {
+      updateStudent(
+        { id: editingStudent.id, item: payload },
+        {
+          onSuccess: () => {
+            toast({ title: "Success", description: "Student updated successfully." });
+            setShowDialog(false);
+            resetForm();
+          },
+          onError: (error: any) => toast({ title: "Error", description: error.message || "Failed to save student.", variant: "destructive" }),
+        }
+      );
+    } else {
+      createStudent(payload, {
+        onSuccess: () => {
+          toast({ title: "Success", description: "Student created successfully." });
+          setShowDialog(false);
+          resetForm();
+        },
+        onError: (error: any) => toast({ title: "Error", description: error.message || "Failed to save student.", variant: "destructive" }),
+      });
     }
   };
 
-  const handleEdit = (student: Student) => {
+  const handleEdit = (student: any) => {
     setEditingStudent(student);
     setFormData({
       name: student.name,
@@ -128,16 +94,12 @@ export default function StudentManager() {
     setShowDialog(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!confirm("Are you sure you want to remove this student?")) return;
-    try {
-      const { error } = await (supabase.from("students" as any).delete().eq("id", id) as any);
-      if (error) throw error;
-      toast({ title: "Deleted", description: "Student removed successfully." });
-      fetchStudents();
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to delete.", variant: "destructive" });
-    }
+    deleteStudent(id, {
+      onSuccess: () => toast({ title: "Deleted", description: "Student removed successfully." }),
+      onError: (error: any) => toast({ title: "Error", description: error.message || "Failed to delete.", variant: "destructive" }),
+    });
   };
 
   const resetForm = () => {
