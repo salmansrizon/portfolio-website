@@ -12,12 +12,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { createRepository } from '@/integrations/supabase/repository';
+import { careerPrepQuestionConfig } from '@/adapters/entityConfigs';
 import {
   Loader2, Plus, Edit, Trash2, Database, Users, Download,
   GraduationCap, CircleUser, Code2, ListChecks, BookOpen,
   FolderTree, Clock, Tags, X, ChevronRight, ChevronDown, Sparkles
 } from 'lucide-react';
-import type { CareerPrepQuestion, QuestionType, MCQOption } from '@/hooks/useCareerPrep';
+import type { CareerPrepQuestion } from '@/hooks/useCareerPrep';
+
+const careerPrepRepository = createRepository(careerPrepQuestionConfig);
 
 // ─── helper maps ──────────────────────────────────────────────────────────────
 const Q_TYPE_META: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
@@ -37,14 +41,17 @@ const DIFFICULTY_COLORS: Record<string, string> = {
 
 // ─── component ────────────────────────────────────────────────────────────────
 const CareerPrepManager = () => {
-  const [questions, setQuestions]       = React.useState<CareerPrepQuestion[]>([]);
   const [appUsers, setAppUsers]         = React.useState<any[]>([]);
-  const [loading, setLoading]           = React.useState(true);
   const [saving, setSaving]             = React.useState(false);
   const [editingQ, setEditingQ]         = React.useState<CareerPrepQuestion | null>(null);
   const [dialogOpen, setDialogOpen]     = React.useState(false);
   const [expandedRoots, setExpandedRoots] = React.useState<Set<string>>(new Set());
   const { toast } = useToast();
+
+  const { data: questions = [], isLoading: loading } = careerPrepRepository.useFindAll();
+  const { mutate: deleteQuestion } = careerPrepRepository.useDelete();
+  const { mutate: createQuestion } = careerPrepRepository.useCreate();
+  const { mutate: updateQuestion } = careerPrepRepository.useUpdate();
 
   const { register, handleSubmit, reset, watch, control, setValue } = useForm<any>({
     defaultValues: {
@@ -59,28 +66,15 @@ const CareerPrepManager = () => {
   });
 
   const { fields: optionFields } = useFieldArray({ control, name: 'options' });
-  const questionType: QuestionType = watch('question_type');
+  const questionType: any = watch('question_type');
   const isRoot = questionType === 'root';
   const isMCQ  = questionType === 'mcq';
   const isCode = questionType === 'code';
 
-  // ── fetch ────────────────────────────────────────────────────────────────
-  React.useEffect(() => { fetchData(); }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    await Promise.all([fetchQuestions(), fetchUsers()]);
-    setLoading(false);
-  };
-
-  const fetchQuestions = async () => {
-    const { data, error } = await (supabase as any)
-      .from('careerprep_questions')
-      .select('*')
-      .order('order_index', { ascending: true })
-      .order('created_at',  { ascending: false });
-    if (!error) setQuestions(data || []);
-  };
+  // ── fetch users (for seed data) ──────────────────────────────────────────
+  React.useEffect(() => {
+    (supabase as any).from('students').select('id,full_name,email,created_at').then(({ data }: any) => setAppUsers(data || []));
+  }, []);
 
   const fetchUsers = async () => {
     const [{ data: students }, { data: guests }] = await Promise.all([
@@ -288,20 +282,37 @@ INSERT INTO ecom_orders (customer_id, amount, order_date) VALUES (1, 5000, CURRE
         correct_option:   raw.question_type === 'mcq' ? raw.correct_option : null,
       };
 
-      console.log("Prepared payload for Supabase:", payload);
+      console.log("Prepared payload:", payload);
 
-      const table = (supabase as any).from('careerprep_questions');
-      const { error, data } = editingQ
-        ? await table.update(payload).eq('id', editingQ.id).select()
-        : await table.insert([payload]).select();
-
-      if (error) {
-        console.error("Supabase operation error:", error);
-        throw error;
+      if (editingQ) {
+        updateQuestion(
+          { id: editingQ.id, item: payload },
+          {
+            onSuccess: () => {
+              toast({ title: 'Saved ✓', description: 'Question updated.' });
+              setDialogOpen(false);
+              setEditingQ(null);
+              reset();
+            },
+            onError: (err: any) => {
+              toast({ title: 'Error', description: err.message, variant: 'destructive' });
+            },
+          }
+        );
+      } else {
+        createQuestion(payload, {
+          onSuccess: () => {
+            toast({ title: 'Saved ✓', description: 'Question created.' });
+            setDialogOpen(false);
+            reset();
+          },
+          onError: (err: any) => {
+            toast({ title: 'Error', description: err.message, variant: 'destructive' });
+          },
+        });
       }
-      
-      console.log("Supabase operation success, data:", data);
-      
+      return;
+
       toast({ 
         title: 'Saved ✓', 
         description: editingQ ? 'Question updated successfully.' : 'New question created.' 
