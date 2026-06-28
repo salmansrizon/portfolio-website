@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -7,27 +6,17 @@ import { format } from "date-fns";
 import { CheckCircle2, XCircle, Search, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { createRepository } from "@/integrations/supabase/repository";
+import { courseEnrollmentConfig } from "@/adapters/entityConfigs";
+
+const enrollmentRepository = createRepository(courseEnrollmentConfig);
 
 export default function CourseEnrollmentManager() {
-  const [enrollments, setEnrollments] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchEnrollments();
-  }, []);
-
-  const fetchEnrollments = async () => {
-    setIsLoading(true);
-    try {
-      // Fetch enrollments and courses separately to avoid FK join RLS issues
-      const [enrollRes, coursesRes] = await Promise.all([
-        supabase
-          .from("course_enrollments")
-          .select("*")
-          .order("created_at", { ascending: false }),
-        supabase
+  const { data: enrollments = [], isLoading } = enrollmentRepository.useFindAll();
+  const { mutate: deleteEnrollment } = enrollmentRepository.useDelete();
           .from("courses")
           .select("id, title, is_free, price, discounted_price"),
       ]);
@@ -38,63 +27,25 @@ export default function CourseEnrollmentManager() {
         (coursesRes.data || []).map((c: any) => [c.id, c])
       );
 
-      const merged = (enrollRes.data || []).map((e: any) => ({
-        ...e,
-        course: coursesMap.get(e.course_id) || null,
-      }));
-
-      setEnrollments(merged);
-    } catch (error: any) {
-      console.error("Error fetching enrollments:", error);
-      toast({
-        title: "Error",
-        description: error?.message || "Failed to load enrollments.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+      const handleUpdateStatus = async (id: string, newStatus: string) => {
+    const { mutate: updateStatus } = enrollmentRepository.useUpdate();
+    updateStatus(
+      { id, item: { status: newStatus } },
+      {
+        onSuccess: () => toast({ title: "Success", description: `Enrollment status updated to ${newStatus}.` }),
+        onError: (error: any) => toast({ title: "Error", description: error?.message || "Failed to update.", variant: "destructive" }),
+      }
+    );
   };
 
-  const handleUpdateStatus = async (id: string, newStatus: string) => {
-    try {
-      const { error } = await supabase
-        .from("course_enrollments")
-        .update({ status: newStatus })
-        .eq("id", id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: `Enrollment status updated to ${newStatus}.`,
-      });
-      fetchEnrollments();
-    } catch (error: any) {
-      console.error("Error updating enrollment:", error);
-      toast({
-        title: "Error",
-        description: error?.message || "Failed to update enrollment status",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!window.confirm("Are you sure you want to delete this enrollment?")) return;
-    try {
-      const { error } = await supabase
-        .from("course_enrollments")
-        .delete()
-        .eq("id", id);
-      if (error) throw error;
-      toast({ title: "Success", description: "Enrollment deleted successfully." });
-      fetchEnrollments();
-    } catch (error: any) {
-      console.error("Error deleting enrollment:", error);
-      toast({ title: "Error", description: error?.message || "Failed to delete enrollment.", variant: "destructive" });
-    }
+    deleteEnrollment(id, {
+      onSuccess: () => toast({ title: "Success", description: "Enrollment deleted successfully." }),
+      onError: (error: any) => toast({ title: "Error", description: error?.message || "Failed to delete.", variant: "destructive" }),
+    });
   };
+
 
   const filteredEnrollments = enrollments.filter(e => 
     e.user_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
