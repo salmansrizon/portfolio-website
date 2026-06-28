@@ -308,3 +308,291 @@ export const blogPostConfig: EntityConfig<BlogPost> = {
     { name: 'categories', type: 'array', label: 'Categories' },
   ],
 };
+
+// ── Brand Logo ──────────────────────────────────────────────────────────────
+export const brandLogoSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().min(1, 'Name is required'),
+  logo_url: z.string().url().optional().or(z.literal('')),
+  website_url: z.string().url().optional().or(z.literal('')),
+  created_at: z.string().optional(),
+});
+
+export type BrandLogo = z.infer<typeof brandLogoSchema>;
+
+export const brandLogoConfig: EntityConfig<BrandLogo> = {
+  table: 'brand_logos',
+  schema: brandLogoSchema,
+  defaultSort: 'name',
+  realtime: false,
+  fields: [
+    { name: 'name', type: 'text', label: 'Name', required: true },
+    { name: 'logo_url', type: 'text', label: 'Logo URL' },
+    { name: 'website_url', type: 'text', label: 'Website URL' },
+  ],
+};
+
+// ── Instructor ──────────────────────────────────────────────────────────────
+export const instructorSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().min(1, 'Name is required'),
+  bio: z.string().optional(),
+  avatar_url: z.string().url().optional().or(z.literal('')),
+  created_at: z.string().optional(),
+});
+
+export type Instructor = z.infer<typeof instructorSchema>;
+
+export const instructorConfig: EntityConfig<Instructor> = {
+  table: 'instructors',
+  schema: instructorSchema,
+  defaultSort: 'name',
+  realtime: false,
+  fields: [
+    { name: 'name', type: 'text', label: 'Name', required: true },
+    { name: 'bio', type: 'textarea', label: 'Bio' },
+    { name: 'avatar_url', type: 'text', label: 'Avatar URL' },
+  ],
+};
+
+// ── Student ──────────────────────────────────────────────────────────────
+export const studentSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email().optional().or(z.literal('')),
+  avatar_url: z.string().url().optional().or(z.literal('')),
+  created_at: z.string().optional(),
+});
+
+export type Student = z.infer<typeof studentSchema>;
+
+export const studentConfig: EntityConfig<Student> = {
+  table: 'students',
+  schema: studentSchema,
+  defaultSort: 'name',
+  realtime: false,
+  fields: [
+    { name: 'name', type: 'text', label: 'Name', required: true },
+    { name: 'email', type: 'text', label: 'Email' },
+    { name: 'avatar_url', type: 'text', label: 'Avatar URL' },
+  ],
+};
+
+// ── Course ──────────────────────────────────────────────────────────────
+export const courseSchema = z.object({
+  id: z.string().uuid().optional(),
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().optional(),
+  thumbnail_url: z.string().url().optional().or(z.literal('')),
+  price: z.number().min(0).optional(),
+  is_published: z.boolean().default(false),
+  instructor_id: z.string().uuid().optional(),
+  created_at: z.string().optional(),
+});
+
+export type Course = z.infer<typeof courseSchema>;
+
+export const courseConfig: EntityConfig<Course> = {
+  table: 'courses',
+  schema: courseSchema,
+  defaultSort: 'created_at',
+  realtime: false,
+  fields: [
+    { name: 'title', type: 'text', label: 'Title', required: true },
+    { name: 'description', type: 'textarea', label: 'Description' },
+    { name: 'thumbnail_url', type: 'text', label: 'Thumbnail URL' },
+    { name: 'price', type: 'number', label: 'Price' },
+    { name: 'is_published', type: 'boolean', label: 'Published' },
+    { name: 'instructor_id', type: 'text', label: 'Instructor ID' },
+  ],
+};
+
+// ── Course Review ──────────────────────────────────────────────────────────────
+export const courseReviewSchema = z.object({
+  id: z.string().uuid().optional(),
+  course_id: z.string().uuid(),
+  student_id: z.string().uuid(),
+  rating: z.number().min(1).max(5),
+  comment: z.string().optional(),
+  created_at: z.string().optional(),
+});
+
+export type CourseReview = z.infer<typeof courseReviewSchema>;
+
+export const courseReviewConfig: EntityConfig<CourseReview> = {
+  table: 'course_reviews',
+  schema: courseReviewSchema,
+  defaultSort: 'created_at',
+  realtime: false,
+  fields: [
+    { name: 'course_id', type: 'text', label: 'Course ID', required: true },
+    { name: 'student_id', type: 'text', label: 'Student ID', required: true },
+    { name: 'rating', type: 'number', label: 'Rating (1-5)', required: true },
+    { name: 'comment', type: 'textarea', label: 'Comment' },
+  ],
+};
+
+// ── Course Category ──────────────────────────────────────────────────────────────
+export const courseCategorySchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().min(1, 'Name is required'),
+  description: z.string().optional(),
+  created_at: z.string().optional(),
+});
+
+export type CourseCategory = z.infer<typeof courseCategorySchema>;
+
+export const courseCategoryConfig: EntityConfig<CourseCategory> = {
+  table: 'course_categories',
+  schema: courseCategorySchema,
+  defaultSort: 'name',
+  realtime: false,
+  fields: [
+    { name: 'name', type: 'text', label: 'Name', required: true },
+    { name: 'description', type: 'textarea', label: 'Description' },
+  ],
+};
+
+// ── Course Enrollment ──────────────────────────────────────────────────────────────
+export const courseEnrollmentSchema = z.object({
+  id: z.string().uuid().optional(),
+  course_id: z.string().uuid(),
+  student_id: z.string().uuid(),
+  enrolled_at: z.string().optional(),
+  status: z.enum(['active', 'completed', 'cancelled']).default('active'),
+});
+
+export type CourseEnrollment = z.infer<typeof courseEnrollmentSchema>;
+
+export const courseEnrollmentConfig: EntityConfig<CourseEnrollment> = {
+  table: 'course_enrollments',
+  schema: courseEnrollmentSchema,
+  defaultSort: 'enrolled_at',
+  realtime: false,
+  fields: [
+    { name: 'course_id', type: 'text', label: 'Course ID', required: true },
+    { name: 'student_id', type: 'text', label: 'Student ID', required: true },
+    { name: 'status', type: 'select', label: 'Status', options: [
+      { label: 'Active', value: 'active' },
+      { label: 'Completed', value: 'completed' },
+      { label: 'Cancelled', value: 'cancelled' },
+    ]},
+  ],
+};
+
+// ── Session Booking ──────────────────────────────────────────────────────────────
+export const sessionBookingSchema = z.object({
+  id: z.string().uuid().optional(),
+  session_type_id: z.string().uuid(),
+  student_id: z.string().uuid(),
+  booking_date: z.string(),
+  booking_time: z.string(),
+  status: z.enum(['pending', 'confirmed', 'cancelled', 'completed']).default('pending'),
+  created_at: z.string().optional(),
+});
+
+export type SessionBooking = z.infer<typeof sessionBookingSchema>;
+
+export const sessionBookingConfig: EntityConfig<SessionBooking> = {
+  table: 'session_bookings',
+  schema: sessionBookingSchema,
+  defaultSort: 'booking_date',
+  realtime: false,
+  fields: [
+    { name: 'session_type_id', type: 'text', label: 'Session Type ID', required: true },
+    { name: 'student_id', type: 'text', label: 'Student ID', required: true },
+    { name: 'booking_date', type: 'text', label: 'Booking Date', required: true },
+    { name: 'booking_time', type: 'text', label: 'Booking Time', required: true },
+    { name: 'status', type: 'select', label: 'Status', options: [
+      { label: 'Pending', value: 'pending' },
+      { label: 'Confirmed', value: 'confirmed' },
+      { label: 'Cancelled', value: 'cancelled' },
+      { label: 'Completed', value: 'completed' },
+    ]},
+  ],
+};
+
+// ── Webinar ──────────────────────────────────────────────────────────────
+export const webinarSchema = z.object({
+  id: z.string().uuid().optional(),
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().optional(),
+  webinar_date: z.string(),
+  webinar_time: z.string(),
+  meeting_url: z.string().url().optional().or(z.literal('')),
+  is_published: z.boolean().default(false),
+  created_at: z.string().optional(),
+});
+
+export type Webinar = z.infer<typeof webinarSchema>;
+
+export const webinarConfig: EntityConfig<Webinar> = {
+  table: 'webinars',
+  schema: webinarSchema,
+  defaultSort: 'webinar_date',
+  realtime: false,
+  fields: [
+    { name: 'title', type: 'text', label: 'Title', required: true },
+    { name: 'description', type: 'textarea', label: 'Description' },
+    { name: 'webinar_date', type: 'text', label: 'Webinar Date', required: true },
+    { name: 'webinar_time', type: 'text', label: 'Webinar Time', required: true },
+    { name: 'meeting_url', type: 'text', label: 'Meeting URL' },
+    { name: 'is_published', type: 'boolean', label: 'Published' },
+  ],
+};
+
+// ── Roadmap ──────────────────────────────────────────────────────────────
+export const roadmapSchema = z.object({
+  id: z.string().uuid().optional(),
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().optional(),
+  duration_weeks: z.number().optional(),
+  is_published: z.boolean().default(false),
+  created_at: z.string().optional(),
+});
+
+export type Roadmap = z.infer<typeof roadmapSchema>;
+
+export const roadmapConfig: EntityConfig<Roadmap> = {
+  table: 'roadmaps',
+  schema: roadmapSchema,
+  defaultSort: 'created_at',
+  realtime: false,
+  fields: [
+    { name: 'title', type: 'text', label: 'Title', required: true },
+    { name: 'description', type: 'textarea', label: 'Description' },
+    { name: 'duration_weeks', type: 'number', label: 'Duration (weeks)' },
+    { name: 'is_published', type: 'boolean', label: 'Published' },
+  ],
+};
+
+// ── Course Content ──────────────────────────────────────────────────────────────
+export const courseContentSchema = z.object({
+  id: z.string().uuid().optional(),
+  course_id: z.string().uuid(),
+  title: z.string().min(1, 'Title is required'),
+  content_type: z.enum(['video', 'text', 'quiz']),
+  content_url: z.string().url().optional().or(z.literal('')),
+  order_index: z.number().default(0),
+  created_at: z.string().optional(),
+});
+
+export type CourseContent = z.infer<typeof courseContentSchema>;
+
+export const courseContentConfig: EntityConfig<CourseContent> = {
+  table: 'course_contents',
+  schema: courseContentSchema,
+  defaultSort: 'order_index',
+  realtime: false,
+  fields: [
+    { name: 'course_id', type: 'text', label: 'Course ID', required: true },
+    { name: 'title', type: 'text', label: 'Title', required: true },
+    { name: 'content_type', type: 'select', label: 'Content Type', options: [
+      { label: 'Video', value: 'video' },
+      { label: 'Text', value: 'text' },
+      { label: 'Quiz', value: 'quiz' },
+    ], required: true },
+    { name: 'content_url', type: 'text', label: 'Content URL' },
+    { name: 'order_index', type: 'number', label: 'Order Index' },
+  ],
+};
