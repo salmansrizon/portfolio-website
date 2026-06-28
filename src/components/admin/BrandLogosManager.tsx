@@ -1,40 +1,25 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
+import { Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, GripVertical, ExternalLink } from "lucide-react";
+import { createRepository } from "@/integrations/supabase/repository";
+import { brandLogoConfig } from "@/adapters/entityConfigs";
+import EntityFormDialog from "./EntityFormDialog";
 
-interface BrandLogo {
-  id: string;
-  name: string;
-  logo_url: string;
-  website_url: string | null;
-  hover_text: string | null;
-  order_index: number;
-  is_visible: boolean;
-}
+// Create repository instance for brand logos
+const brandLogoRepository = createRepository(brandLogoConfig);
 
 const BrandLogosManager = () => {
   const { toast } = useToast();
-  const [logos, setLogos] = useState<BrandLogo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ name: "", logo_url: "", website_url: "", hover_text: "" });
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingLogo, setEditingLogo] = useState(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const fetchLogos = async () => {
-    const { data } = await supabase
-      .from("brand_logos")
-      .select("*")
-      .order("order_index", { ascending: true });
-    if (data) setLogos(data as BrandLogo[]);
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchLogos(); }, []);
+  // Use repository hooks
+  const { data: logos = [], isLoading: loading } = brandLogoRepository.useFindAll();
+  const { mutate: deleteLogo, isPending: isDeleting } = brandLogoRepository.useDelete();
+  const { mutate: createLogo } = brandLogoRepository.useCreate();
+  const { mutate: updateLogo } = brandLogoRepository.useUpdate();
 
   const handleSave = async () => {
     if (!form.name || !form.logo_url) {
