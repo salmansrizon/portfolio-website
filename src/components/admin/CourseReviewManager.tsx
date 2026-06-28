@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,116 +12,58 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { createRepository } from "@/integrations/supabase/repository";
+import { courseReviewConfig } from "@/adapters/entityConfigs";
 
-interface CourseReview {
-  id: string;
-  course_id: string;
-  student_name: string;
-  student_email: string;
-  rating: number;
-  review_text: string | null;
-  is_approved: boolean;
-  created_at: string;
-}
-
-interface Course {
-  id: string;
-  title: string;
-}
+const reviewRepository = createRepository(courseReviewConfig);
 
 const CourseReviewManager = () => {
   const { toast } = useToast();
-  const [reviews, setReviews] = useState<CourseReview[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterCourse, setFilterCourse] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      // Fetch all reviews (admin can see all)
-      const { data: reviewsData, error: reviewsError } = await (supabase
-        .from("course_reviews" as any)
-        .select("*")
-        .order("created_at", { ascending: false }) as any);
+  const { data: reviews = [], isLoading: loading } = reviewRepository.useFindAll();
+  const { mutate: deleteReview } = reviewRepository.useDelete();
+  const { mutate: updateReview } = reviewRepository.useUpdate();
 
-      if (reviewsError) throw reviewsError;
-      setReviews((reviewsData || []) as CourseReview[]);
-
-      // Fetch courses for filter & display
-      const { data: coursesData } = await supabase
-        .from("courses")
-        .select("id, title")
-        .order("title");
-      setCourses((coursesData || []) as Course[]);
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to load reviews.", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const handleApprove = async (reviewId: string) => {
+  const handleApprove = (reviewId: string) => {
     setActionLoading(reviewId);
-    try {
-      const { error } = await (supabase
-        .from("course_reviews" as any)
-        .update({ is_approved: true })
-        .eq("id", reviewId) as any);
-      if (error) throw error;
-      setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, is_approved: true } : r));
-      toast({ title: "✅ Review Approved", description: "This review is now publicly visible." });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    } finally {
-      setActionLoading(null);
-    }
+    updateReview(
+      { id: reviewId, item: { is_approved: true } },
+      {
+        onSuccess: () => { toast({ title: "✅ Review Approved", description: "This review is now publicly visible." }); setActionLoading(null); },
+        onError: (err: any) => { toast({ title: "Error", description: err.message, variant: "destructive" }); setActionLoading(null); },
+      }
+    );
   };
 
-  const handleReject = async (reviewId: string) => {
+  const handleReject = (reviewId: string) => {
     setActionLoading(reviewId);
-    try {
-      const { error } = await (supabase
-        .from("course_reviews" as any)
-        .update({ is_approved: false })
-        .eq("id", reviewId) as any);
-      if (error) throw error;
-      setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, is_approved: false } : r));
-      toast({ title: "Review Hidden", description: "This review is now hidden from public." });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    } finally {
-      setActionLoading(null);
-    }
+    updateReview(
+      { id: reviewId, item: { is_approved: false } },
+      {
+        onSuccess: () => { toast({ title: "Review Hidden", description: "This review is now hidden from public." }); setActionLoading(null); },
+        onError: (err: any) => { toast({ title: "Error", description: err.message, variant: "destructive" }); setActionLoading(null); },
+      }
+    );
   };
 
-  const handleDelete = async (reviewId: string) => {
+  const handleDelete = (reviewId: string) => {
     if (!confirm("Are you sure you want to permanently delete this review?")) return;
     setActionLoading(reviewId);
-    try {
-      const { error } = await (supabase
-        .from("course_reviews" as any)
-        .delete()
-        .eq("id", reviewId) as any);
-      if (error) throw error;
-      setReviews(prev => prev.filter(r => r.id !== reviewId));
-      toast({ title: "Review Deleted", description: "The review has been permanently removed." });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    } finally {
+    deleteReview(reviewId, {
+      onSuccess: () => { toast({ title: "Review Deleted", description: "The review has been permanently removed." }); setActionLoading(null); },
+      onError: (err: any) => { toast({ title: "Error", description: err.message, variant: "destructive" }); setActionLoading(null); },
+    });
+  };
       setActionLoading(null);
     }
   };
 
   const getCourseName = (courseId: string) => {
-    return courses.find(c => c.id === courseId)?.title || "Unknown Course";
+    return courseId || "Unknown Course";
   };
 
   // Filter reviews
