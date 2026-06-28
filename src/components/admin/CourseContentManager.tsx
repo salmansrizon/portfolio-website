@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
@@ -39,64 +38,26 @@ const CONTENT_TYPES = [
 
 export default function CourseContentManager() {
   const { toast } = useToast();
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] = useState<any[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>("");
-  const [contents, setContents] = useState<Content[]>([]);
+  const [contents, setContents] = useState<any[]>([]);
   const [showContentDialog, setShowContentDialog] = useState(false);
-  const [editingContent, setEditingContent] = useState<Content | null>(null);
+  const [editingContent, setEditingContent] = useState<any>(null);
   
   const [contentForm, setContentForm] = useState({
     title: "",
     description: "",
     content_type: "video",
-    content_category: "lesson" as Content['content_category'],
+    content_category: "lesson" as any,
     order_index: 0,
     is_free: false,
     duration_minutes: 0,
   });
 
+  // Fetch courses on mount
   useEffect(() => {
-    fetchCourses();
+    supabase.from("courses").select("id, title").order("title").then(({ data }) => setCourses(data || []));
   }, []);
-
-  useEffect(() => {
-    if (selectedCourse) {
-      fetchContents();
-    }
-  }, [selectedCourse]);
-
-  const fetchCourses = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("courses")
-        .select("id, title")
-        .order("title");
-
-      if (error) throw error;
-      setCourses(data || []);
-    } catch (error) {
-      console.error("Error fetching courses:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load courses",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const fetchContents = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("course_content")
-        .select("*")
-        .eq("course_id", selectedCourse)
-        .order("order_index");
-
-      if (error) throw error;
-      setContents((data || []) as unknown as Content[]);
-    } catch (error) {
-      console.error("Error fetching contents:", error);
-      toast({
         title: "Error",
         description: "Failed to load contents",
         variant: "destructive",
