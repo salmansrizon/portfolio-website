@@ -3,13 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, X, UserPlus, Mail, Phone, Globe, GraduationCap, Linkedin } from "lucide-react";
+import { Plus, Edit, Trash2, UserPlus, Mail, Phone, Globe, GraduationCap, Linkedin } from "lucide-react";
+import { createRepository } from "@/integrations/supabase/repository";
+import { instructorConfig } from "@/adapters/entityConfigs";
+
+const instructorRepository = createRepository(instructorConfig);
 
 interface Instructor {
   id: string;
@@ -46,39 +48,15 @@ const initialFormData = {
 
 export default function InstructorManager() {
   const { toast } = useToast();
-  const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [formData, setFormData] = useState(initialFormData);
   const [editingInstructor, setEditingInstructor] = useState<Instructor | null>(null);
   const [showDialog, setShowDialog] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchInstructors();
-    fetchCourses();
-  }, []);
-
-  const fetchInstructors = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await (supabase.from("instructors" as any).select("*").order("created_at", { ascending: false }) as any);
-      if (error) throw error;
-      setInstructors((data || []) as Instructor[]);
-    } catch (error) {
-      console.error("Error fetching instructors:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchCourses = async () => {
-    try {
-      const { data } = await supabase.from("courses").select("id, title").order("title");
-      setCourses((data || []) as Course[]);
-    } catch (error) {
-      console.error("Error fetching courses:", error);
-    }
-  };
+  const { data: instructors = [], isLoading } = instructorRepository.useFindAll();
+  const { mutate: deleteInstructor } = instructorRepository.useDelete();
+  const { mutate: createInstructor } = instructorRepository.useCreate();
+  const { mutate: updateInstructor } = instructorRepository.useUpdate();
 
   const handleSubmit = async () => {
     if (!formData.name || !formData.email) {
@@ -86,35 +64,44 @@ export default function InstructorManager() {
       return;
     }
 
-    try {
-      const payload: any = {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone || null,
-        bio: formData.bio || null,
-        specialization: formData.specialization || null,
-        avatar_url: formData.avatar_url || null,
-        website: formData.website || null,
-        linkedin_url: formData.linkedin_url || null,
-        is_active: formData.is_active,
-        assigned_courses: formData.assigned_courses,
-      };
+    const payload = {
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone || null,
+      bio: formData.bio || null,
+      specialization: formData.specialization || null,
+      avatar_url: formData.avatar_url || null,
+      website: formData.website || null,
+      linkedin_url: formData.linkedin_url || null,
+      is_active: formData.is_active,
+      assigned_courses: formData.assigned_courses,
+    };
 
-      if (editingInstructor) {
-        const { error } = await (supabase.from("instructors" as any).update(payload).eq("id", editingInstructor.id) as any);
-        if (error) throw error;
-        toast({ title: "Success", description: "Instructor updated successfully." });
-      } else {
-        const { error } = await (supabase.from("instructors" as any).insert(payload) as any);
-        if (error) throw error;
-        toast({ title: "Success", description: "Instructor created successfully." });
-      }
-
-      setShowDialog(false);
-      resetForm();
-      fetchInstructors();
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to save instructor.", variant: "destructive" });
+    if (editingInstructor) {
+      updateInstructor(
+        { id: editingInstructor.id, item: payload },
+        {
+          onSuccess: () => {
+            toast({ title: "Success", description: "Instructor updated successfully." });
+            setShowDialog(false);
+            resetForm();
+          },
+          onError: (error: any) => {
+            toast({ title: "Error", description: error.message || "Failed to update.", variant: "destructive" });
+          },
+        }
+      );
+    } else {
+      createInstructor(payload, {
+        onSuccess: () => {
+          toast({ title: "Success", description: "Instructor created successfully." });
+          setShowDialog(false);
+          resetForm();
+        },
+        onError: (error: any) => {
+          toast({ title: "Error", description: error.message || "Failed to create.", variant: "destructive" });
+        },
+      });
     }
   };
 
@@ -135,16 +122,12 @@ export default function InstructorManager() {
     setShowDialog(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!confirm("Are you sure you want to delete this instructor?")) return;
-    try {
-      const { error } = await (supabase.from("instructors" as any).delete().eq("id", id) as any);
-      if (error) throw error;
-      toast({ title: "Deleted", description: "Instructor removed successfully." });
-      fetchInstructors();
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to delete.", variant: "destructive" });
-    }
+    deleteInstructor(id, {
+      onSuccess: () => toast({ title: "Deleted", description: "Instructor removed successfully." }),
+      onError: (error: any) => toast({ title: "Error", description: error.message || "Failed to delete.", variant: "destructive" }),
+    });
   };
 
   const resetForm = () => {
