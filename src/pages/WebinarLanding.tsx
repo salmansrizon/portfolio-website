@@ -120,13 +120,19 @@ const WebinarLanding = () => {
                 payment_status: webinar.is_free ? 'confirmed' : 'pending',
                 payment_method: webinar.is_free ? 'free' : data.paymentMethod,
                 payment_transaction_id: webinar.is_free ? null : data.transactionId,
-                booking_date: new Date().toISOString()
+                booking_date: new Date().toISOString(),
+                promo_code: data.promoCode || null,
+                discount_amount: data.discountAmount || null,
             };
 
             const { error } = await (supabase.from('webinar_bookings' as any).insert([bookingPayload]) as any);
 
             if (error) {
                 throw error;
+            }
+
+            if (data.promoCode) {
+                await (supabase.rpc('increment_promo_code_usage' as any, { code_input: data.promoCode }) as any);
             }
 
             toast({ title: "Success!", description: webinar.is_free ? "Registration confirmed!" : "Payment submitted for verification." });
@@ -554,7 +560,9 @@ const WebinarLanding = () => {
                 onOpenChange={setIsRegistering}
                 title={webinar.title}
                 isFree={webinar.is_free}
-                priceLabel={webinar.price}
+                priceLabel={webinar.is_free ? undefined : `৳${webinar.price}`}
+                originalAmount={webinar.is_free ? undefined : webinar.price}
+                webinarId={id}
                 onSubmit={handleRegister}
                 extraFields={[
                     { key: 'role', label: 'Role / Profession', placeholder: 'e.g. Student, UX Designer', required: true }

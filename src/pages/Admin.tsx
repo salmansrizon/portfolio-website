@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, Settings, FileText, Award, Briefcase, MessageSquare, User, FolderKanban, GraduationCap, CalendarCheck, LayoutDashboard, Menu, Image, UserCheck, Users, Star, Database, Calendar, Map } from 'lucide-react';
+import { LogOut, Settings, FileText, Award, Briefcase, MessageSquare, User, FolderKanban, GraduationCap, CalendarCheck, LayoutDashboard, Menu, Image, UserCheck, Users, Star, Database, Calendar, Map, Tag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -26,6 +26,7 @@ import CourseReviewManager from '@/components/admin/CourseReviewManager';
 import CareerPrepManager from '@/components/admin/CareerPrepManager';
 import WebinarManager from '@/components/admin/WebinarManager';
 import RoadmapManager from '@/components/admin/RoadmapManager';
+import PromoCodeManager from '@/components/admin/PromoCodeManager';
 
 const navigation = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -41,6 +42,7 @@ const navigation = [
   { id: 'students', label: 'Students', icon: Users },
   { id: 'sessions', label: 'Sessions', icon: CalendarCheck },
   { id: 'reviews', label: 'Reviews', icon: Star },
+  { id: 'promo-codes', label: 'Promo Codes', icon: Tag },
   { id: 'brand-logos', label: 'Brand Logos', icon: Image },
   { id: 'career-prep', label: 'Career Prep', icon: Database },
   { id: 'roadmaps', label: 'Roadmaps', icon: Map },
@@ -96,6 +98,8 @@ const Admin = () => {
         return <SessionBookingManager />;
       case 'reviews':
         return <CourseReviewManager />;
+      case 'promo-codes':
+        return <PromoCodeManager />;
       case 'brand-logos':
         return <BrandLogosManager />;
       case 'career-prep':

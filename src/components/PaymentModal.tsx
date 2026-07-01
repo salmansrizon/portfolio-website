@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useBookingData } from "@/hooks/useBookingData";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import {
   CreditCard,
@@ -16,6 +17,7 @@ import {
   User,
   Mail,
   Smartphone,
+  X,
 } from "lucide-react";
 
 // ── Types ────────────────────────────────────────────────────────
@@ -35,6 +37,22 @@ export interface PaymentModalData {
   transactionId: string;
   /** Any extra field values keyed by PaymentModalField.key */
   extras: Record<string, string>;
+  /** Applied promo code, if any */
+  promoCode?: string;
+  /** Amount deducted by the applied promo code, in the same currency unit as originalAmount */
+  discountAmount?: number;
+}
+
+interface PromoCode {
+  id: string;
+  code: string;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
+  scope: "all" | "course" | "webinar";
+  course_id: string | null;
+  webinar_id: string | null;
+  max_uses: number | null;
+  used_count: number;
 }
 
 export interface PaymentModalProps {
@@ -46,6 +64,12 @@ export interface PaymentModalProps {
   isFree: boolean;
   /** Price string to display, e.g. "৳499" or "Free" */
   priceLabel?: string;
+  /** Numeric price before any discount. Required for the promo code field to appear. */
+  originalAmount?: number;
+  /** Course this booking is for, used to validate course-scoped promo codes */
+  courseId?: string;
+  /** Webinar this booking is for, used to validate webinar-scoped promo codes */
+  webinarId?: string;
   /** Extra form fields beyond Name / Email / WhatsApp */
   extraFields?: PaymentModalField[];
   /** Called with form data when user clicks submit.
@@ -64,6 +88,9 @@ const PaymentModal = ({
   title,
   isFree,
   priceLabel,
+  originalAmount,
+  courseId,
+  webinarId,
   extraFields = [],
   onSubmit,
   submitLabel = "Confirm Booking",
@@ -84,6 +111,68 @@ const PaymentModal = ({
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  // ── Promo code state ─────────────────────────────────────────
+  const [promoInput, setPromoInput] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
+  const [promoError, setPromoError] = useState("");
+  const [applyingPromo, setApplyingPromo] = useState(false);
+
+  const discountAmount = appliedPromo && originalAmount
+    ? Math.min(
+        appliedPromo.discount_type === "percentage"
+          ? (originalAmount * appliedPromo.discount_value) / 100
+          : appliedPromo.discount_value,
+        originalAmount
+      )
+    : 0;
+  const finalAmount = originalAmount != null ? Math.max(originalAmount - discountAmount, 0) : undefined;
+
+  const handleApplyPromo = async () => {
+    const codeInput = promoInput.trim().toUpperCase();
+    if (!codeInput) return;
+    setApplyingPromo(true);
+    setPromoError("");
+    try {
+      const { data, error } = await (supabase
+        .from("promo_codes" as any)
+        .select("*")
+        .eq("code", codeInput)
+        .maybeSingle() as any);
+
+      if (error || !data) {
+        setPromoError("Invalid promo code.");
+        return;
+      }
+
+      const code = data as PromoCode;
+      if (code.max_uses != null && code.used_count >= code.max_uses) {
+        setPromoError("This promo code has reached its usage limit.");
+        return;
+      }
+      if (code.scope === "course" && code.course_id !== courseId) {
+        setPromoError("This promo code isn't valid for this item.");
+        return;
+      }
+      if (code.scope === "webinar" && code.webinar_id !== webinarId) {
+        setPromoError("This promo code isn't valid for this item.");
+        return;
+      }
+
+      setAppliedPromo(code);
+      setPromoInput("");
+      toast({ title: "Promo applied!", description: `${code.code} has been applied to your order.` });
+    } catch (err) {
+      setPromoError("Couldn't validate promo code. Please try again.");
+    } finally {
+      setApplyingPromo(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setPromoError("");
+  };
+
   // Reset state when modal opens/closes
   useEffect(() => {
     if (!open) {
@@ -99,6 +188,9 @@ const PaymentModal = ({
         setTimeLeft("");
         setSubmitting(false);
         setSuccess(false);
+        setPromoInput("");
+        setAppliedPromo(null);
+        setPromoError("");
       }, 300);
       return () => clearTimeout(t);
     }
@@ -171,6 +263,8 @@ const PaymentModal = ({
         paymentMethod,
         transactionId,
         extras,
+        promoCode: appliedPromo?.code,
+        discountAmount: appliedPromo ? discountAmount : undefined,
       });
       setSuccess(true);
     } catch (err: any) {
@@ -297,6 +391,56 @@ const PaymentModal = ({
                 </div>
               ))}
 
+              {/* ── Promo Code (paid only) ────────────────────── */}
+              {!isFree && originalAmount != null && originalAmount > 0 && (
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-semibold flex items-center gap-1.5">
+                    <Tag className="h-3.5 w-3.5" /> Promo Code
+                  </Label>
+                  {appliedPromo ? (
+                    <div className="flex items-center justify-between rounded-lg border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-800 px-3 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-emerald-500 hover:bg-emerald-500 text-white">{appliedPromo.code}</Badge>
+                        <span className="text-sm text-emerald-700 dark:text-emerald-300 font-medium">
+                          {appliedPromo.discount_type === "percentage"
+                            ? `${appliedPromo.discount_value}% off`
+                            : `৳${appliedPromo.discount_value} off`}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRemovePromo}
+                        className="text-muted-foreground hover:text-destructive transition-colors"
+                        aria-label="Remove promo code"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Input
+                        className="uppercase"
+                        placeholder="Enter code"
+                        value={promoInput}
+                        onChange={(e) => { setPromoInput(e.target.value); setPromoError(""); }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") { e.preventDefault(); handleApplyPromo(); }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleApplyPromo}
+                        disabled={!promoInput.trim() || applyingPromo}
+                      >
+                        {applyingPromo ? "Checking..." : "Apply"}
+                      </Button>
+                    </div>
+                  )}
+                  {promoError && <p className="text-xs text-destructive font-medium">{promoError}</p>}
+                </div>
+              )}
+
               {/* ── Payment Section (paid only) ─────────────── */}
               {!isFree && (
                 <div className="space-y-2">
@@ -338,14 +482,22 @@ const PaymentModal = ({
                           <Timer className="h-4 w-4" />
                           {timeLeft} left to pay
                         </div>
-                        {priceLabel && (
+                        {appliedPromo && originalAmount != null ? (
+                          <div className="text-right">
+                            <div className="text-xs text-muted-foreground line-through">৳{originalAmount}</div>
+                            <h4 className="font-semibold text-foreground text-sm">
+                              Fee:{" "}
+                              <span className="font-bold text-lg text-primary">৳{finalAmount}</span>
+                            </h4>
+                          </div>
+                        ) : priceLabel ? (
                           <h4 className="font-semibold text-foreground text-sm">
                             Fee:{" "}
                             <span className="font-bold text-lg text-primary">
                               {priceLabel}
                             </span>
                           </h4>
-                        )}
+                        ) : null}
                       </div>
 
                       <p className="text-2xl font-mono font-bold text-foreground">

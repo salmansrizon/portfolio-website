@@ -286,7 +286,7 @@ export default function CourseDetails() {
   const handleEnrollment = async (data: PaymentModalData) => {
     setEnrolling(true);
     try {
-      const { error } = await supabase
+      const { error } = await (supabase
         .from("course_enrollments")
         .insert({
           course_id: courseId,
@@ -297,9 +297,15 @@ export default function CourseDetails() {
           institute_name: data.extras.institute_name,
           payment_method: course?.is_free ? 'free' : data.paymentMethod,
           transaction_id: course?.is_free ? null : data.transactionId,
-        });
+          promo_code: data.promoCode || null,
+          discount_amount: data.discountAmount || null,
+        } as any) as any);
 
       if (error) throw error;
+
+      if (data.promoCode) {
+        await (supabase.rpc("increment_promo_code_usage" as any, { code_input: data.promoCode }) as any);
+      }
 
       toast({
         title: "Success",
@@ -850,6 +856,8 @@ export default function CourseDetails() {
           title={`Enroll in ${course.title}`}
           isFree={isFree}
           priceLabel={isFree ? undefined : (course.price ? `৳${course.discounted_price || course.price}` : undefined)}
+          originalAmount={isFree ? undefined : (course.discounted_price || course.price)}
+          courseId={course.id}
           onSubmit={handleEnrollment}
           extraFields={[
             { key: 'profession', label: 'Profession', placeholder: 'e.g. Student, Engineer', required: true },
