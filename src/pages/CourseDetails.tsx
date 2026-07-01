@@ -15,7 +15,6 @@ import {
   GraduationCap, Rocket, BookOpen, Layout, Linkedin,
   HelpCircle, Quote, ArrowRight, Zap
 } from "lucide-react";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -341,24 +340,36 @@ export default function CourseDetails() {
     return (
       <div className="min-h-screen bg-background pb-20">
         <Navbar />
-        <div className="pt-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row gap-12">
-            <div className="w-full lg:w-[65%]">
-              <Skeleton className="h-4 w-32 mb-6" />
-              <Skeleton className="h-10 w-full mb-6" />
-              <div className="flex gap-4 mb-6">
-                <Skeleton className="h-6 w-16" />
-                <Skeleton className="h-6 w-24" />
-                <Skeleton className="h-6 w-32" />
+
+        <div className="relative bg-gradient-to-br from-slate-950 via-slate-900 to-[#0c1a3d] overflow-hidden">
+          <div className="relative z-10 pt-28 pb-16 lg:pb-40 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="lg:w-[62%]">
+              <Skeleton className="h-4 w-32 mb-6 bg-white/10" />
+              <div className="flex gap-2 mb-5">
+                <Skeleton className="h-6 w-16 rounded-full bg-white/10" />
+                <Skeleton className="h-6 w-24 rounded-full bg-white/10" />
               </div>
-              <Skeleton className="h-24 w-full mb-10" />
-              <div className="flex gap-4 border-y py-4 mb-8">
-                <Skeleton className="h-12 w-12 rounded-full" />
+              <Skeleton className="h-10 w-full mb-4 bg-white/10" />
+              <Skeleton className="h-6 w-2/3 mb-6 bg-white/10" />
+              <div className="flex gap-4 mb-6">
+                <Skeleton className="h-5 w-16 bg-white/10" />
+                <Skeleton className="h-5 w-24 bg-white/10" />
+                <Skeleton className="h-5 w-32 bg-white/10" />
+              </div>
+              <div className="flex gap-4 pt-4 border-t border-white/10">
+                <Skeleton className="h-11 w-11 rounded-full bg-white/10" />
                 <div className="flex-1">
-                   <Skeleton className="h-4 w-32 mb-2" />
-                   <Skeleton className="h-4 w-48" />
+                   <Skeleton className="h-3 w-24 mb-2 bg-white/10" />
+                   <Skeleton className="h-4 w-40 bg-white/10" />
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col lg:flex-row gap-12">
+            <div className="w-full lg:w-[65%] pt-8 lg:pt-10">
               <div className="grid grid-cols-4 gap-4 mb-8">
                 <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-10 w-full" />
@@ -368,7 +379,7 @@ export default function CourseDetails() {
               <Skeleton className="h-64 w-full rounded-2xl" />
             </div>
             <div className="w-full lg:w-[35%]">
-              <div className="sticky top-24 border rounded-2xl overflow-hidden shadow-sm">
+              <div className="lg:-mt-32 xl:-mt-40 sticky top-24 border rounded-2xl overflow-hidden shadow-sm bg-card">
                 <Skeleton className="aspect-video w-full" />
                 <div className="p-7 space-y-6">
                   <Skeleton className="h-10 w-1/2" />
@@ -401,89 +412,92 @@ export default function CourseDetails() {
   const isFree = course.is_free || (!course.price && !course.discounted_price);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-accent/30 pb-20 relative">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-400/8 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-accent/5 rounded-full blur-2xl animate-pulse delay-2000"></div>
-      </div>
-      <div className="absolute inset-0 bg-gradient-to-t from-background/50 via-transparent to-background/30 pointer-events-none"></div>
-
+    <div className="min-h-screen bg-background pb-20">
       <Navbar />
-      
-      <div className="pt-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
-          
-          <div className="w-full lg:w-[65%]">
-            <div className="flex items-center flex-wrap text-sm text-muted-foreground mb-6 gap-2">
-              <Link to="/courses" className="hover:text-primary transition-colors font-medium">All courses</Link>
+
+      {/* Premium Hero Banner */}
+      <div className="relative bg-gradient-to-br from-slate-950 via-slate-900 to-[#0c1a3d] overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 right-0 w-[32rem] h-[32rem] bg-primary/25 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4"></div>
+          <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+        </div>
+
+        <div className="relative z-10 pt-28 pb-16 lg:pb-40 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="lg:w-[62%]">
+            <div className="flex items-center flex-wrap text-sm text-slate-400 mb-5 gap-2">
+              <Link to="/courses" className="hover:text-white transition-colors font-medium">All courses</Link>
               <ChevronRight className="w-4 h-4 shrink-0" />
-              <span className="text-foreground font-semibold">{course.title}</span>
-              <div className="ml-auto w-full sm:w-auto mt-2 sm:mt-0 flex gap-2">
-                <Badge variant="secondary" className="bg-pink-100 text-pink-700 hover:bg-pink-200 dark:bg-pink-900/30 dark:text-pink-300 pointer-events-none capitalize">
-                  {course.difficulty_level || 'beginner'}
-                </Badge>
-              </div>
+              <span className="text-slate-200 font-medium truncate">{course.title}</span>
             </div>
 
-            {isFree && (
-              <Badge className="mb-3 inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 text-xs font-bold border-none shadow-md w-fit">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-                </span>
-                FREE
+            <div className="flex items-center flex-wrap gap-2 mb-5">
+              {isFree && (
+                <Badge className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 text-xs font-bold border-none shadow-md">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                  </span>
+                  FREE
+                </Badge>
+              )}
+              <Badge variant="secondary" className="bg-white/10 text-white hover:bg-white/15 border border-white/10 pointer-events-none capitalize backdrop-blur-sm">
+                {course.difficulty_level || 'beginner'}
               </Badge>
-            )}
+            </div>
 
-            <h1 className="text-3xl md:text-4xl lg:text-[42px] font-bold text-foreground mb-4 leading-tight">
+            <h1 className="text-3xl md:text-4xl lg:text-[44px] font-extrabold text-white mb-4 leading-tight tracking-tight">
               {course.title}
             </h1>
-            
-            <div className="flex items-center flex-wrap gap-4 text-sm mb-6">
-              <div className="flex items-center gap-1.5 text-yellow-600 dark:text-yellow-500 font-bold bg-yellow-100/50 dark:bg-yellow-500/10 px-2 py-0.5 rounded">
+
+            <p className="text-lg text-slate-300 mb-6 leading-relaxed max-w-2xl">
+              {course.short_description || `${course.description.substring(0, 160)}...`}
+            </p>
+
+            <div className="flex items-center flex-wrap gap-x-5 gap-y-2 text-sm mb-6">
+              <div className="flex items-center gap-1.5 text-amber-400 font-bold">
                 <Star className="w-4 h-4 fill-current" />
                 <span>{course.rating || '4.8'}</span>
               </div>
-              <span className="text-muted-foreground underline decoration-dotted underline-offset-4 cursor-help">{Math.floor((course.student_count || 0) * 0.82)} reviews</span>
-              <span className="text-foreground font-medium">{course.student_count || 0} students</span>
+              <span className="text-slate-400 underline decoration-dotted underline-offset-4 cursor-help">{Math.floor((course.student_count || 0) * 0.82)} reviews</span>
+              <span className="text-slate-200 font-medium">{course.student_count || 0} students</span>
+              <div className="flex items-center gap-1.5 text-slate-400">
+                <Info className="w-3.5 h-3.5" />
+                Updated {new Date(course.updated_at || Date.now()).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+              </div>
             </div>
-            
-            <p className="text-lg text-muted-foreground mb-8 leading-relaxed max-w-3xl">
-              {course.short_description || `${course.description.substring(0, 160)}...`}
-            </p>
-            
-          <Card className="border border-primary/20 shadow-card hover:shadow-hover transition-shadow mb-8">
-            <CardHeader className="flex flex-col sm:flex-row items-center gap-4 p-6">
-              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-primary/20 bg-primary/10 flex items-center justify-center">
+
+            <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+              <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-white/20 bg-white/10 flex items-center justify-center shrink-0">
                 {instructor?.avatar_url ? (
                   <img src={instructor.avatar_url} alt={instructor.name} className="w-full h-full object-cover" />
                 ) : (
-                  <UserCircle className="w-8 h-8 text-primary" />
+                  <UserCircle className="w-6 h-6 text-white/70" />
                 )}
               </div>
-              <div className="flex-1">
-                <p className="text-sm text-primary font-semibold uppercase tracking-wider mb-1">Instructor</p>
-                <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
+              <div>
+                <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Created by</p>
+                <p className="text-white font-bold text-sm flex items-center gap-2">
                   {instructor?.name || 'To be announced'}
                   {instructor?.specialization && (
-                    <span className="text-muted-foreground text-sm font-medium">• {instructor.specialization}</span>
+                    <span className="text-slate-400 font-medium text-xs">• {instructor.specialization}</span>
                   )}
-                </h3>
-                {instructor?.linkedin_url && (
-                  <a href={instructor.linkedin_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-2 text-sm font-medium text-[#0077b5] hover:bg-[#0077b5] hover:text-white bg-[#0077b5]/10 px-3 py-1 rounded-full border border-[#0077b5]/20 transition-colors">
-                    <Linkedin className="w-4 h-4" />
-                    <span>VIEW PROFILE</span>
-                  </a>
-                )}
+                </p>
               </div>
-              <div className="flex items-center gap-1 text-muted-foreground bg-muted/10 px-3 py-1 rounded-full text-sm border border-border/30">
-                <Info className="w-3 h-3" />
-                <span>Updated {new Date(course.updated_at || Date.now()).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}</span>
-              </div>
-            </CardHeader>
-          </Card>
-            
+              {instructor?.linkedin_url && (
+                <a href={instructor.linkedin_url} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex items-center gap-1.5 text-xs font-semibold text-[#4db5ff] hover:text-white bg-white/5 hover:bg-[#0077b5] px-3 py-1.5 rounded-full border border-white/10 transition-colors">
+                  <Linkedin className="w-3.5 h-3.5" />
+                  <span>Profile</span>
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
+
+          <div className="w-full lg:w-[65%] pt-8 lg:pt-10">
             <div className="flex space-x-1 border border-border/50 bg-muted/30 rounded-xl p-1 mb-8 overflow-x-auto no-scrollbar relative min-h-[48px]">
               {['overview', 'content', 'reviews', 'faq'].map(tab => (
                 <button
@@ -716,6 +730,7 @@ export default function CourseDetails() {
           </div>
 
           <div className="w-full lg:w-[35%] relative">
+            <div className="lg:-mt-32 xl:-mt-40">
             <div className="bg-card border border-border/50 rounded-3xl overflow-hidden shadow-xl sticky top-28">
               <div className="relative aspect-video bg-slate-900 group">
                 {playingVideo && course.video_url ? (
@@ -825,6 +840,7 @@ export default function CourseDetails() {
                  </div>
                </div>
              )}
+            </div>
            </div>
         </div>
 
