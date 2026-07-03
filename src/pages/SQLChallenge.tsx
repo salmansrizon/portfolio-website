@@ -317,20 +317,20 @@ const SQLChallenge = () => {
     <div className="h-screen flex flex-col items-center justify-center bg-background text-foreground p-8 relative overflow-hidden">
        <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[100px] animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[100px] animate-pulse delay-700"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[100px] animate-pulse delay-700"></div>
        </div>
        <div className="relative z-10 w-full max-w-md text-center">
           <div ref={resultsRef} className="p-8 space-y-6 bg-card/60 backdrop-blur-2xl border border-border/80 rounded-[32px] shadow-2xl">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mb-4 mx-auto shadow-lg shadow-green-500/20"><CheckCircle2 className="w-8 h-8 text-white" /></div>
+              <div className="w-16 h-16 bg-gradient-to-br from-success to-emerald-600 rounded-2xl flex items-center justify-center mb-4 mx-auto shadow-lg shadow-success/20"><CheckCircle2 className="w-8 h-8 text-white" /></div>
               <div className="space-y-1">
                 <h2 className="text-2xl font-black uppercase tracking-tight italic text-foreground">Mission Complete</h2>
                 <p className="text-[11px] text-muted-foreground font-medium px-4">Finalized <span className="text-primary font-bold uppercase">{question?.title}</span>.</p>
               </div>
               <div className="grid grid-cols-3 gap-2">
                  {[
-                   { label: 'XP', value: `+${missionResults?.xpEarned || 0}`, icon: <Star className="w-3.5 h-3.5 text-yellow-500" /> },
-                   { label: 'Time', value: formatTime(missionResults?.timeTaken || 0), icon: <Timer className="w-3.5 h-3.5 text-blue-500" /> },
-                   { label: 'Score', value: `${missionResults?.accuracy || 0}%`, icon: <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> }
+                   { label: 'XP', value: `+${missionResults?.xpEarned || 0}`, icon: <Star className="w-3.5 h-3.5 text-warning" /> },
+                   { label: 'Time', value: formatTime(missionResults?.timeTaken || 0), icon: <Timer className="w-3.5 h-3.5 text-primary" /> },
+                   { label: 'Score', value: `${missionResults?.accuracy || 0}%`, icon: <CheckCircle2 className="w-3.5 h-3.5 text-success" /> }
                  ].map((stat, i) => (
                    <div key={i} className="bg-background/40 p-3 rounded-xl border border-border/40 flex flex-col items-center">
                       <div className="mb-0.5 opacity-80">{stat.icon}</div>
@@ -348,9 +348,9 @@ const SQLChallenge = () => {
                          <div key={q.id} className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-background/30 group hover:bg-background/50 transition-colors">
                             <div className="flex items-center gap-2 overflow-hidden">
                                {isCorrect ? (
-                                 <CheckCircle2 className="w-2.5 h-2.5 text-green-500 shrink-0" />
+                                 <CheckCircle2 className="w-2.5 h-2.5 text-success shrink-0" />
                                ) : (
-                                 <AlertCircle className="w-2.5 h-2.5 text-red-500 shrink-0" />
+                                 <AlertCircle className="w-2.5 h-2.5 text-danger shrink-0" />
                                )}
                                <span className={`text-[9px] font-bold truncate ${isCorrect ? 'text-foreground/80' : 'text-red-400'}`}>{q.title}</span>
                             </div>
@@ -371,7 +371,7 @@ const SQLChallenge = () => {
                     </Button>
                  </div>
                  {Object.values(stepResults).includes(false) && (
-                   <Button variant="ghost" className="h-11 w-full rounded-xl border border-dashed border-red-500/30 text-red-500/80 hover:bg-red-500/5 text-xs font-black uppercase tracking-widest gap-2" onClick={() => {
+                   <Button variant="ghost" className="h-11 w-full rounded-xl border border-dashed border-danger/30 text-danger/80 hover:bg-danger/5 text-xs font-black uppercase tracking-widest gap-2" onClick={() => {
                      setCursorIdx(0);
                      setIsMissionComplete(false);
                      setStepResults({});
@@ -397,7 +397,7 @@ const SQLChallenge = () => {
       <MemoizedNavbar />
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[100px] animate-pulse delay-700"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-primary/5 rounded-full blur-[100px] animate-pulse delay-700"></div>
       </div>
       <div className="flex-1 flex flex-col relative z-10 pt-16 overflow-hidden">
         <div className="h-2 shrink-0 flex gap-1.5 px-3 py-1 bg-muted/30 border-b border-border/50">
@@ -408,7 +408,7 @@ const SQLChallenge = () => {
             
             let colorClass = 'bg-muted/50';
             if (isCurrent) colorClass = 'bg-primary shadow-[0_0_15px_rgba(var(--primary),0.6)]';
-            else if (isCompleted) colorClass = wasCorrect ? 'bg-green-500' : 'bg-red-500';
+            else if (isCompleted) colorClass = wasCorrect ? 'bg-success' : 'bg-danger';
 
             return (
               <div 
@@ -510,7 +510,7 @@ activeTab === 'schema' ? <pre className="bg-muted rounded-xl p-5 border border-b
                           {submissions.map(sub => (
                             <div key={sub.id} className="p-4 rounded-xl border border-border bg-muted/30 hover:bg-muted/50 transition-colors">
                               <div className="flex justify-between items-center mb-3">
-                                <Badge className={sub.is_correct ? 'bg-green-500/10 text-green-500 border-0' : 'bg-red-500/10 text-red-500 border-0'}>{sub.is_correct ? 'ACCEPTED' : 'FAILED'}</Badge>
+                                <Badge className={sub.is_correct ? 'bg-success/10 text-success border-0' : 'bg-danger/10 text-danger border-0'}>{sub.is_correct ? 'ACCEPTED' : 'FAILED'}</Badge>
                                 <span className="text-[9px] font-mono text-muted-foreground">{new Date(sub.created_at).toLocaleString()}</span>
                               </div>
                               <pre className="text-[11px] font-mono text-foreground/80 bg-muted/50 p-3 rounded-lg border border-border/50 overflow-x-auto whitespace-pre-wrap">{sub.submitted_code}</pre>
@@ -640,7 +640,7 @@ activeTab === 'schema' ? <pre className="bg-muted rounded-xl p-5 border border-b
             return revealedCount > 0 ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">
-                  <AlertCircle className="w-3 h-3 text-yellow-500" />
+                  <AlertCircle className="w-3 h-3 text-warning" />
                   {revealedCount}/{hints.length} Hint{revealedCount !== 1 ? 's' : ''} Unlocked
                 </div>
                 <div className="space-y-2">
@@ -650,9 +650,9 @@ activeTab === 'schema' ? <pre className="bg-muted rounded-xl p-5 border border-b
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.1 }}
-                      className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3 flex items-start gap-3"
+                      className="bg-warning/5 border border-warning/20 rounded-xl p-3 flex items-start gap-3"
                     >
-                      <span className="shrink-0 w-6 h-6 rounded-lg bg-yellow-500/10 text-yellow-500 flex items-center justify-center text-[10px] font-black">{i + 1}</span>
+                      <span className="shrink-0 w-6 h-6 rounded-lg bg-warning/10 text-warning flex items-center justify-center text-[10px] font-black">{i + 1}</span>
                       <p className="text-sm text-foreground/80 pt-0.5">{hint}</p>
                     </motion.div>
                   ))}
