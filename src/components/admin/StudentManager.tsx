@@ -264,19 +264,19 @@ export default function StudentManager() {
         </Card>
         <Card>
           <CardContent className="pt-4 pb-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-500/10 flex items-center justify-center"><Users className="w-5 h-5 text-emerald-600" /></div>
+            <div className="w-10 h-10 rounded-lg bg-success-soft dark:bg-success/10 flex items-center justify-center"><Users className="w-5 h-5 text-success" /></div>
             <div><p className="text-2xl font-bold">{students.filter(s => s.is_active).length}</p><p className="text-xs text-muted-foreground">Active</p></div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-500/10 flex items-center justify-center"><BookOpen className="w-5 h-5 text-orange-600" /></div>
+            <div className="w-10 h-10 rounded-lg bg-warning-soft dark:bg-warning/10 flex items-center justify-center"><BookOpen className="w-5 h-5 text-warning" /></div>
             <div><p className="text-2xl font-bold">{students.reduce((acc, s) => acc + (s.enrolled_courses?.length || 0), 0)}</p><p className="text-xs text-muted-foreground">Enrollments</p></div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-500/10 flex items-center justify-center"><GraduationCap className="w-5 h-5 text-blue-600" /></div>
+            <div className="w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary/10 flex items-center justify-center"><GraduationCap className="w-5 h-5 text-primary" /></div>
             <div><p className="text-2xl font-bold">{courses.length}</p><p className="text-xs text-muted-foreground">Courses</p></div>
           </CardContent>
         </Card>

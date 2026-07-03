@@ -180,9 +180,9 @@ const CourseReviewManager = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Approved</p>
-                <p className="text-3xl font-extrabold text-green-600 mt-1">{approvedCount}</p>
+                <p className="text-3xl font-extrabold text-success mt-1">{approvedCount}</p>
               </div>
-              <CheckCircle2 className="w-8 h-8 text-green-500/30" />
+              <CheckCircle2 className="w-8 h-8 text-success/30" />
             </div>
           </CardContent>
         </Card>
@@ -191,9 +191,9 @@ const CourseReviewManager = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Pending</p>
-                <p className="text-3xl font-extrabold text-amber-600 mt-1">{pendingCount}</p>
+                <p className="text-3xl font-extrabold text-warning mt-1">{pendingCount}</p>
               </div>
-              <EyeOff className="w-8 h-8 text-amber-500/30" />
+              <EyeOff className="w-8 h-8 text-warning/30" />
             </div>
           </CardContent>
         </Card>
@@ -248,7 +248,7 @@ const CourseReviewManager = () => {
       ) : (
         <div className="space-y-4">
           {filteredReviews.map(review => (
-            <Card key={review.id} className={`bg-card/60 backdrop-blur-sm border-border/50 transition-all hover:shadow-md ${!review.is_approved ? 'border-l-4 border-l-amber-400' : 'border-l-4 border-l-green-400'}`}>
+            <Card key={review.id} className={`bg-card/60 backdrop-blur-sm border-border/50 transition-all hover:shadow-md ${!review.is_approved ? 'border-l-4 border-l-warning' : 'border-l-4 border-l-success'}`}>
               <CardContent className="p-5">
                 <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                   {/* Avatar & Info */}
@@ -259,7 +259,7 @@ const CourseReviewManager = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-foreground">{review.student_name}</span>
-                        <Badge variant={review.is_approved ? "default" : "secondary"} className={`text-[10px] px-1.5 py-0 ${review.is_approved ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400 hover:bg-green-200' : 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 hover:bg-amber-200'}`}>
+                        <Badge variant={review.is_approved ? "default" : "secondary"} className={`text-[10px] px-1.5 py-0 ${review.is_approved ? 'bg-success-soft text-success dark:bg-success/10 dark:text-success hover:bg-success-soft' : 'bg-warning-soft text-warning dark:bg-warning/10 dark:text-warning hover:bg-warning-soft'}`}>
                           {review.is_approved ? "Approved" : "Pending"}
                         </Badge>
                       </div>
@@ -273,7 +273,7 @@ const CourseReviewManager = () => {
                       {/* Stars */}
                       <div className="flex items-center gap-0.5 mt-2">
                         {[1, 2, 3, 4, 5].map(s => (
-                          <Star key={s} className={`w-4 h-4 ${s <= review.rating ? 'text-yellow-500 fill-yellow-500' : 'text-muted-foreground/20'}`} />
+                          <Star key={s} className={`w-4 h-4 ${s <= review.rating ? 'text-warning fill-warning' : 'text-muted-foreground/20'}`} />
                         ))}
                         <span className="text-xs text-muted-foreground ml-2">{review.rating}/5</span>
                       </div>
@@ -297,7 +297,7 @@ const CourseReviewManager = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="text-amber-600 border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-500/10 gap-1.5"
+                        className="text-warning border-warning-soft hover:bg-warning-soft dark:hover:bg-warning/10 gap-1.5"
                         onClick={() => handleReject(review.id)}
                         disabled={actionLoading === review.id}
                       >
@@ -307,7 +307,7 @@ const CourseReviewManager = () => {
                     ) : (
                       <Button
                         size="sm"
-                        className="bg-green-600 hover:bg-green-700 text-white gap-1.5"
+                        className="bg-success hover:bg-success text-white gap-1.5"
                         onClick={() => handleApprove(review.id)}
                         disabled={actionLoading === review.id}
                       >
@@ -318,7 +318,7 @@ const CourseReviewManager = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="text-red-600 border-red-200 hover:bg-red-50 dark:hover:bg-red-500/10 gap-1.5"
+                      className="text-danger border-danger-soft hover:bg-danger-soft dark:hover:bg-danger/10 gap-1.5"
                       onClick={() => handleDelete(review.id)}
                       disabled={actionLoading === review.id}
                     >
