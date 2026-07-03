@@ -265,7 +265,7 @@ export default function WebinarManager() {
                                                 <td className="p-3">
                                                     <Badge className={cn(
                                                         "text-[10px] font-black uppercase tracking-wider h-6 px-3",
-                                                        b.payment_status === 'confirmed' ? "bg-green-500 hover:bg-green-600 text-white" : "bg-orange-500 hover:bg-orange-600 text-white"
+                                                        b.payment_status === 'confirmed' ? "bg-success hover:bg-success/90 text-success-foreground" : "bg-warning hover:bg-warning/90 text-warning-foreground"
                                                     )}>
                                                         {b.payment_status}
                                                     </Badge>

@@ -1320,14 +1320,14 @@ export default function CourseManager() {
                                             {content.description.split('\n').map((line, idx) => {
                                               if (line.trim().startsWith('✅')) {
                                                 return (
-                                                  <div key={idx} className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                                                  <div key={idx} className="flex items-center gap-2 text-success">
                                                     <span>✅</span>
                                                     <span>{line.replace('✅', '').trim()}</span>
                                                   </div>
                                                 );
                                               } else if (line.trim().startsWith('📌')) {
                                                 return (
-                                                  <div key={idx} className="flex items-center gap-2 font-medium text-blue-700 dark:text-blue-400 mt-3 first:mt-0">
+                                                  <div key={idx} className="flex items-center gap-2 font-medium text-primary mt-3 first:mt-0">
                                                     <span>📌</span>
                                                     <span>{line.replace('📌', '').trim()}</span>
                                                   </div>
@@ -1462,7 +1462,7 @@ export default function CourseManager() {
                                             {content.content_type}
                                           </Badge>
                                           {content.is_free && (
-                                            <Badge variant="outline" className="text-xs text-green-600">
+                                            <Badge variant="outline" className="text-xs text-success">
                                               Free
                                             </Badge>
                                           )}
