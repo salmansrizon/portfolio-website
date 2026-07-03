@@ -127,11 +127,11 @@ export function BlogCarousel({ blogs, title = 'Latest Blogs', maxItems = 6 }: Bl
                           <h3 className="relative z-10 text-lg font-bold mb-2 line-clamp-2 min-h-[56px] flex items-start transition-colors group-hover:text-primary">
                             {blog.title}
                           </h3>
-                          <p className="relative z-10 text-sm text-gray-500 dark:text-gray-400 mb-3 line-clamp-2 flex-1 min-h-[40px]">
+                          <p className="relative z-10 text-sm text-muted-foreground mb-3 line-clamp-2 flex-1 min-h-[40px]">
                             {blog.excerpt}
                           </p>
                           <div className="relative z-10 flex items-center justify-between mt-auto pt-2">
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                            <span className="text-xs text-muted-foreground">
                               {format(new Date(blog.created_at), 'MMM d, yyyy')}
                             </span>
                             <Button 
@@ -174,7 +174,7 @@ export function BlogCarousel({ blogs, title = 'Latest Blogs', maxItems = 6 }: Bl
             </Carousel>
           ) : (
             <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400">No blogs found in this category.</p>
+              <p className="text-muted-foreground">No blogs found in this category.</p>
             </div>
           )}
         </div>

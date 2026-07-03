@@ -47,7 +47,7 @@ export function ContentEditor({
         <button
           type="button"
           onClick={() => formatText('bold')}
-          className="px-2 py-1 hover:bg-gray-100 rounded"
+          className="px-2 py-1 hover:bg-muted rounded"
           title="Bold"
         >
           <strong>B</strong>
@@ -55,7 +55,7 @@ export function ContentEditor({
         <button
           type="button"
           onClick={() => formatText('italic')}
-          className="px-2 py-1 hover:bg-gray-100 rounded"
+          className="px-2 py-1 hover:bg-muted rounded"
           title="Italic"
         >
           <em>I</em>
@@ -63,7 +63,7 @@ export function ContentEditor({
         <button
           type="button"
           onClick={() => formatText('underline')}
-          className="px-2 py-1 hover:bg-gray-100 rounded"
+          className="px-2 py-1 hover:bg-muted rounded"
           title="Underline"
         >
           <u>U</u>
@@ -83,7 +83,7 @@ export function ContentEditor({
         <button
           type="button"
           onClick={() => formatText('insertUnorderedList')}
-          className="px-2 py-1 hover:bg-gray-100 rounded"
+          className="px-2 py-1 hover:bg-muted rounded"
           title="Bullet List"
         >
           • List
@@ -91,7 +91,7 @@ export function ContentEditor({
         <button
           type="button"
           onClick={() => formatText('insertOrderedList')}
-          className="px-2 py-1 hover:bg-gray-100 rounded"
+          className="px-2 py-1 hover:bg-muted rounded"
           title="Numbered List"
         >
           1. List
