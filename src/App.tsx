@@ -23,6 +23,7 @@ import RoadmapsPage from "./pages/RoadmapsPage";
 import RoadmapDetailPage from "./pages/RoadmapDetailPage";
 import FloatingContact from "@/components/FloatingContact";
 import WebinarFloatingButton from "@/components/WebinarFloatingButton";
+import UIPreview from "./pages/UIPreview";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,7 @@ const App = () => (
               <Route path="/webinar/:id" element={<WebinarLanding />} />
               <Route path="/roadmaps" element={<RoadmapsPage />} />
               <Route path="/roadmaps/:slug" element={<RoadmapDetailPage />} />
+              {import.meta.env.DEV && <Route path="/ui-preview" element={<UIPreview />} />}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
