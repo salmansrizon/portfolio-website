@@ -29,24 +29,24 @@ import RoadmapManager from '@/components/admin/RoadmapManager';
 import PromoCodeManager from '@/components/admin/PromoCodeManager';
 
 const navigation = [
-  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { id: 'webinars', label: 'Webinars', icon: Calendar },
-  { id: 'sections', label: 'Sections', icon: Settings },
-  { id: 'blogs', label: 'Blogs', icon: FileText },
-  { id: 'services', label: 'Services', icon: Briefcase },
-  { id: 'certifications', label: 'Certifications', icon: Award },
-  { id: 'projects', label: 'Projects', icon: FolderKanban },
-  { id: 'testimonials', label: 'Testimonials', icon: MessageSquare },
-  { id: 'courses', label: 'Courses', icon: GraduationCap },
-  { id: 'instructors', label: 'Instructors', icon: UserCheck },
-  { id: 'students', label: 'Students', icon: Users },
-  { id: 'sessions', label: 'Sessions', icon: CalendarCheck },
-  { id: 'reviews', label: 'Reviews', icon: Star },
-  { id: 'promo-codes', label: 'Promo Codes', icon: Tag },
-  { id: 'brand-logos', label: 'Brand Logos', icon: Image },
-  { id: 'career-prep', label: 'Career Prep', icon: Database },
-  { id: 'roadmaps', label: 'Roadmaps', icon: Map },
-  { id: 'profile', label: 'Profile', icon: User },
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard, group: 'Overview' },
+  { id: 'courses', label: 'Courses', icon: GraduationCap, group: 'Content' },
+  { id: 'sections', label: 'Sections', icon: Settings, group: 'Content' },
+  { id: 'blogs', label: 'Blogs', icon: FileText, group: 'Content' },
+  { id: 'webinars', label: 'Webinars', icon: Calendar, group: 'Content' },
+  { id: 'roadmaps', label: 'Roadmaps', icon: Map, group: 'Content' },
+  { id: 'projects', label: 'Projects', icon: FolderKanban, group: 'Content' },
+  { id: 'certifications', label: 'Certifications', icon: Award, group: 'Content' },
+  { id: 'services', label: 'Services', icon: Briefcase, group: 'Content' },
+  { id: 'testimonials', label: 'Testimonials', icon: MessageSquare, group: 'Content' },
+  { id: 'brand-logos', label: 'Brand Logos', icon: Image, group: 'Content' },
+  { id: 'career-prep', label: 'Career Prep', icon: Database, group: 'Content' },
+  { id: 'promo-codes', label: 'Promo Codes', icon: Tag, group: 'Commerce' },
+  { id: 'sessions', label: 'Sessions', icon: CalendarCheck, group: 'Commerce' },
+  { id: 'reviews', label: 'Reviews', icon: Star, group: 'Commerce' },
+  { id: 'instructors', label: 'Instructors', icon: UserCheck, group: 'People' },
+  { id: 'students', label: 'Students', icon: Users, group: 'People' },
+  { id: 'profile', label: 'Profile', icon: User, group: 'Account' },
 ];
 
 const Admin = () => {
@@ -133,26 +133,33 @@ const Admin = () => {
   };
 
   const NavLinks = ({ onClick }: { onClick?: () => void }) => (
-    <nav className="flex flex-col gap-2 p-4">
-      {navigation.map((item) => {
+    <nav className="flex flex-col gap-1 p-4">
+      {navigation.map((item, i) => {
         const Icon = item.icon;
         const isActive = activeTab === item.id;
+        const showGroup = i === 0 || navigation[i - 1].group !== item.group;
         return (
-          <button
-            key={item.id}
-            onClick={() => {
-              setActiveTab(item.id);
-              if (onClick) onClick();
-            }}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
-              isActive 
-                ? 'bg-primary text-primary-foreground font-medium shadow-sm' 
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            <Icon className="h-5 w-5" />
-            {item.label}
-          </button>
+          <div key={item.id}>
+            {showGroup && (
+              <p className="px-3 pt-4 pb-1 first:pt-1 font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                {item.group}
+              </p>
+            )}
+            <button
+              onClick={() => {
+                setActiveTab(item.id);
+                if (onClick) onClick();
+              }}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                isActive
+                  ? 'bg-primary text-primary-foreground font-medium shadow-sm'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              {item.label}
+            </button>
+          </div>
         );
       })}
     </nav>

@@ -169,7 +169,7 @@ const WebinarLanding = () => {
             {/* Background Blur Elements (Matching Hero) */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
                 <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[100px] animate-pulse"></div>
-                <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-400/10 rounded-full blur-[100px] animate-pulse delay-1000"></div>
+                <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-primary/10 rounded-full blur-[100px] animate-pulse delay-1000"></div>
                 <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-accent/5 rounded-full blur-[80px] animate-pulse delay-2000"></div>
             </div>
 
@@ -300,8 +300,8 @@ const WebinarLanding = () => {
                         {/* Status Floaties */}
                         <Card className="absolute -top-6 -right-6 bg-white/90 dark:bg-slate-900/90 border-primary/10 shadow-2xl p-4 rounded-2xl animate-float backdrop-blur-md z-30">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center ring-4 ring-green-500/5">
-                                    <Users className="h-5 w-5 text-green-500" />
+                                <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center ring-4 ring-success/5">
+                                    <Users className="h-5 w-5 text-success" />
                                 </div>
                                 <div className="pr-4">
                                     <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black leading-none mb-1">Registered</p>
@@ -544,7 +544,7 @@ const WebinarLanding = () => {
                             Don't miss out on this live session. Reserve your spot today before it's too late.
                         </p>
                         <Button
-                            className="bg-white text-primary hover:bg-slate-100 h-16 px-12 text-xl font-black rounded-full shadow-2xl transition-all hover:scale-105"
+                            className="bg-white text-primary hover:bg-white/90 h-16 px-12 text-xl font-black rounded-full shadow-2xl transition-all hover:scale-105"
                             onClick={() => setIsRegistering(true)}
                         >
                             {webinar.is_free ? 'Join for Free' : 'Claim My Seat Now'} <ArrowRight className="ml-3 h-6 w-6" />
