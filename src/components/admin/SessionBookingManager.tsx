@@ -259,12 +259,12 @@ const SessionBookingManager = () => {
   // ── Helpers ────────────────────────────────────────────────
   const statusBadge = (status: string) => {
     const colors: Record<string, string> = {
-      pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-      submitted: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      verified: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      confirmed: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      rejected: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-      cancelled: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+      pending: 'bg-warning-soft text-warning dark:bg-warning dark:text-warning-soft',
+      submitted: 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary',
+      verified: 'bg-success-soft text-success dark:bg-success dark:text-success-soft',
+      confirmed: 'bg-success-soft text-success dark:bg-success dark:text-success-soft',
+      rejected: 'bg-danger-soft text-danger dark:bg-danger dark:text-danger-soft',
+      cancelled: 'bg-danger-soft text-danger dark:bg-danger dark:text-danger-soft',
       completed: 'bg-primary/10 text-primary',
     };
     return <Badge className={colors[status] || 'bg-muted text-muted-foreground'}>{status}</Badge>;
@@ -322,10 +322,10 @@ const SessionBookingManager = () => {
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button size="sm" variant="ghost" title="Confirm" onClick={() => handleQuickStatusUpdate(b.id, 'confirmed', 'verified')}>
-                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <CheckCircle className="h-4 w-4 text-success" />
                         </Button>
                         <Button size="sm" variant="ghost" title="Reject" onClick={() => handleQuickStatusUpdate(b.id, 'cancelled', 'rejected')}>
-                          <XCircle className="h-4 w-4 text-red-600" />
+                          <XCircle className="h-4 w-4 text-danger" />
                         </Button>
                       </div>
                     </TableCell>
@@ -381,7 +381,7 @@ const SessionBookingManager = () => {
                       {newType.is_paid ? (
                         <span className="text-primary font-medium">Paid Session</span>
                       ) : (
-                        <span className="text-green-600 dark:text-green-400 font-medium">Free Session</span>
+                        <span className="text-success dark:text-success font-medium">Free Session</span>
                       )}
                     </Label>
                   </div>
@@ -403,7 +403,7 @@ const SessionBookingManager = () => {
                     {st.is_paid ? (
                       <Badge className="bg-primary/10 text-primary text-xs">Paid — ৳{st.fee}</Badge>
                     ) : (
-                      <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-xs">Free</Badge>
+                      <Badge className="bg-success-soft text-success dark:bg-success dark:text-success text-xs">Free</Badge>
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">{st.description}</p>
@@ -836,7 +836,7 @@ const SessionBookingManager = () => {
                     {editingType.is_paid ? (
                       <span className="text-primary">Paid Session</span>
                     ) : (
-                      <span className="text-green-600 dark:text-green-400">Free Session</span>
+                      <span className="text-success dark:text-success">Free Session</span>
                     )}
                   </Label>
                   <p className="text-xs text-muted-foreground mt-0.5">
