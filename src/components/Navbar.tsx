@@ -36,12 +36,12 @@ const Navbar = () => {
   }
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/70 backdrop-blur-xl border-b border-primary/10 shadow-sm">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-panel/80 backdrop-blur-xl border-b border-border shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center gap-3 md:gap-0">
-            <Link to="/" className="text-xl sm:text-2xl font-bold text-primary hover:text-primary/80 transition-colors">
+            <Link to="/" className="font-display text-xl sm:text-2xl font-bold text-primary hover:text-primary/80 transition-colors">
               Salman Sakib
             </Link>
             
@@ -123,7 +123,7 @@ const Navbar = () => {
           {/* Actions */}
           <div className="hidden md:flex items-center space-x-4">
             <ThemeToggle />
-            <Button className="bg-primary hover:bg-primary-hover text-primary-foreground animate-pulse [animation-duration:3s] hover:animate-none font-semibold transition-all duration-500" asChild>
+            <Button className="bg-primary hover:bg-primary-hover text-primary-foreground animate-pulse [animation-duration:3s] hover:animate-none font-semibold rounded-xl shadow-pop transition-all duration-500" asChild>
               <Link to="/book-session">
                 Book Session
               </Link>
