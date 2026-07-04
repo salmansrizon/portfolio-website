@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Pencil, Trash2, Eye, Map, Upload, Loader2, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, Map, Upload, Loader2, X, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface Roadmap {
@@ -30,6 +30,7 @@ const RoadmapManager = () => {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRoadmap, setEditingRoadmap] = useState<Roadmap | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const [form, setForm] = useState({
@@ -135,28 +136,50 @@ const RoadmapManager = () => {
         <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" /> Add Roadmap</Button>
       </div>
 
-      <div className="grid gap-4">
-        {roadmaps.map((r) => (
-          <Card key={r.id}>
-            <CardContent className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <Map className="h-5 w-5 text-primary" />
-                <div>
-                  <h3 className="font-semibold">{r.title}</h3>
-                  <p className="text-sm text-muted-foreground">{r.description || 'No description'}</p>
-                </div>
-                <Badge variant={r.status === 'published' ? 'default' : 'secondary'}>{r.status}</Badge>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="icon" asChild>
-                  <a href={`/roadmaps/${r.slug}`} target="_blank"><Eye className="h-4 w-4" /></a>
-                </Button>
-                <Button variant="outline" size="icon" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
-                <Button variant="destructive" size="icon" onClick={() => handleDelete(r.id)}><Trash2 className="h-4 w-4" /></Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="grid gap-2">
+        {roadmaps.map((r) => {
+          const isExpanded = expandedId === r.id;
+          return (
+            <Card key={r.id}>
+              <CardContent className="p-0">
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between gap-3 p-4 text-left"
+                  onClick={() => setExpandedId(isExpanded ? null : r.id)}
+                  aria-expanded={isExpanded}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Map className="h-5 w-5 text-primary shrink-0" />
+                    <h3 className="font-semibold truncate">{r.title}</h3>
+                    <Badge variant={r.status === 'published' ? 'default' : 'secondary'}>{r.status}</Badge>
+                  </div>
+                  <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                </button>
+                {isExpanded && (
+                  <div className="border-t px-4 py-4 space-y-3">
+                    <div className="grid gap-2 text-sm">
+                      <p><span className="font-medium text-muted-foreground">Description: </span>{r.description || 'No description'}</p>
+                      <p><span className="font-medium text-muted-foreground">Slug: </span><code className="text-xs bg-muted px-1.5 py-0.5 rounded">/roadmaps/{r.slug}</code></p>
+                      <p><span className="font-medium text-muted-foreground">Status: </span>{r.status}</p>
+                    </div>
+                    {r.markdown_content && (
+                      <pre className="text-xs text-muted-foreground bg-muted/50 rounded-md p-3 max-h-40 overflow-auto whitespace-pre-wrap">
+                        {r.markdown_content.slice(0, 600)}{r.markdown_content.length > 600 ? '…' : ''}
+                      </pre>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={`/roadmaps/${r.slug}`} target="_blank"><Eye className="h-4 w-4 mr-1.5" /> View</a>
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => openEdit(r)}><Pencil className="h-4 w-4 mr-1.5" /> Edit</Button>
+                      <Button variant="destructive" size="sm" onClick={() => handleDelete(r.id)}><Trash2 className="h-4 w-4 mr-1.5" /> Delete</Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
         {roadmaps.length === 0 && (
           <p className="text-center text-muted-foreground py-8">No roadmaps yet. Create one to get started.</p>
         )}
