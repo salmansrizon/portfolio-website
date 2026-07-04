@@ -1,6 +1,7 @@
 import { datasets } from "./datasets";
 import { tranche1 } from "./tranche1";
 import { tranche2 } from "./tranche2";
+import { tranche3 } from "./tranche3";
 import type { SeedQuestion } from "./types";
 
 export type { SeedQuestion } from "./types";
@@ -14,7 +15,7 @@ export interface ExpandedSeedQuestion extends Omit<SeedQuestion, "dataset"> {
   solution_sql: string;
 }
 
-const tranches: SeedQuestion[][] = [tranche1, tranche2];
+const tranches: SeedQuestion[][] = [tranche1, tranche2, tranche3];
 
 function expand(q: SeedQuestion): ExpandedSeedQuestion {
   const world = q.dataset ? datasets[q.dataset] : undefined;
