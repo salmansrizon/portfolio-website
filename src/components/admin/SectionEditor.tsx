@@ -463,7 +463,7 @@ const SectionEditor = () => {
       </div>
 
       <Tabs defaultValue="hero" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
+        <TabsList className="grid w-full h-auto grid-cols-2 sm:grid-cols-4 lg:grid-cols-8">
           {sections.map((section) => (
             <TabsTrigger key={section.id} value={section.section_name}>
               <div className="text-xs">

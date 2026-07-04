@@ -210,7 +210,7 @@ const RoadmapManager = () => {
                 placeholder={`Brief intro paragraph.\n\n## Section heading\n\n- Bullet one\n- Bullet two\n\n**Bold text** and [links](https://example.com).`}
               />
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="text-sm font-medium">Status</label>
                 <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
