@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { resolveCoursePricing } from "@/lib/pricing";
 import Navbar from "@/components/Navbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ interface Course {
   difficulty_level: string;
   discount_percentage: number | null;
   discounted_price: number | null;
+  promo_only?: boolean;
   category_id: string | null;
   start_date?: string;
   course_type?: string;
@@ -406,14 +408,17 @@ export default function CoursesPage() {
                                 </span>
                                 FREE
                               </span>
-                            ) : course.discounted_price ? (
-                              <>
-                                <span>৳ {course.discounted_price}</span>
-                                <span className="text-xs text-muted-foreground line-through font-normal">৳ {course.price}</span>
-                              </>
-                            ) : (
-                              <span>৳ {course.price}</span>
-                            )}
+                            ) : (() => {
+                              const pricing = resolveCoursePricing(course);
+                              return (
+                                <>
+                                  <span>৳ {pricing.listPrice}</span>
+                                  {pricing.strikethroughPrice != null && (
+                                    <span className="text-xs text-muted-foreground line-through font-normal">৳ {pricing.strikethroughPrice}</span>
+                                  )}
+                                </>
+                              );
+                            })()}
                           </div>
                         </div>
                         

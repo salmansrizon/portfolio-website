@@ -621,6 +621,7 @@ export type Database = {
           is_free: boolean
           learning_outcomes: string[] | null
           price: number | null
+          promo_only: boolean
           rating: number | null
           requirements: string[] | null
           short_description: string | null
@@ -651,6 +652,7 @@ export type Database = {
           is_free?: boolean
           learning_outcomes?: string[] | null
           price?: number | null
+          promo_only?: boolean
           rating?: number | null
           requirements?: string[] | null
           short_description?: string | null
@@ -681,6 +683,7 @@ export type Database = {
           is_free?: boolean
           learning_outcomes?: string[] | null
           price?: number | null
+          promo_only?: boolean
           rating?: number | null
           requirements?: string[] | null
           short_description?: string | null

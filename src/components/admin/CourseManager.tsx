@@ -150,6 +150,7 @@ interface FormData {
   discounted_price: number | null;
   discount_percentage: number | null;
   is_free: boolean;
+  promo_only: boolean;
   status: string // Changed to string to handle form input more flexibly;
   difficulty_level: string // Changed to string to handle form input more flexibly;
   duration_hours: number | null;
@@ -179,6 +180,7 @@ const initialFormData: FormData = {
   discounted_price: null,
   discount_percentage: null,
   is_free: false,
+  promo_only: false,
   status: 'draft',
   difficulty_level: 'beginner',
   duration_hours: null,
@@ -263,6 +265,7 @@ export default function CourseManager() {
             discounted_price: formData.discounted_price,
             discount_percentage: formData.discount_percentage,
             is_free: formData.is_free,
+            promo_only: formData.promo_only,
             status: formData.status,
             difficulty_level: formData.difficulty_level,
             duration_hours: formData.duration_hours,
@@ -296,6 +299,7 @@ export default function CourseManager() {
             discounted_price: formData.discounted_price,
             discount_percentage: formData.discount_percentage,
             is_free: formData.is_free,
+            promo_only: formData.promo_only,
             status: formData.status,
             difficulty_level: formData.difficulty_level,
             duration_hours: formData.duration_hours,
@@ -676,6 +680,7 @@ export default function CourseManager() {
         discounted_price: courseData.discounted_price || null,
         discount_percentage: courseData.discount_percentage || null,
         is_free: Boolean(courseData.is_free),
+        promo_only: Boolean(courseData.promo_only),
         status: courseData.status || 'draft',
         difficulty_level: courseData.difficulty_level || 'beginner',
         duration_hours: courseData.duration_hours || null,
@@ -1033,6 +1038,21 @@ export default function CourseManager() {
                         onCheckedChange={(checked) => setFormData({ ...formData, is_free: checked })}
                       />
                       <Label htmlFor="is_free">Free Course</Label>
+                    </div>
+                    <div className="md:col-span-2 flex items-start gap-3 rounded-lg border p-4">
+                      <Switch
+                        id="promo_only"
+                        checked={formData.promo_only}
+                        onCheckedChange={(checked) => setFormData({ ...formData, promo_only: checked })}
+                      />
+                      <div>
+                        <Label htmlFor="promo_only">Promo-Only Pricing</Label>
+                        <p className="text-sm text-muted-foreground">
+                          ON: course lists at full price and only promo codes can discount it.
+                          OFF: the discounted price above is charged and promo codes are not accepted.
+                          Discounts never stack.
+                        </p>
+                      </div>
                     </div>
                     <div>
                       <Label htmlFor="category_id">Category</Label>

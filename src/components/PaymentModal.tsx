@@ -66,6 +66,9 @@ export interface PaymentModalProps {
   priceLabel?: string;
   /** Numeric price before any discount. Required for the promo code field to appear. */
   originalAmount?: number;
+  /** Whether promo-code entry is offered. Defaults to true.
+   *  Per ADR-0001, courses on Sale Pricing pass false — discounts never stack. */
+  promoAllowed?: boolean;
   /** Course this booking is for, used to validate course-scoped promo codes */
   courseId?: string;
   /** Webinar this booking is for, used to validate webinar-scoped promo codes */
@@ -89,6 +92,7 @@ const PaymentModal = ({
   isFree,
   priceLabel,
   originalAmount,
+  promoAllowed = true,
   courseId,
   webinarId,
   extraFields = [],
@@ -392,7 +396,7 @@ const PaymentModal = ({
               ))}
 
               {/* ── Promo Code (paid only) ────────────────────── */}
-              {!isFree && originalAmount != null && originalAmount > 0 && (
+              {!isFree && promoAllowed && originalAmount != null && originalAmount > 0 && (
                 <div className="space-y-1.5">
                   <Label className="text-sm font-semibold flex items-center gap-1.5">
                     <Tag className="h-3.5 w-3.5" /> Promo Code
