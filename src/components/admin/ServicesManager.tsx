@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
+import IconPicker from './IconPicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,7 +27,7 @@ const ServicesManager = () => {
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
-  const { register, handleSubmit, reset, control, setValue } = useForm({
+  const { register, handleSubmit, reset, control, setValue, watch } = useForm({
     defaultValues: {
       title: '',
       description: '',
@@ -206,12 +207,8 @@ const ServicesManager = () => {
               </div>
               
               <div>
-                <Label htmlFor="icon">Icon Name (Lucide React)</Label>
-                <Input
-                  id="icon"
-                  {...register('icon')}
-                  placeholder="e.g., BarChart3, Brain, Cloud"
-                />
+                <Label>Icon</Label>
+                <IconPicker value={watch('icon')} onChange={(name) => setValue('icon', name)} />
               </div>
               
               <div>
