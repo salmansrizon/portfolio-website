@@ -34,6 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { addMinutes } from "date-fns";
 import { cn } from "@/lib/utils";
 import PaymentModal, { PaymentModalData } from "@/components/PaymentModal";
+import { resolveCoursePricing } from "@/lib/pricing";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Course {
@@ -46,6 +47,7 @@ interface Course {
   discounted_price?: number;
   discount_percentage?: number;
   is_free: boolean;
+  promo_only?: boolean;
   difficulty_level?: string;
   duration_hours?: number;
   learning_outcomes?: string[];
@@ -62,6 +64,7 @@ interface Course {
   video_url?: string | null;
   faqs?: { question: string; answer: string }[];
   what_you_will_learn?: { title: string; description: string }[];
+  course_includes?: string[];
   course_type?: string;
   created_at?: string;
 }
@@ -782,15 +785,12 @@ export default function CourseDetails() {
                        </div>
                      );
                    }
+                   const pricing = resolveCoursePricing(course);
                    return (
                      <div className="flex items-end gap-3 mb-6">
-                       {course.discounted_price ? (
-                         <>
-                           <span className="text-4xl font-extrabold">৳{course.discounted_price}</span>
-                           <span className="text-lg text-muted-foreground line-through">৳{course.price}</span>
-                         </>
-                       ) : (
-                         <span className="text-4xl font-extrabold">৳{course.price}</span>
+                       <span className="text-4xl font-extrabold">৳{pricing.listPrice}</span>
+                       {pricing.strikethroughPrice != null && (
+                         <span className="text-lg text-muted-foreground line-through">৳{pricing.strikethroughPrice}</span>
                        )}
                      </div>
                    );
@@ -800,8 +800,19 @@ export default function CourseDetails() {
                     <Button size="lg" variant="outline" className="w-14 h-14 p-0 rounded-xl" onClick={handleShare}><Share2 className="w-5 h-5" /></Button>
                  </div>
                  <ul className="space-y-4">
-                    <li className="flex items-start gap-4 text-sm font-medium"><MonitorPlay className="w-5 h-5 shrink-0" /> Full lifetime access</li>
-                    <li className="flex items-start gap-4 text-sm font-medium"><Award className="w-5 h-5 shrink-0" /> Certificate of completion</li>
+                    {course.course_includes && course.course_includes.length > 0 ? (
+                      course.course_includes.map((item, i) => (
+                        <li key={i} className="flex items-start gap-4 text-sm font-medium">
+                          <CheckCircle2 className="w-5 h-5 shrink-0 text-primary" />
+                          <span className="min-w-0 break-words">{item}</span>
+                        </li>
+                      ))
+                    ) : (
+                      <>
+                        <li className="flex items-start gap-4 text-sm font-medium"><MonitorPlay className="w-5 h-5 shrink-0" /> Full lifetime access</li>
+                        <li className="flex items-start gap-4 text-sm font-medium"><Award className="w-5 h-5 shrink-0" /> Certificate of completion</li>
+                      </>
+                    )}
                  </ul>
                 </div>
              </div>
@@ -824,14 +835,18 @@ export default function CourseDetails() {
                          </div>
                          <div className="flex items-center justify-between gap-2 mt-auto">
                            <div className="flex flex-col">
-                             {rc.discounted_price ? (
-                               <div className="flex items-center gap-2">
-                                 <span className="text-sm font-black text-primary">৳{rc.discounted_price}</span>
-                                 <span className="text-[10px] text-muted-foreground line-through opacity-60">৳{rc.price}</span>
-                               </div>
-                             ) : (
-                               <span className="text-sm font-black text-primary">{rc.is_free ? 'FREE' : `৳${rc.price}`}</span>
-                             )}
+                             {(() => {
+                               const rcPricing = resolveCoursePricing(rc);
+                               if (rc.is_free) return <span className="text-sm font-black text-primary">FREE</span>;
+                               return (
+                                 <div className="flex items-center gap-2">
+                                   <span className="text-sm font-black text-primary">৳{rcPricing.listPrice}</span>
+                                   {rcPricing.strikethroughPrice != null && (
+                                     <span className="text-[10px] text-muted-foreground line-through opacity-60">৳{rcPricing.strikethroughPrice}</span>
+                                   )}
+                                 </div>
+                               );
+                             })()}
                            </div>
                            <Link 
                              to={`/course/${rc.id}`} 
@@ -855,8 +870,9 @@ export default function CourseDetails() {
           onOpenChange={setShowEnrollmentModal}
           title={`Enroll in ${course.title}`}
           isFree={isFree}
-          priceLabel={isFree ? undefined : (course.price ? `৳${course.discounted_price || course.price}` : undefined)}
-          originalAmount={isFree ? undefined : (course.discounted_price || course.price)}
+          priceLabel={isFree ? undefined : (course.price ? `৳${resolveCoursePricing(course).listPrice}` : undefined)}
+          originalAmount={isFree ? undefined : resolveCoursePricing(course).listPrice}
+          promoAllowed={resolveCoursePricing(course).promoAllowed}
           courseId={course.id}
           onSubmit={handleEnrollment}
           extraFields={[
