@@ -199,6 +199,45 @@ INSERT INTO deliveries VALUES
   (411,310,25,'2026-06-05 10:00:00','2026-06-05 12:00:00','delivered');`,
   },
 
+  // ── Fintech: a digital microloan book (city-bank-style DFS) ────────
+  fintech_microloan: {
+    schema_sql: `CREATE TABLE loans (
+  loan_id INT PRIMARY KEY,
+  borrower TEXT NOT NULL,
+  district TEXT NOT NULL,
+  principal NUMERIC(12,2) NOT NULL,
+  disbursed_on DATE NOT NULL,
+  term_months INT NOT NULL,
+  status TEXT NOT NULL -- 'active' | 'paid' | 'defaulted'
+);
+CREATE TABLE repayments (
+  repayment_id INT PRIMARY KEY,
+  loan_id INT NOT NULL REFERENCES loans(loan_id),
+  amount NUMERIC(10,2) NOT NULL,
+  paid_on DATE NOT NULL
+);`,
+    initial_sql: `INSERT INTO loans VALUES
+  (201,'Hasan Mahmud','Dhaka',20000.00,'2026-01-10',6,'active'),
+  (202,'Ruma Begum','Chattogram',15000.00,'2026-01-22',6,'paid'),
+  (203,'Sohel Rana','Dhaka',30000.00,'2026-02-05',12,'active'),
+  (204,'Moriom Akter','Sylhet',10000.00,'2026-02-18',3,'paid'),
+  (205,'Rasel Mia','Rajshahi',25000.00,'2026-03-02',12,'defaulted'),
+  (206,'Shirin Sultana','Dhaka',12000.00,'2026-03-15',6,'active'),
+  (207,'Jamal Uddin','Khulna',18000.00,'2026-04-01',6,'active'),
+  (208,'Taslima Khatun','Chattogram',8000.00,'2026-04-20',3,'paid');
+INSERT INTO repayments VALUES
+  (301,201,3500.00,'2026-02-10'),(302,201,3500.00,'2026-03-10'),
+  (303,201,3500.00,'2026-04-12'),(304,202,2650.00,'2026-02-22'),
+  (305,202,2650.00,'2026-03-20'),(306,202,2650.00,'2026-04-21'),
+  (307,202,2650.00,'2026-05-19'),(308,202,2650.00,'2026-06-18'),
+  (309,203,2800.00,'2026-03-05'),(310,203,2800.00,'2026-04-07'),
+  (311,204,3450.00,'2026-03-18'),(312,204,3450.00,'2026-04-16'),
+  (313,204,3450.00,'2026-05-18'),(314,205,2300.00,'2026-04-02'),
+  (315,206,2150.00,'2026-04-15'),(316,206,2150.00,'2026-05-16'),
+  (317,207,3200.00,'2026-05-01'),(318,207,3200.00,'2026-06-02'),
+  (319,208,2750.00,'2026-05-20'),(320,208,2750.00,'2026-06-19');`,
+  },
+
   // ── Telco: a mobile operator (GP/Robi-style) ───────────────────────
   telco_network: {
     schema_sql: `CREATE TABLE plans (
