@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import Navbar from "@/components/Navbar";
 import { usePageView } from "@/hooks/usePageView";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSectionContent } from "@/hooks/useSectionContent";
 
 interface Project {
   id: string;
@@ -22,6 +23,7 @@ interface Project {
 const DESC_LIMIT = 120;
 
 const PortfolioPage = () => {
+  const { content: sectionContent } = useSectionContent("portfolio", { title: "Portfolio", subtitle: "", description: "A showcase of my projects and technical implementations" });
   usePageView("/portfolio");
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,9 +102,9 @@ const PortfolioPage = () => {
       <section className="min-h-screen pt-16 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center mb-12">
-            <h1 className="text-5xl font-bold text-foreground mb-4 text-primary">Portfolio</h1>
+            <h1 className="text-5xl font-bold text-foreground mb-4 text-primary">{sectionContent.title}</h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              A showcase of my projects and technical implementations
+              {sectionContent.description}
             </p>
           </div>
 

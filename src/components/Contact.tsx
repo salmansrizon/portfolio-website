@@ -34,10 +34,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import ScrollReveal from "./ScrollReveal";
 import { useBookingData } from "@/hooks/useBookingData";
+import { useSectionContent } from "@/hooks/useSectionContent";
 
 type BookingStep = 'form' | 'confirmed';
 
 const Contact = () => {
+  const { content: sectionContent } = useSectionContent("contact", { title: "Let's Work Together", description: "Ready to transform your data into strategic insights?", email: "salmansrizon2016@gmail.com", phone: "", location: "Dhaka, Bangladesh" });
   const [currentTime, setCurrentTime] = useState('');
   const [isBusinessHours, setIsBusinessHours] = useState(false);
   const [formData, setFormData] = useState({
@@ -222,9 +224,9 @@ ${formData.message}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal direction="up">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-foreground mb-4">Let's Work Together</h2>
+            <h2 className="text-4xl font-bold text-foreground mb-4">{sectionContent.title}</h2>
             <p className="text-xl text-muted-foreground text-primary font-semibold">
-              Ready to transform your data into strategic insights?
+              {sectionContent.description}
             </p>
           </div>
         </ScrollReveal>
@@ -614,7 +616,7 @@ ${formData.message}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <MapPin className="h-5 w-5 text-primary" />
-                    <span className="font-medium text-foreground">Dhaka, Bangladesh</span>
+                    <span className="font-medium text-foreground">{sectionContent.location}</span>
                   </div>
                   <Badge 
                     className={cn(

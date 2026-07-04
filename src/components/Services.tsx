@@ -3,6 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Loader2 } from "lucide-react";
 import DynamicIcon from "@/components/DynamicIcon";
+import { useSectionContent } from "@/hooks/useSectionContent";
+
+const SERVICES_FALLBACK = {
+  title: "Services",
+  subtitle: "Comprehensive data analytics solutions tailored to your business needs",
+};
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +25,7 @@ interface Service {
 }
 
 const Services = () => {
+  const { content: sectionContent } = useSectionContent("services", SERVICES_FALLBACK);
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -84,9 +91,9 @@ const Services = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal direction="up">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-foreground mb-4">Services</h2>
+            <h2 className="text-4xl font-bold text-foreground mb-4">{sectionContent.title}</h2>
             <p className="text-xl text-muted-foreground text-primary font-semibold">
-              Comprehensive data analytics solutions tailored to your business needs
+              {sectionContent.subtitle}
             </p>
           </div>
         </ScrollReveal>

@@ -4,6 +4,7 @@ import profileImage from "@/assets/formal.jpg";
 import ScrollReveal from "./ScrollReveal";
 import BrandLogos from "./BrandLogos";
 import { supabase } from "@/integrations/supabase/client";
+import { useSectionContent } from "@/hooks/useSectionContent";
 
 interface AboutContent {
   title: string;
@@ -24,6 +25,7 @@ interface AboutContent {
 }
 
 const About = () => {
+  const { content: teachingContent } = useSectionContent("teaching", { title: "Teaching & Mentoring", subtitle: "", description: "As an instructor at DScentral, I'm passionate about sharing knowledge and helping the next generation of data professionals. I provide corporate training, one-on-one mentoring, and workshop facilitation." });
   const [aboutContent, setAboutContent] = useState<AboutContent | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -147,11 +149,9 @@ const About = () => {
         <ScrollReveal direction="up">
           <Card className="mb-16 shadow-card hover:shadow-hover transition-all hover:border-primary/20">
           <CardContent className="p-8">
-            <h3 className="text-2xl font-bold text-foreground mb-4">Teaching & Mentoring</h3>
+            <h3 className="text-2xl font-bold text-foreground mb-4">{teachingContent.title}</h3>
             <p className="text-muted-foreground mb-6 leading-relaxed">
-              As an instructor at DScentral, I'm passionate about sharing knowledge 
-              and helping the next generation of data professionals. I provide corporate 
-              training, one-on-one mentoring, and workshop facilitation.
+              {teachingContent.description}
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {["Consultation","Corporate Training", "Data Analysis", "Growth Strategy"].map((item, index) => (

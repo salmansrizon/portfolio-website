@@ -2,8 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Award } from "lucide-react";
+import { useSectionContent } from "@/hooks/useSectionContent";
 
 const Certifications = () => {
+  const { content: sectionContent } = useSectionContent("certifications", { title: "Certifications", subtitle: "Validated expertise in data and analytics" });
   const certifications = [
     {
       code: "PL-300",
@@ -41,10 +43,10 @@ const Certifications = () => {
         <div className="text-center mb-16">
           <div className="flex items-center justify-center mb-4">
             <Award className="h-8 w-8 text-primary mr-3" />
-            <h2 className="text-4xl font-bold text-foreground">Certifications</h2>
+            <h2 className="text-4xl font-bold text-foreground">{sectionContent.title}</h2>
           </div>
           <p className="text-xl text-muted-foreground">
-            Validated expertise in data and analytics
+            {sectionContent.subtitle}
           </p>
         </div>
 
