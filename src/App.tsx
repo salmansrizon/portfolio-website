@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "next-themes";
-import { SQLProvider } from "@/contexts/SQLContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
@@ -48,7 +47,7 @@ const App = () => (
               <Route path="/course/:courseId" element={<CourseDetails />} />
               <Route path="/book-session" element={<BookSession />} />
               <Route path="/career-prep" element={<CareerPrep />} />
-              <Route path="/career-prep/solve/:slug" element={<SQLProvider><SQLChallenge /></SQLProvider>} />
+              <Route path="/career-prep/solve/:slug" element={<SQLChallenge />} />
               <Route path="/webinar/:id" element={<WebinarLanding />} />
               <Route path="/roadmaps" element={<RoadmapsPage />} />
               <Route path="/roadmaps/:slug" element={<RoadmapDetailPage />} />
