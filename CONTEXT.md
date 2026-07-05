@@ -4,6 +4,28 @@ Salman Sakib's portfolio and course platform: public marketing site, course sale
 
 ## Language
 
+### Design Language (Family system)
+
+**Ink**:
+The near-black neutral (`#131313`, surfaces `#1c1c1c`) used for text and dark surfaces; the dark theme is derived from it.
+_Avoid_: black, charcoal
+
+**Paper**:
+The warm white canvas (`#ffffff`, muted `#f5f4f1`) every light surface sits on.
+_Avoid_: white, background (too generic)
+
+**Action Blue**:
+`#2f7eff` — the site's primary interactive color (a deliberate deviation from Family's ink-primary buttons).
+
+**Mint**:
+`#00d26a` — success and special-CTA color.
+
+**Magenta**:
+`#ec1e79` — the course-sales CTA color (replaces the old hardcoded pink).
+
+**Pill**:
+The fully-rounded button shape; every button is a Pill. Cards use 14px (small) / 20px (prominent) radii. Surfaces are flat — no gradients or glow.
+
 ### Site Content
 
 **Section**:
