@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Pencil, Trash2, Eye, Map, Upload, Loader2, X } from 'lucide-react';
+import { useAdminResource } from '@/hooks/useAdminResource';
+import { Plus, Pencil, Trash2, Eye, Map, Upload, Loader2, X, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface Roadmap {
@@ -26,11 +27,18 @@ interface Roadmap {
 }
 
 const RoadmapManager = () => {
-  const [roadmaps, setRoadmaps] = useState<Roadmap[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingRoadmap, setEditingRoadmap] = useState<Roadmap | null>(null);
-  const { toast } = useToast();
+  const {
+    items: roadmaps,
+    loading,
+    editingItem: editingRoadmap,
+    isDialogOpen,
+    setIsDialogOpen,
+    startCreate,
+    startEdit,
+    save,
+    remove,
+  } = useAdminResource<Roadmap>({ table: 'roadmaps', orderBy: { column: 'order_index', ascending: true } });
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     title: '',
@@ -43,34 +51,16 @@ const RoadmapManager = () => {
     order_index: 0,
   });
 
-  useEffect(() => {
-    fetchRoadmaps();
-  }, []);
-
-  const fetchRoadmaps = async () => {
-    const { data, error } = await supabase
-      .from('roadmaps')
-      .select('*')
-      .order('order_index');
-    if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    } else {
-      setRoadmaps((data || []) as Roadmap[]);
-    }
-    setLoading(false);
-  };
-
   const generateSlug = (title: string) =>
     title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
   const openCreate = () => {
-    setEditingRoadmap(null);
+    startCreate();
     setForm({ title: '', slug: '', description: '', markdown_content: '', icon: '', banner_image: '', status: 'draft', order_index: 0 });
-    setIsDialogOpen(true);
   };
 
   const openEdit = (r: Roadmap) => {
-    setEditingRoadmap(r);
+    startEdit(r);
     setForm({
       title: r.title,
       slug: r.slug,
@@ -81,7 +71,6 @@ const RoadmapManager = () => {
       status: r.status,
       order_index: r.order_index,
     });
-    setIsDialogOpen(true);
   };
 
   const handleSave = async () => {
@@ -95,32 +84,12 @@ const RoadmapManager = () => {
       status: form.status,
       order_index: form.order_index,
     };
-
-    let error;
-    if (editingRoadmap) {
-      ({ error } = await supabase.from('roadmaps').update(payload).eq('id', editingRoadmap.id));
-    } else {
-      ({ error } = await supabase.from('roadmaps').insert(payload));
-    }
-
-    if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: editingRoadmap ? 'Updated' : 'Created', description: 'Roadmap saved successfully.' });
-      setIsDialogOpen(false);
-      fetchRoadmaps();
-    }
+    await save(payload);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!confirm('Delete this roadmap?')) return;
-    const { error } = await supabase.from('roadmaps').delete().eq('id', id);
-    if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Deleted' });
-      fetchRoadmaps();
-    }
+    remove(id);
   };
 
   if (loading) return <div className="text-center py-8 text-muted-foreground">Loading...</div>;
@@ -135,28 +104,50 @@ const RoadmapManager = () => {
         <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" /> Add Roadmap</Button>
       </div>
 
-      <div className="grid gap-4">
-        {roadmaps.map((r) => (
-          <Card key={r.id}>
-            <CardContent className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <Map className="h-5 w-5 text-primary" />
-                <div>
-                  <h3 className="font-semibold">{r.title}</h3>
-                  <p className="text-sm text-muted-foreground">{r.description || 'No description'}</p>
-                </div>
-                <Badge variant={r.status === 'published' ? 'default' : 'secondary'}>{r.status}</Badge>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="icon" asChild>
-                  <a href={`/roadmaps/${r.slug}`} target="_blank"><Eye className="h-4 w-4" /></a>
-                </Button>
-                <Button variant="outline" size="icon" onClick={() => openEdit(r)}><Pencil className="h-4 w-4" /></Button>
-                <Button variant="destructive" size="icon" onClick={() => handleDelete(r.id)}><Trash2 className="h-4 w-4" /></Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="grid gap-2">
+        {roadmaps.map((r) => {
+          const isExpanded = expandedId === r.id;
+          return (
+            <Card key={r.id}>
+              <CardContent className="p-0">
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between gap-3 p-4 text-left"
+                  onClick={() => setExpandedId(isExpanded ? null : r.id)}
+                  aria-expanded={isExpanded}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Map className="h-5 w-5 text-primary shrink-0" />
+                    <h3 className="font-semibold truncate">{r.title}</h3>
+                    <Badge variant={r.status === 'published' ? 'default' : 'secondary'}>{r.status}</Badge>
+                  </div>
+                  <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                </button>
+                {isExpanded && (
+                  <div className="border-t px-4 py-4 space-y-3">
+                    <div className="grid gap-2 text-sm">
+                      <p><span className="font-medium text-muted-foreground">Description: </span>{r.description || 'No description'}</p>
+                      <p><span className="font-medium text-muted-foreground">Slug: </span><code className="text-xs bg-muted px-1.5 py-0.5 rounded">/roadmaps/{r.slug}</code></p>
+                      <p><span className="font-medium text-muted-foreground">Status: </span>{r.status}</p>
+                    </div>
+                    {r.markdown_content && (
+                      <pre className="text-xs text-muted-foreground bg-muted/50 rounded-md p-3 max-h-40 overflow-auto whitespace-pre-wrap">
+                        {r.markdown_content.slice(0, 600)}{r.markdown_content.length > 600 ? '…' : ''}
+                      </pre>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={`/roadmaps/${r.slug}`} target="_blank"><Eye className="h-4 w-4 mr-1.5" /> View</a>
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => openEdit(r)}><Pencil className="h-4 w-4 mr-1.5" /> Edit</Button>
+                      <Button variant="destructive" size="sm" onClick={() => handleDelete(r.id)}><Trash2 className="h-4 w-4 mr-1.5" /> Delete</Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
         {roadmaps.length === 0 && (
           <p className="text-center text-muted-foreground py-8">No roadmaps yet. Create one to get started.</p>
         )}
@@ -187,7 +178,7 @@ const RoadmapManager = () => {
                 placeholder={`Brief intro paragraph.\n\n## Section heading\n\n- Bullet one\n- Bullet two\n\n**Bold text** and [links](https://example.com).`}
               />
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="text-sm font-medium">Status</label>
                 <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>

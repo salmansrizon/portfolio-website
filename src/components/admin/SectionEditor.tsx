@@ -17,96 +17,25 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
-
-interface HeroContent {
-  title: {
-    main: string;
-    highlight: string;
-  };
-  subtitle: string;
-  name: string;
-  description: string;
-  cta: {
-    primary: {
-      text: string;
-      link: string;
-    };
-    secondary: {
-      text: string;
-      link: string;
-    };
-  };
-}
-
-interface AboutContent {
-  title: string;
-  subtitle: string;
-  professionalJourney: {
-    title: string;
-    description: string;
-  };
-  stats: Array<{
-    number: string;
-    label: string;
-  }>;
-  skills: Array<{
-    name: string;
-    percentage: number;
-  }>;
-  expertise: string[];
-}
-
-interface ContactContent {
-  title: string;
-  description: string;
-  email: string;
-  phone: string;
-  location: string;
-}
-
-interface ServicesContent {
-  title: string;
-  subtitle: string;
-  description: string;
-}
-
-interface PortfolioContent {
-  title: string;
-  subtitle: string;
-  description: string;
-}
-
-interface TestimonialsContent {
-  title: string;
-  subtitle: string;
-  description: string;
-}
-
-interface CertificationsContent {
-  title: string;
-  subtitle: string;
-  description: string;
-}
-
-// New section for Teaching, Mentoring and Technical Expertise
-interface TeachingContent {
-  title: string;
-  subtitle: string;
-  description: string;
-}
-
-// New section for Teaching, Mentoring and Technical Expertise
-interface TeachingContent {
-  title: string;
-  subtitle: string;
-  description: string;
-}
+import {
+  SECTION_NAMES,
+  SECTION_DEFAULTS,
+  type SectionName,
+  type HeroContent,
+  type AboutContent,
+  type ContactContent,
+  type ServicesContent,
+  type PortfolioContent,
+  type TestimonialsContent,
+  type CertificationsContent,
+  type TeachingContent,
+} from '@/lib/sections';
 
 type SectionContent = HeroContent | AboutContent | ContactContent | ServicesContent | PortfolioContent | TestimonialsContent | CertificationsContent | TeachingContent;
 
 interface SectionData {
   id: string;
-  section_name: 'hero' | 'about' | 'contact' | 'services' | 'portfolio' | 'testimonials' | 'certifications' | 'teaching';
+  section_name: SectionName;
   content: SectionContent;
   status?: string;
   section_type?: string;
@@ -125,7 +54,7 @@ const SectionEditor = () => {
   const { toast } = useToast();
   const { register, handleSubmit, reset, setValue } = useForm();
 
-  const predefinedSections = ['hero', 'about', 'contact', 'services', 'portfolio', 'testimonials', 'certifications', 'teaching'];
+  const predefinedSections = SECTION_NAMES;
 
   useEffect(() => {
     fetchSections();
@@ -141,7 +70,7 @@ const SectionEditor = () => {
       if (error) throw error;
 
       const typedSections = (data || []).map(section => {
-        const sectionName = section.section_name as 'hero' | 'about' | 'contact' | 'services' | 'portfolio' | 'testimonials' | 'certifications' | 'teaching';
+        const sectionName = section.section_name as SectionName;
         let content: SectionContent;
 
         const rawContent = section.content as unknown;
@@ -194,42 +123,8 @@ const SectionEditor = () => {
       let initialContent: SectionContent;
 
       if (createSectionType === 'predefined') {
-        const sectionKey = createSectionName.toLowerCase();
-        if (sectionKey === 'hero') {
-          initialContent = {
-            title: { main: '', highlight: '' },
-            subtitle: '',
-            name: '',
-            description: '',
-            cta: {
-              primary: { text: '', link: '' },
-              secondary: { text: '', link: '' }
-            }
-          } as HeroContent;
-        } else if (sectionKey === 'about') {
-          initialContent = {
-            title: '',
-            subtitle: '',
-            professionalJourney: { title: '', description: '' },
-            stats: [],
-            skills: [],
-            expertise: []
-          } as AboutContent;
-        } else if (sectionKey === 'contact') {
-          initialContent = {
-            title: '',
-            description: '',
-            email: '',
-            phone: '',
-            location: ''
-          } as ContactContent;
-        } else {
-          initialContent = {
-            title: '',
-            subtitle: '',
-            description: ''
-          };
-        }
+        const sectionKey = createSectionName.toLowerCase() as SectionName;
+        initialContent = SECTION_DEFAULTS[sectionKey];
       } else {
         initialContent = {
           title: '',
@@ -463,7 +358,7 @@ const SectionEditor = () => {
       </div>
 
       <Tabs defaultValue="hero" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
+        <TabsList className="grid w-full h-auto grid-cols-2 sm:grid-cols-4 lg:grid-cols-8">
           {sections.map((section) => (
             <TabsTrigger key={section.id} value={section.section_name}>
               <div className="text-xs">

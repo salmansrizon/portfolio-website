@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useAdminResource } from "@/hooks/useAdminResource";
 import { FolderTree, Plus, Edit, Trash2 } from "lucide-react";
 
 interface Category {
@@ -17,40 +16,21 @@ interface Category {
   created_at: string;
 }
 
+const initialFormData = { name: "", slug: "", parent_id: "none" };
+
 export default function CourseCategoryManager() {
-  const { toast } = useToast();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showDialog, setShowDialog] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  
-  const [formData, setFormData] = useState({
-    name: "",
-    slug: "",
-    parent_id: "none"
-  });
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("course_categories" as any)
-        .select("*")
-        .order("name", { ascending: true });
-        
-      if (error) throw error;
-      setCategories((data as any[]) || []);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-      toast({ title: "Error", description: "Failed to load categories.", variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const {
+    items: categories,
+    loading: isLoading,
+    editingItem: editingCategory,
+    isDialogOpen: showDialog,
+    setIsDialogOpen: setShowDialog,
+    startEdit,
+    clearEditing,
+    save,
+    remove,
+  } = useAdminResource<Category>({ table: "course_categories", orderBy: { column: "name", ascending: true } });
+  const [formData, setFormData] = useState(initialFormData);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const name = e.target.value;
@@ -60,68 +40,35 @@ export default function CourseCategoryManager() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      if (!formData.name || !formData.slug) {
-        toast({ title: "Error", description: "Name and Slug are required.", variant: "destructive" });
-        return;
-      }
+    if (!formData.name || !formData.slug) return;
 
-      const payload = {
-        name: formData.name,
-        slug: formData.slug,
-        parent_id: formData.parent_id === "none" ? null : formData.parent_id
-      };
+    const payload = {
+      name: formData.name,
+      slug: formData.slug,
+      parent_id: formData.parent_id === "none" ? null : formData.parent_id
+    };
 
-      if (editingCategory) {
-        const { error } = await supabase
-          .from("course_categories" as any)
-          .update(payload)
-          .eq("id", editingCategory.id);
-        if (error) throw error;
-        toast({ title: "Success", description: "Category updated!" });
-      } else {
-        const { error } = await supabase
-          .from("course_categories" as any)
-          .insert(payload);
-        if (error) throw error;
-        toast({ title: "Success", description: "Category created!" });
-      }
-
-      setShowDialog(false);
-      resetForm();
-      fetchCategories();
-    } catch (error: any) {
-      console.error("Error saving category:", error);
-      toast({ title: "Error", description: error.message || "Failed to save category.", variant: "destructive" });
-    }
-  };
-
-  const deleteCategory = async (id: string) => {
-    if (!window.confirm("Are you sure? This might fail if courses are using this category or if it has child categories.")) return;
-    try {
-      const { error } = await supabase.from("course_categories" as any).delete().eq("id", id);
-      if (error) throw error;
-      toast({ title: "Success", description: "Category deleted!" });
-      fetchCategories();
-    } catch (error: any) {
-      console.error("Error deleting category:", error);
-      toast({ title: "Error", description: error.message || "Failed to delete category.", variant: "destructive" });
-    }
+    const ok = await save(payload);
+    if (ok) setFormData(initialFormData);
   };
 
   const resetForm = () => {
-    setEditingCategory(null);
-    setFormData({ name: "", slug: "", parent_id: "none" });
+    clearEditing();
+    setFormData(initialFormData);
   };
 
   const handleEdit = (category: Category) => {
-    setEditingCategory(category);
+    startEdit(category);
     setFormData({
       name: category.name,
       slug: category.slug,
       parent_id: category.parent_id || "none"
     });
-    setShowDialog(true);
+  };
+
+  const handleDelete = (id: string) => {
+    if (!window.confirm("Are you sure? This might fail if courses are using this category or if it has child categories.")) return;
+    remove(id);
   };
 
   const getParentName = (parentId: string | null) => {
@@ -212,7 +159,7 @@ export default function CourseCategoryManager() {
                     <Button variant="ghost" size="icon" onClick={() => handleEdit(category)}>
                       <Edit className="w-4 h-4 text-primary" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => deleteCategory(category.id)}>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(category.id)}>
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>
                   </TableCell>

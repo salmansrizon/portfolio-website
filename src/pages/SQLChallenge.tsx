@@ -2,7 +2,6 @@ import * as React from 'react';
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { PGlite } from '@electric-sql/pglite';
 import Editor from '@monaco-editor/react';
 import { 
   Play, 
@@ -44,6 +43,8 @@ import remarkGfm from 'remark-gfm';
 import { useTheme } from 'next-themes';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { SqlExecutionEngine } from '@/careerprep/sqlEngine';
+import { gradeSubmission } from '@/careerprep/grading';
 
 // ── Performance Memoization ──────────────────────────────────────────────
 const MemoizedMarkdown = React.memo(({ content }: { content: string }) => (
@@ -102,7 +103,7 @@ const SQLChallenge = () => {
   const { submissions, loading: sLoading, refresh: refreshSubmissions } = useSubmissions(currentQ?.id || '');
   const [code, setCode] = useState('');
   const [mcqAnswer, setMcqAnswer] = useState<string | null>(null);
-  const pgRef = useRef<PGlite | null>(null);
+  const engineRef = useRef<SqlExecutionEngine>(new SqlExecutionEngine());
   const [status, setStatus] = useState<'idle' | 'booting' | 'seeding' | 'ready' | 'error'>('idle');
   const [results, setResults] = useState<any[]>([]);
   const [columns, setColumns] = useState<string[]>([]);
@@ -140,7 +141,7 @@ const SQLChallenge = () => {
       }
       setCursorIdx(0);
       setIsMissionComplete(false);
-      setSeededSqlSet(new Set());
+      engineRef.current.forgetSeeds();
       setStepResults({});
       missionStartTime.current = Date.now();
     }
@@ -168,69 +169,50 @@ const SQLChallenge = () => {
   };
 
   useEffect(() => {
-    const db = new PGlite();
-    pgRef.current = db;
+    const engine = engineRef.current;
+    engine.boot();
     setStatus('ready');
-    return () => { try { db.close(); } catch(e) {} };
+    return () => { engine.teardown(); };
   }, []);
-
-  const [seededSqlSet, setSeededSqlSet] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const seed = async () => {
-      const pg = pgRef.current;
-      if (!pg || !currentQ || currentQ.question_type === 'mcq') {
+      if (!currentQ || currentQ.question_type === 'mcq') {
         if (currentQ?.question_type === 'mcq' && status !== 'ready') setStatus('ready');
         return;
       }
 
-      const fullSql = (currentQ.schema_sql || '') + (currentQ.initial_sql || '');
-      if (!fullSql || seededSqlSet.has(fullSql)) {
-        const tableName = extractFirstTable(currentQ.schema_sql || 'your_table');
-        if (!code) setCode(`-- Write your SQL query here\nSELECT * FROM ${tableName};`);
-        if (status !== 'ready') setStatus('ready');
-        return;
-      }
-
       setStatus('seeding');
-      try {
-        // Run schema separately first if it contains CREATE statements
-        if (currentQ.schema_sql) await pg.exec(currentQ.schema_sql);
-        if (currentQ.initial_sql) await pg.exec(currentQ.initial_sql);
-        
-        setSeededSqlSet(prev => new Set(prev).add(fullSql));
-        const tableName = extractFirstTable(currentQ.schema_sql);
-        setCode(`-- Write your SQL query here\nSELECT * FROM ${tableName};`);
-        setStatus('ready');
-      } catch (err: any) {
-        console.warn('Seeding warning:', err);
-        // If it's just a duplicate key/table error, we can still proceed if the tables exist
-        if (err.message.includes('already exists') || err.message.includes('duplicate key')) {
-          setSeededSqlSet(prev => new Set(prev).add(fullSql));
-          setStatus('ready');
-        } else {
-          setStatus('ready'); // Still mark as ready so user can try to fix SQL
-          toast({ title: 'Environment Note', description: 'Database state might be inherited from previous step.', variant: 'default' });
-        }
+      const { error, seeded } = await engineRef.current.boot({
+        schemaSql: currentQ.schema_sql,
+        initialSql: currentQ.initial_sql,
+      });
+
+      const tableName = extractFirstTable(currentQ.schema_sql || 'your_table');
+      if (seeded || !code) setCode(`-- Write your SQL query here\nSELECT * FROM ${tableName};`);
+      setStatus('ready');
+
+      if (error) {
+        console.warn('Seeding warning:', error);
+        toast({ title: 'Environment Note', description: 'Database state might be inherited from previous step.', variant: 'default' });
       }
     };
     seed();
   }, [currentQ?.id, status]);
 
   const handleRun = useCallback(async () => {
-    const pg = pgRef.current;
-    if (!pg || !code.trim()) return;
+    if (!code.trim()) return;
     setExecError(null);
     const start = performance.now();
-    try {
-      const res = await pg.query(code);
-      setResults(res.rows);
-      setColumns(res.fields.map((f: any) => f.name));
-      setExecutionTime(performance.now() - start);
-    } catch (err: any) {
-      setExecError(err.message);
+    const { rows, columns: cols, error } = await engineRef.current.run(code);
+    if (error) {
+      setExecError(error);
       setResults([]);
       setColumns([]);
+    } else {
+      setResults(rows);
+      setColumns(cols);
+      setExecutionTime(performance.now() - start);
     }
   }, [code]);
 
@@ -268,23 +250,16 @@ const SQLChallenge = () => {
 
   const handleSubmit = async () => {
     if (!currentQ) return;
-    const pg = pgRef.current;
     const isMultiStep = missionQueue.length > 1;
     let isCorrect = false;
 
     if (currentQ.question_type === 'mcq') {
       isCorrect = mcqAnswer === currentQ.correct_option;
-    } else if (pg && currentQ.solution_sql) {
+    } else if (currentQ.solution_sql) {
       // Validate by comparing user query results with solution query results
-      try {
-        const userRes = await pg.query(code);
-        const solRes = await pg.query(currentQ.solution_sql);
-        // Compare stringified sorted results
-        const normalize = (rows: any[]) => JSON.stringify(rows.map(r => JSON.stringify(Object.values(r))).sort());
-        isCorrect = normalize(userRes.rows) === normalize(solRes.rows);
-      } catch {
-        isCorrect = false;
-      }
+      const userRes = await engineRef.current.run(code);
+      const solRes = await engineRef.current.run(currentQ.solution_sql);
+      isCorrect = !userRes.error && !solRes.error && gradeSubmission(userRes.rows, solRes.rows).correct;
     }
 
     const currentIdx = cursorIdx;
@@ -375,7 +350,7 @@ const SQLChallenge = () => {
                      setCursorIdx(0);
                      setIsMissionComplete(false);
                      setStepResults({});
-                     setSeededSqlSet(new Set());
+                     engineRef.current.forgetSeeds();
                      missionStartTime.current = Date.now();
                    }}>
                      <RotateCcw className="w-4 h-4" /> Retry Failed Steps

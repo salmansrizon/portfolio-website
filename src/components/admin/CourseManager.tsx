@@ -14,6 +14,7 @@ import { PostgrestError } from '@supabase/supabase-js';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CourseEnrollmentManager from "./CourseEnrollmentManager";
 import CourseCategoryManager from "./CourseCategoryManager";
+import { saveCourse } from "@/lib/coursePersistence";
 
 // Using the exact variant types that the toast component expects
 type ToastVariant = 'default' | 'destructive';
@@ -150,6 +151,7 @@ interface FormData {
   discounted_price: number | null;
   discount_percentage: number | null;
   is_free: boolean;
+  promo_only: boolean;
   status: string // Changed to string to handle form input more flexibly;
   difficulty_level: string // Changed to string to handle form input more flexibly;
   duration_hours: number | null;
@@ -179,6 +181,7 @@ const initialFormData: FormData = {
   discounted_price: null,
   discount_percentage: null,
   is_free: false,
+  promo_only: false,
   status: 'draft',
   difficulty_level: 'beginner',
   duration_hours: null,
@@ -249,79 +252,7 @@ export default function CourseManager() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      let courseId: string | null = editingCourse?.id || null;
-
-      if (editingCourse && courseId) {
-        // Update existing course
-        const { error: courseError } = await supabase
-          .from('courses')
-          .update({
-            title: formData.title,
-            description: formData.description,
-            short_description: formData.short_description,
-            price: formData.price,
-            discounted_price: formData.discounted_price,
-            discount_percentage: formData.discount_percentage,
-            is_free: formData.is_free,
-            status: formData.status,
-            difficulty_level: formData.difficulty_level,
-            duration_hours: formData.duration_hours,
-            banner_image: formData.banner_image,
-            category_id: formData.category_id || null,
-            technologies: formData.technologies,
-            learning_outcomes: formData.learning_outcomes,
-            requirements: formData.requirements,
-            target_audience: formData.target_audience,
-            rating: formData.rating,
-            student_count: formData.student_count,
-            start_date: formData.start_date ? new Date(formData.start_date).toISOString() : null,
-            course_includes: formData.course_includes,
-            instructor_id: formData.instructor_id || null,
-            faqs: formData.faqs || [],
-            what_you_will_learn: formData.what_you_will_learn || [],
-            course_type: formData.course_type || 'regular',
-            video_url: formData.video_url || null,
-          })
-          .eq('id', courseId);
-        if (courseError) throw courseError;
-      } else {
-        // Create new course and capture its id
-        const { data: created, error: courseError } = await supabase
-          .from('courses')
-          .insert({
-            title: formData.title,
-            description: formData.description,
-            short_description: formData.short_description,
-            price: formData.price,
-            discounted_price: formData.discounted_price,
-            discount_percentage: formData.discount_percentage,
-            is_free: formData.is_free,
-            status: formData.status,
-            difficulty_level: formData.difficulty_level,
-            duration_hours: formData.duration_hours,
-            banner_image: formData.banner_image,
-            category_id: formData.category_id || null,
-            technologies: formData.technologies,
-            learning_outcomes: formData.learning_outcomes,
-            requirements: formData.requirements,
-            target_audience: formData.target_audience,
-            rating: formData.rating,
-            student_count: formData.student_count,
-            start_date: formData.start_date ? new Date(formData.start_date).toISOString() : null,
-            course_includes: formData.course_includes,
-            instructor_id: formData.instructor_id || null,
-            faqs: formData.faqs || [],
-            what_you_will_learn: formData.what_you_will_learn || [],
-            course_type: formData.course_type || 'regular',
-            video_url: formData.video_url || null,
-          })
-          .select('id')
-          .single();
-        if (courseError) throw courseError;
-        courseId = created?.id || null;
-      }
-
-      if (!courseId) throw new Error('Missing course id');
+      const courseId = await saveCourse(formData, editingCourse?.id || null);
 
       // Sync sections and contents for this course
       await syncSectionsAndContents(courseId);
@@ -676,6 +607,7 @@ export default function CourseManager() {
         discounted_price: courseData.discounted_price || null,
         discount_percentage: courseData.discount_percentage || null,
         is_free: Boolean(courseData.is_free),
+        promo_only: Boolean(courseData.promo_only),
         status: courseData.status || 'draft',
         difficulty_level: courseData.difficulty_level || 'beginner',
         duration_hours: courseData.duration_hours || null,
@@ -1033,6 +965,21 @@ export default function CourseManager() {
                         onCheckedChange={(checked) => setFormData({ ...formData, is_free: checked })}
                       />
                       <Label htmlFor="is_free">Free Course</Label>
+                    </div>
+                    <div className="md:col-span-2 flex items-start gap-3 rounded-lg border p-4">
+                      <Switch
+                        id="promo_only"
+                        checked={formData.promo_only}
+                        onCheckedChange={(checked) => setFormData({ ...formData, promo_only: checked })}
+                      />
+                      <div>
+                        <Label htmlFor="promo_only">Promo-Only Pricing</Label>
+                        <p className="text-sm text-muted-foreground">
+                          ON: course lists at full price and only promo codes can discount it.
+                          OFF: the discounted price above is charged and promo codes are not accepted.
+                          Discounts never stack.
+                        </p>
+                      </div>
                     </div>
                     <div>
                       <Label htmlFor="category_id">Category</Label>

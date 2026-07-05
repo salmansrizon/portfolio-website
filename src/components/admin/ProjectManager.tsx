@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,9 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Plus, Edit, Trash2, X } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2 } from 'lucide-react';
+import { useAdminResource } from '@/hooks/useAdminResource';
 
 interface Project {
   id: string;
@@ -22,115 +21,35 @@ interface Project {
 }
 
 const ProjectManager = () => {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { toast } = useToast();
+  const {
+    items: projects,
+    loading,
+    saving,
+    editingItem: editingProject,
+    isDialogOpen,
+    setIsDialogOpen,
+    startCreate,
+    startEdit,
+    save,
+    remove,
+  } = useAdminResource<Project>({ table: 'projects', orderBy: { column: 'created_at', ascending: false } });
   const { register, handleSubmit, reset } = useForm();
 
-  useEffect(() => {
-    fetchProjects();
-  }, []);
-
-  const fetchProjects = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setProjects(data || []);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch projects",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const onSubmit = async (formData: any) => {
-    console.log('Form data received:', formData);
-    setSaving(true);
-    try {
-      const projectData = {
-        title: formData.title,
-        description: formData.description,
-        technologies: formData.technologies ? formData.technologies.split(',').map((t: string) => t.trim()).filter(Boolean) : [],
-        image_url: formData.image_url || null,
-        demo_url: formData.demo_url || null,
-        github_url: formData.github_url || null
-      };
-
-      console.log('Project data to save:', projectData);
-
-      if (editingProject) {
-        const { data, error } = await supabase
-          .from('projects')
-          .update(projectData)
-          .eq('id', editingProject.id)
-          .select();
-
-        if (error) {
-          console.error('Update error:', error);
-          throw error;
-        }
-        console.log('Update result:', data);
-        toast({
-          title: "Success",
-          description: "Project updated successfully!",
-        });
-      } else {
-        const { data, error } = await supabase
-          .from('projects')
-          .insert([projectData])
-          .select();
-
-        if (error) {
-          console.error('Insert error:', error);
-          throw error;
-        }
-        console.log('Insert result:', data);
-        toast({
-          title: "Success",
-          description: "Project created successfully!",
-        });
-      }
-
-      await fetchProjects();
-      setIsDialogOpen(false);
-      setEditingProject(null);
-      reset();
-    } catch (error: any) {
-      console.error('Full error object:', error);
-      
-      // Extract error message
-      let errorMessage = "Failed to save project";
-      if (error?.message) {
-        errorMessage = error.message;
-      } else if (error?.error?.message) {
-        errorMessage = error.error.message;
-      } else if (typeof error === 'string') {
-        errorMessage = error;
-      }
-      
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
+    const projectData = {
+      title: formData.title,
+      description: formData.description,
+      technologies: formData.technologies ? formData.technologies.split(',').map((t: string) => t.trim()).filter(Boolean) : [],
+      image_url: formData.image_url || null,
+      demo_url: formData.demo_url || null,
+      github_url: formData.github_url || null
+    };
+    const ok = await save(projectData);
+    if (ok) reset();
   };
 
   const handleEdit = (project: Project) => {
-    setEditingProject(project);
+    startEdit(project);
     reset({
       title: project.title,
       description: project.description,
@@ -139,38 +58,16 @@ const ProjectManager = () => {
       demo_url: project.demo_url || '',
       github_url: project.github_url || ''
     });
-    setIsDialogOpen(true);
   };
 
-  const handleDelete = async (projectId: string) => {
+  const handleDelete = (projectId: string) => {
     if (!confirm('Are you sure you want to delete this project?')) return;
-
-    try {
-      const { error } = await supabase
-        .from('projects')
-        .delete()
-        .eq('id', projectId);
-
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Project deleted successfully!",
-      });
-      await fetchProjects();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete project",
-        variant: "destructive",
-      });
-    }
+    remove(projectId);
   };
 
   const handleNewProject = () => {
-    setEditingProject(null);
+    startCreate();
     reset();
-    setIsDialogOpen(true);
   };
 
   if (loading) {
@@ -198,7 +95,7 @@ const ProjectManager = () => {
                 {editingProject ? 'Edit Project' : 'Create New Project'}
               </DialogTitle>
             </DialogHeader>
-            
+
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
                 <Label htmlFor="title">Title</Label>
@@ -208,7 +105,7 @@ const ProjectManager = () => {
                   placeholder="Project title"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="description">Description</Label>
                 <Textarea
@@ -218,7 +115,7 @@ const ProjectManager = () => {
                   rows={4}
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="technologies">Technologies</Label>
                 <Input
@@ -227,7 +124,7 @@ const ProjectManager = () => {
                   placeholder="React, TypeScript, Tailwind (comma-separated)"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="image_url">Image URL</Label>
                 <Input
@@ -236,7 +133,7 @@ const ProjectManager = () => {
                   placeholder="https://example.com/image.jpg"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="demo_url">Demo URL</Label>
                 <Input
@@ -245,7 +142,7 @@ const ProjectManager = () => {
                   placeholder="https://example.com"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="github_url">GitHub URL</Label>
                 <Input
@@ -254,7 +151,7 @@ const ProjectManager = () => {
                   placeholder="https://github.com/username/repo"
                 />
               </div>
-              
+
               <div className="flex justify-end space-x-2">
                 <Button
                   type="button"

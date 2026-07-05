@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button"
 import { MapPin, ExternalLink, Mail } from "lucide-react"
 import { Link } from "react-router-dom"
 import LottieAnimation from "@/components/LottieAnimation"
+import { useSectionContent } from "@/hooks/useSectionContent"
 
 const Hero = () => {
+  const { content } = useSectionContent("hero")
   return (
     <section
       id="home"
@@ -38,21 +40,20 @@ const Hero = () => {
             <div className="space-y-4">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight">
                 <span className="bg-gradient-to-r from-primary via-blue-500 to-blue-400 bg-[length:200%_100%] bg-clip-text text-transparent animate-gradient-move">
-                  Transforming Data into Strategic Insights
+                  {content.title.main} {content.title.highlight}
                 </span>
               </h1>
               <p className="text-xl sm:text-2xl text-primary font-semibold animate-fade-in-up delay-300">
-                Google Certified Data Analytics Professional
+                {content.subtitle}
               </p>
               <h2 className="text-2xl sm:text-3xl font-bold text-foreground animate-fade-in-up delay-500">
-                Salman Sakib
+                {content.name}
               </h2>
             </div>
 
             {/* Description */}
             <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto lg:mx-0 leading-relaxed animate-fade-in-up delay-700">
-              Google Certified Analytics Engineer with 7+ years of experience transforming complex data into actionable
-              insights. Specializing in data driven business growth with data analysis and data engineering solutions.
+              {content.description}
             </p>
 
             {/* CTA Buttons */}
@@ -62,12 +63,12 @@ const Hero = () => {
                 size="lg"
                 className="bg-primary hover:bg-primary-hover text-primary-foreground px-8 py-3 text-lg font-semibold shadow-card hover:shadow-hover transition-all hover:scale-105 group w-full sm:w-auto"
               >
-                <Link to="/book-session" className="flex items-center justify-center">
+                <Link to={content.cta.primary.link} className="flex items-center justify-center">
                   <div className="relative flex h-3 w-3 mr-3">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white/80 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-3 w-3 bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"></span>
                   </div>
-                  Book 1-1 Session
+                  {content.cta.primary.text}
                 </Link>
               </Button>
               <Button
@@ -80,7 +81,7 @@ const Hero = () => {
                 }}
               >
                 <Mail className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
-                Get in Touch
+                {content.cta.secondary.text}
               </Button>
             </div>
 
@@ -94,8 +95,8 @@ const Hero = () => {
           {/* Lottie Animation Column */}
           <div className="lg:col-span-5 flex justify-center items-center animate-fade-in-up delay-500">
             <LottieAnimation
-              src="https://assets-v2.lottiefiles.com/a/f979121a-1808-11ee-9147-7358b38a246f/AefZhAiGJP.lottie"
-              className="w-full max-w-[800px] sm:max-w-[1000px] lg:max-w-[1200px] aspect-square filter hue-rotate-[190deg] saturate-200 drop-shadow-[0_0_48px_rgba(59,130,246,0.25)]"
+              src="/animations/data-insights.json"
+              className="w-full max-w-[800px] sm:max-w-[1000px] lg:max-w-[1200px] aspect-square drop-shadow-[0_0_48px_rgba(59,130,246,0.25)]"
             />
           </div>
         </div>

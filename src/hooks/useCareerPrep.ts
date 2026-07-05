@@ -2,6 +2,7 @@ import * as React from 'react';
 const { useState, useEffect, useCallback } = React;
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import * as guestIdentity from '@/careerprep/guestIdentity';
 
 export type QuestionType = 'root' | 'code' | 'mcq' | 'case_study';
 
@@ -142,13 +143,12 @@ export function useSubmitCode() {
   ) => {
     setIsSubmitting(true);
     
-    // Get guest info from localStorage if present
-    const guestEmail = localStorage.getItem('careerprep_guest_email');
-    const guestWhatsapp = localStorage.getItem('careerprep_guest_whatsapp');
-    const sessionId = localStorage.getItem('careerprep_session_id');
-    
+    // Get guest info if present
+    const { email: guestEmail, whatsapp: guestWhatsapp } = guestIdentity.current();
+    const sessionId = guestIdentity.sessionId();
+
     // Update local last active for guest streak logic
-    localStorage.setItem('careerprep_guest_last_active', new Date().toISOString());
+    guestIdentity.touch();
 
     try {
       const { error } = await (supabase as any)
@@ -183,9 +183,9 @@ export function useCompletedMissions() {
   const { session } = useAuth();
   
   const fetchCompleted = useCallback(async () => {
-    const guestEmail = localStorage.getItem('careerprep_guest_email');
-    const sessionId = localStorage.getItem('careerprep_session_id');
-    
+    const { email: guestEmail } = guestIdentity.current();
+    const sessionId = guestIdentity.sessionId();
+
     // Create base query
     let query = (supabase as any).from('careerprep_submissions').select('question_id').eq('is_correct', true);
     
@@ -228,8 +228,7 @@ export function useXPStats() {
      
      // Simple streak mock logic based on last active
      // (In a real app, this would be computed server-side or from a history table)
-     const guestEmail = localStorage.getItem('careerprep_guest_email');
-     const guestActive = localStorage.getItem('careerprep_guest_last_active');
+     const { email: guestEmail, lastActive: guestActive } = guestIdentity.current();
      let streak = session ? 3 : 0; // Default/Mock
      
      if (!session && guestEmail && guestActive) {

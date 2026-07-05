@@ -1,71 +1,12 @@
-import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import profileImage from "@/assets/formal.jpg";
 import ScrollReveal from "./ScrollReveal";
 import BrandLogos from "./BrandLogos";
-import { supabase } from "@/integrations/supabase/client";
-
-interface AboutContent {
-  title: string;
-  subtitle: string;
-  professionalJourney: {
-    title: string;
-    description: string;
-  };
-  stats: Array<{
-    number: string;
-    label: string;
-  }>;
-  skills: Array<{
-    name: string;
-    percentage: number;
-  }>;
-  expertise: string[];
-}
+import { useSectionContent } from "@/hooks/useSectionContent";
 
 const About = () => {
-  const [aboutContent, setAboutContent] = useState<AboutContent | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchAboutContent = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("portfolio_sections")
-          .select("content")
-          .eq("section_name", "about")
-          .eq("status", "published")
-          .single();
-
-        if (error) throw error;
-        if (data?.content) {
-          setAboutContent(data.content as unknown as AboutContent);
-        }
-      } catch (error) {
-        console.error("Failed to fetch about content:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAboutContent();
-  }, []);
-
-  const stats = aboutContent?.stats || [
-    { number: "7+", label: "Years Experience" },
-    { number: "30+", label: "Successful Projects" },
-    { number: "10+", label: "Satisfied Clients" },
-    { number: "4+", label: "Industry Catered" },
-  ];
-
-  const skills = aboutContent?.skills || [
-    { name: "Power BI", percentage: 95 },
-    { name: "Tableau", percentage: 80 },
-    { name: "Metabase", percentage: 90 },
-    { name: "SQL", percentage: 90 },
-    { name: "Python", percentage: 85 },
-    { name: "Data Visualization", percentage: 95 },
-  ];
+  const { content: aboutContent, loading } = useSectionContent("about");
+  const { content: teachingContent } = useSectionContent("teaching");
 
   if (loading) {
     return (
@@ -77,10 +18,9 @@ const About = () => {
     );
   }
 
-  const title = aboutContent?.title || "About Me";
-  const subtitle = aboutContent?.subtitle || "Turning complex data into clear, actionable insights";
-  const journeyTitle = aboutContent?.professionalJourney?.title || "Professional Journey";
-  const journeyDescription = aboutContent?.professionalJourney?.description || "Currently serving as Head of Business Intelligence at Cartup Limited, I specialize in transforming complex financial and business data into actionable insights. With over 7 years of experience across Fintech, consulting, and education sectors, I've helped organizations optimize their data strategies and make informed decisions.";
+  const { title, subtitle, stats, skills } = aboutContent;
+  const journeyTitle = aboutContent.professionalJourney.title;
+  const journeyDescription = aboutContent.professionalJourney.description;
 
   return (
     <section id="about" className="py-20 bg-background">
@@ -147,11 +87,9 @@ const About = () => {
         <ScrollReveal direction="up">
           <Card className="mb-16 shadow-card hover:shadow-hover transition-all hover:border-primary/20">
           <CardContent className="p-8">
-            <h3 className="text-2xl font-bold text-foreground mb-4">Teaching & Mentoring</h3>
+            <h3 className="text-2xl font-bold text-foreground mb-4">{teachingContent.title}</h3>
             <p className="text-muted-foreground mb-6 leading-relaxed">
-              As an instructor at DScentral, I'm passionate about sharing knowledge 
-              and helping the next generation of data professionals. I provide corporate 
-              training, one-on-one mentoring, and workshop facilitation.
+              {teachingContent.description}
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {["Consultation","Corporate Training", "Data Analysis", "Growth Strategy"].map((item, index) => (

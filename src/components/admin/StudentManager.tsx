@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAdminResource } from "@/hooks/useAdminResource";
 import { Plus, Edit, Trash2, UserPlus, Mail, Phone, GraduationCap, BookOpen, Search, Users } from "lucide-react";
 
 interface Student {
@@ -42,31 +43,24 @@ const initialFormData = {
 
 export default function StudentManager() {
   const { toast } = useToast();
-  const [students, setStudents] = useState<Student[]>([]);
+  const {
+    items: students,
+    loading: isLoading,
+    editingItem: editingStudent,
+    isDialogOpen: showDialog,
+    setIsDialogOpen: setShowDialog,
+    startEdit,
+    clearEditing,
+    save,
+    remove,
+  } = useAdminResource<Student>({ table: "students", orderBy: { column: "created_at", ascending: false } });
   const [courses, setCourses] = useState<Course[]>([]);
   const [formData, setFormData] = useState(initialFormData);
-  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
-  const [showDialog, setShowDialog] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    fetchStudents();
     fetchCourses();
   }, []);
-
-  const fetchStudents = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await (supabase.from("students" as any).select("*").order("created_at", { ascending: false }) as any);
-      if (error) throw error;
-      setStudents((data || []) as Student[]);
-    } catch (error) {
-      console.error("Error fetching students:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const fetchCourses = async () => {
     try {
@@ -83,38 +77,23 @@ export default function StudentManager() {
       return;
     }
 
-    try {
-      const payload: any = {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone || null,
-        bio: formData.bio || null,
-        avatar_url: formData.avatar_url || null,
-        institution: formData.institution || null,
-        is_active: formData.is_active,
-        enrolled_courses: formData.enrolled_courses,
-      };
+    const payload: Record<string, unknown> = {
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone || null,
+      bio: formData.bio || null,
+      avatar_url: formData.avatar_url || null,
+      institution: formData.institution || null,
+      is_active: formData.is_active,
+      enrolled_courses: formData.enrolled_courses,
+    };
 
-      if (editingStudent) {
-        const { error } = await (supabase.from("students" as any).update(payload).eq("id", editingStudent.id) as any);
-        if (error) throw error;
-        toast({ title: "Success", description: "Student updated successfully." });
-      } else {
-        const { error } = await (supabase.from("students" as any).insert(payload) as any);
-        if (error) throw error;
-        toast({ title: "Success", description: "Student created successfully." });
-      }
-
-      setShowDialog(false);
-      resetForm();
-      fetchStudents();
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to save student.", variant: "destructive" });
-    }
+    const ok = await save(payload);
+    if (ok) setFormData(initialFormData);
   };
 
   const handleEdit = (student: Student) => {
-    setEditingStudent(student);
+    startEdit(student);
     setFormData({
       name: student.name,
       email: student.email,
@@ -125,23 +104,15 @@ export default function StudentManager() {
       is_active: student.is_active,
       enrolled_courses: student.enrolled_courses || [],
     });
-    setShowDialog(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!confirm("Are you sure you want to remove this student?")) return;
-    try {
-      const { error } = await (supabase.from("students" as any).delete().eq("id", id) as any);
-      if (error) throw error;
-      toast({ title: "Deleted", description: "Student removed successfully." });
-      fetchStudents();
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to delete.", variant: "destructive" });
-    }
+    remove(id);
   };
 
   const resetForm = () => {
-    setEditingStudent(null);
+    clearEditing();
     setFormData(initialFormData);
   };
 
