@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useAuth } from '@/contexts/AuthContext';
+import * as guestIdentity from '@/careerprep/guestIdentity';
 
 interface Roadmap {
   id: string;
@@ -33,7 +34,7 @@ const RoadmapDetailPage = () => {
   const [viewMode, setViewMode] = useState<'tree' | 'accordion'>('tree');
   usePageView(`/roadmaps/${slug}`);
 
-  // Guest gate (reuses careerprep_guests + same localStorage keys)
+  // Guest gate (reuses careerprep_guests + the shared guest identity module)
   const [showGate, setShowGate] = useState(false);
   const [guestEmail, setGuestEmail] = useState('');
   const [guestWhatsapp, setGuestWhatsapp] = useState('');
@@ -41,11 +42,8 @@ const RoadmapDetailPage = () => {
 
   useEffect(() => {
     if (session?.user) return;
-    const isGuest = localStorage.getItem('careerprep_guest') === 'true';
-    if (!isGuest) setShowGate(true);
-    if (!localStorage.getItem('careerprep_session_id')) {
-      localStorage.setItem('careerprep_session_id', Math.random().toString(36).substring(2, 15));
-    }
+    if (!guestIdentity.current().isGuest) setShowGate(true);
+    guestIdentity.sessionId();
   }, [session]);
 
   const handleGuestSubmit = async (e: React.FormEvent) => {
@@ -77,9 +75,7 @@ const RoadmapDetailPage = () => {
         setGuestSaving(false);
         return;
       }
-      localStorage.setItem('careerprep_guest', 'true');
-      localStorage.setItem('careerprep_guest_email', payload.email);
-      localStorage.setItem('careerprep_guest_whatsapp', cleanPhone);
+      guestIdentity.identify({ email: payload.email, whatsapp: cleanPhone });
       setShowGate(false);
     } catch (err) {
       alert('Something went wrong. Please try again.');
@@ -207,7 +203,7 @@ const RoadmapDetailPage = () => {
       </div>
 
       {/* Guest Gate Modal */}
-      <Dialog open={showGate} onOpenChange={(open) => { if (!open && localStorage.getItem('careerprep_guest') !== 'true') return; setShowGate(open); }}>
+      <Dialog open={showGate} onOpenChange={(open) => { if (!open && !guestIdentity.current().isGuest) return; setShowGate(open); }}>
         <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">

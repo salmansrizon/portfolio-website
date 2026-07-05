@@ -14,6 +14,7 @@ import Navbar from '@/components/Navbar';
 import { Search, Trophy, Loader2, CheckCircle2, Circle, ChevronRight, ChevronLeft, Lock, Sparkles } from 'lucide-react';
 import { useQuestions, useCompletedMissions, useXPStats } from '@/hooks/useCareerPrep';
 import { supabase } from '@/integrations/supabase/client';
+import * as guestIdentity from '@/careerprep/guestIdentity';
 
 const CATEGORIES = ['All', 'SQL', 'Management', 'System Design'];
 const QUESTION_TYPES = ['All', 'MCQ', 'Coding Test', 'Case Study'] as const;
@@ -53,9 +54,7 @@ const CareerPrep = () => {
   const xpStats = useXPStats();
 
   useEffect(() => {
-    if (!localStorage.getItem('careerprep_session_id')) {
-      localStorage.setItem('careerprep_session_id', Math.random().toString(36).substring(2, 15));
-    }
+    guestIdentity.sessionId();
   }, []);
 
   // Fetch courses for carousel
@@ -157,7 +156,7 @@ const CareerPrep = () => {
       return;
     }
 
-    const isGuest = localStorage.getItem('careerprep_guest') === 'true';
+    const isGuest = guestIdentity.current().isGuest;
     if (isGuest) {
       navigate(`/career-prep/solve/${slug}`);
       return;
@@ -209,10 +208,8 @@ const CareerPrep = () => {
         return;
       }
 
-      // Persist to localStorage for session-level tracking
-      localStorage.setItem('careerprep_guest', 'true');
-      localStorage.setItem('careerprep_guest_email', payload.email);
-      localStorage.setItem('careerprep_guest_whatsapp', cleanPhone);
+      // Persist for session-level tracking
+      guestIdentity.identify({ email: payload.email, whatsapp: cleanPhone });
 
       setShowGuestModal(false);
       if (targetSlug) {
