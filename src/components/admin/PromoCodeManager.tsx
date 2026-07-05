@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAdminResource } from "@/hooks/useAdminResource";
 import { Plus, Edit, Trash2, Tag, Percent, Coins } from "lucide-react";
 
 interface PromoCode {
@@ -48,32 +49,25 @@ const initialFormData = {
 
 export default function PromoCodeManager() {
   const { toast } = useToast();
-  const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
+  const {
+    items: promoCodes,
+    loading: isLoading,
+    editingItem: editingCode,
+    isDialogOpen: showDialog,
+    setIsDialogOpen: setShowDialog,
+    startEdit,
+    clearEditing,
+    save,
+    remove,
+  } = useAdminResource<PromoCode>({ table: "promo_codes", orderBy: { column: "created_at", ascending: false } });
   const [courses, setCourses] = useState<Option[]>([]);
   const [webinars, setWebinars] = useState<Option[]>([]);
   const [formData, setFormData] = useState(initialFormData);
-  const [editingCode, setEditingCode] = useState<PromoCode | null>(null);
-  const [showDialog, setShowDialog] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchPromoCodes();
     fetchCourses();
     fetchWebinars();
   }, []);
-
-  const fetchPromoCodes = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await (supabase.from("promo_codes" as any).select("*").order("created_at", { ascending: false }) as any);
-      if (error) throw error;
-      setPromoCodes((data || []) as PromoCode[]);
-    } catch (error) {
-      console.error("Error fetching promo codes:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const fetchCourses = async () => {
     const { data } = await supabase.from("courses").select("id, title").order("title");
@@ -91,40 +85,25 @@ export default function PromoCodeManager() {
       return;
     }
 
-    try {
-      const payload: any = {
-        code: formData.code.trim().toUpperCase(),
-        description: formData.description || null,
-        discount_type: formData.discount_type,
-        discount_value: Number(formData.discount_value),
-        scope: formData.scope,
-        course_id: formData.scope === "course" ? formData.course_id || null : null,
-        webinar_id: formData.scope === "webinar" ? formData.webinar_id || null : null,
-        max_uses: formData.max_uses ? Number(formData.max_uses) : null,
-        is_active: formData.is_active,
-        valid_until: formData.valid_until ? new Date(formData.valid_until).toISOString() : null,
-      };
+    const payload: Record<string, unknown> = {
+      code: formData.code.trim().toUpperCase(),
+      description: formData.description || null,
+      discount_type: formData.discount_type,
+      discount_value: Number(formData.discount_value),
+      scope: formData.scope,
+      course_id: formData.scope === "course" ? formData.course_id || null : null,
+      webinar_id: formData.scope === "webinar" ? formData.webinar_id || null : null,
+      max_uses: formData.max_uses ? Number(formData.max_uses) : null,
+      is_active: formData.is_active,
+      valid_until: formData.valid_until ? new Date(formData.valid_until).toISOString() : null,
+    };
 
-      if (editingCode) {
-        const { error } = await (supabase.from("promo_codes" as any).update(payload).eq("id", editingCode.id) as any);
-        if (error) throw error;
-        toast({ title: "Success", description: "Promo code updated successfully." });
-      } else {
-        const { error } = await (supabase.from("promo_codes" as any).insert(payload) as any);
-        if (error) throw error;
-        toast({ title: "Success", description: "Promo code created successfully." });
-      }
-
-      setShowDialog(false);
-      resetForm();
-      fetchPromoCodes();
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to save promo code.", variant: "destructive" });
-    }
+    const ok = await save(payload);
+    if (ok) setFormData(initialFormData);
   };
 
   const handleEdit = (code: PromoCode) => {
-    setEditingCode(code);
+    startEdit(code);
     setFormData({
       code: code.code,
       description: code.description || "",
@@ -137,23 +116,15 @@ export default function PromoCodeManager() {
       is_active: code.is_active,
       valid_until: code.valid_until ? code.valid_until.slice(0, 10) : "",
     });
-    setShowDialog(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!confirm("Are you sure you want to delete this promo code?")) return;
-    try {
-      const { error } = await (supabase.from("promo_codes" as any).delete().eq("id", id) as any);
-      if (error) throw error;
-      toast({ title: "Deleted", description: "Promo code removed successfully." });
-      fetchPromoCodes();
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to delete.", variant: "destructive" });
-    }
+    remove(id);
   };
 
   const resetForm = () => {
-    setEditingCode(null);
+    clearEditing();
     setFormData(initialFormData);
   };
 

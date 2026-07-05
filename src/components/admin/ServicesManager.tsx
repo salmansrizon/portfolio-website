@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import IconPicker from './IconPicker';
 import { Button } from '@/components/ui/button';
@@ -7,9 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Plus, Edit, Trash2, X } from 'lucide-react';
+import { useAdminResource } from '@/hooks/useAdminResource';
 
 interface Service {
   id: string;
@@ -21,12 +20,18 @@ interface Service {
 }
 
 const ServicesManager = () => {
-  const [services, setServices] = useState<Service[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [editingService, setEditingService] = useState<Service | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { toast } = useToast();
+  const {
+    items: services,
+    loading,
+    saving,
+    editingItem: editingService,
+    isDialogOpen,
+    setIsDialogOpen,
+    startCreate,
+    startEdit,
+    save,
+    remove,
+  } = useAdminResource<Service>({ table: 'services', orderBy: { column: 'created_at', ascending: false } });
   const { register, handleSubmit, reset, control, setValue, watch } = useForm({
     defaultValues: {
       title: '',
@@ -36,128 +41,43 @@ const ServicesManager = () => {
     }
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove: removeFeature } = useFieldArray({
     control,
     name: 'features'
   });
 
-  useEffect(() => {
-    fetchServices();
-  }, []);
-
-  const fetchServices = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('services')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setServices(data || []);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch services",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const onSubmit = async (formData: any) => {
-    setSaving(true);
-    try {
-      const serviceData = {
-        title: formData.title,
-        description: formData.description,
-        icon: formData.icon,
-        features: formData.features.map((f: any) => f.value).filter((f: string) => f.trim() !== '')
-      };
-
-      if (editingService) {
-        const { error } = await supabase
-          .from('services')
-          .update(serviceData)
-          .eq('id', editingService.id);
-
-        if (error) throw error;
-        toast({
-          title: "Success",
-          description: "Service updated successfully!",
-        });
-      } else {
-        const { error } = await supabase
-          .from('services')
-          .insert([serviceData]);
-
-        if (error) throw error;
-        toast({
-          title: "Success",
-          description: "Service created successfully!",
-        });
-      }
-
-      // Fetch updated services after modification
-      await fetchServices();
-      setIsDialogOpen(false);
-      setEditingService(null);
-      reset();
-      fetchServices();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save service",
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
+    const serviceData = {
+      title: formData.title,
+      description: formData.description,
+      icon: formData.icon,
+      features: formData.features.map((f: any) => f.value).filter((f: string) => f.trim() !== '')
+    };
+    const ok = await save(serviceData);
+    if (ok) reset();
   };
 
   const handleEdit = (service: Service) => {
-    setEditingService(service);
+    startEdit(service);
     setValue('title', service.title);
     setValue('description', service.description);
     setValue('icon', service.icon || '');
     setValue('features', service.features.map(f => ({ value: f })));
-    setIsDialogOpen(true);
   };
 
-  const handleDelete = async (serviceId: string) => {
+  const handleDelete = (serviceId: string) => {
     if (!confirm('Are you sure you want to delete this service?')) return;
-
-    try {
-      const { error } = await supabase
-        .from('services')
-        .delete()
-        .eq('id', serviceId);
-
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Service deleted successfully!",
-      });
-      fetchServices();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete service",
-        variant: "destructive",
-      });
-    }
+    remove(serviceId);
   };
 
   const handleNewService = () => {
-    setEditingService(null);
+    startCreate();
     reset({
       title: '',
       description: '',
       icon: '',
       features: [{ value: '' }]
     });
-    setIsDialogOpen(true);
   };
 
   if (loading) {
@@ -185,7 +105,7 @@ const ServicesManager = () => {
                 {editingService ? 'Edit Service' : 'Create New Service'}
               </DialogTitle>
             </DialogHeader>
-            
+
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
                 <Label htmlFor="title">Title</Label>
@@ -195,7 +115,7 @@ const ServicesManager = () => {
                   placeholder="Service title"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="description">Description</Label>
                 <Textarea
@@ -205,12 +125,12 @@ const ServicesManager = () => {
                   rows={4}
                 />
               </div>
-              
+
               <div>
                 <Label>Icon</Label>
                 <IconPicker value={watch('icon')} onChange={(name) => setValue('icon', name)} />
               </div>
-              
+
               <div>
                 <Label>Features</Label>
                 <div className="space-y-2">
@@ -225,7 +145,7 @@ const ServicesManager = () => {
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => remove(index)}
+                          onClick={() => removeFeature(index)}
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -243,7 +163,7 @@ const ServicesManager = () => {
                   </Button>
                 </div>
               </div>
-              
+
               <div className="flex justify-end space-x-2">
                 <Button
                   type="button"

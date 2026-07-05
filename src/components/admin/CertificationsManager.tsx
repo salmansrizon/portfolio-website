@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Plus, Edit, Trash2, ExternalLink } from 'lucide-react';
+import { useAdminResource } from '@/hooks/useAdminResource';
 
 interface Certification {
   id: string;
@@ -21,128 +20,51 @@ interface Certification {
 }
 
 const CertificationsManager = () => {
-  const [certifications, setCertifications] = useState<Certification[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [editingCert, setEditingCert] = useState<Certification | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { toast } = useToast();
+  const {
+    items: certifications,
+    loading,
+    saving,
+    editingItem: editingCert,
+    isDialogOpen,
+    setIsDialogOpen,
+    startCreate,
+    startEdit,
+    save,
+    remove,
+  } = useAdminResource<Certification>({ table: 'certifications', orderBy: { column: 'earned_date', ascending: false } });
   const { register, handleSubmit, reset, setValue } = useForm();
 
-  useEffect(() => {
-    fetchCertifications();
-  }, []);
-
-  const fetchCertifications = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('certifications')
-        .select('*')
-        .order('earned_date', { ascending: false });
-
-      if (error) throw error;
-      setCertifications(data || []);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch certifications",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const onSubmit = async (formData: any) => {
-    setSaving(true);
-    try {
-      const certData = {
-        title: formData.title,
-        issuer: formData.issuer,
-        credential_id: formData.credential_id || null,
-        verification_url: formData.verification_url || null,
-        image_url: formData.image_url || null,
-        earned_date: formData.earned_date || null
-      };
-
-      if (editingCert) {
-        const { error } = await supabase
-          .from('certifications')
-          .update(certData)
-          .eq('id', editingCert.id);
-
-        if (error) throw error;
-        toast({
-          title: "Success",
-          description: "Certification updated successfully!",
-        });
-      } else {
-        const { error } = await supabase
-          .from('certifications')
-          .insert([certData]);
-
-        if (error) throw error;
-        toast({
-          title: "Success",
-          description: "Certification created successfully!",
-        });
-      }
-
-      setIsDialogOpen(false);
-      setEditingCert(null);
-      reset();
-      fetchCertifications();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save certification",
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
+    const certData = {
+      title: formData.title,
+      issuer: formData.issuer,
+      credential_id: formData.credential_id || null,
+      verification_url: formData.verification_url || null,
+      image_url: formData.image_url || null,
+      earned_date: formData.earned_date || null
+    };
+    const ok = await save(certData);
+    if (ok) reset();
   };
 
   const handleEdit = (cert: Certification) => {
-    setEditingCert(cert);
+    startEdit(cert);
     setValue('title', cert.title);
     setValue('issuer', cert.issuer);
     setValue('credential_id', cert.credential_id || '');
     setValue('verification_url', cert.verification_url || '');
     setValue('image_url', cert.image_url || '');
     setValue('earned_date', cert.earned_date || '');
-    setIsDialogOpen(true);
   };
 
-  const handleDelete = async (certId: string) => {
+  const handleDelete = (certId: string) => {
     if (!confirm('Are you sure you want to delete this certification?')) return;
-
-    try {
-      const { error } = await supabase
-        .from('certifications')
-        .delete()
-        .eq('id', certId);
-
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Certification deleted successfully!",
-      });
-      fetchCertifications();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete certification",
-        variant: "destructive",
-      });
-    }
+    remove(certId);
   };
 
   const handleNewCertification = () => {
-    setEditingCert(null);
+    startCreate();
     reset();
-    setIsDialogOpen(true);
   };
 
   if (loading) {
@@ -170,7 +92,7 @@ const CertificationsManager = () => {
                 {editingCert ? 'Edit Certification' : 'Create New Certification'}
               </DialogTitle>
             </DialogHeader>
-            
+
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
                 <Label htmlFor="title">Title</Label>
@@ -180,7 +102,7 @@ const CertificationsManager = () => {
                   placeholder="Certification title"
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="issuer">Issuer</Label>
                 <Input
@@ -189,7 +111,7 @@ const CertificationsManager = () => {
                   placeholder="e.g., Microsoft, Google, AWS"
                 />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="credential_id">Credential ID</Label>
@@ -199,7 +121,7 @@ const CertificationsManager = () => {
                     placeholder="e.g., DP-203, AZ-900"
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="earned_date">Earned Date</Label>
                   <Input
@@ -209,7 +131,7 @@ const CertificationsManager = () => {
                   />
                 </div>
               </div>
-              
+
               <div>
                 <Label htmlFor="verification_url">Verification URL</Label>
                 <Input
@@ -219,7 +141,7 @@ const CertificationsManager = () => {
                   placeholder="https://learn.microsoft.com/..."
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="image_url">Badge Image URL</Label>
                 <Input
@@ -229,7 +151,7 @@ const CertificationsManager = () => {
                   placeholder="https://example.com/badge.png"
                 />
               </div>
-              
+
               <div className="flex justify-end space-x-2">
                 <Button
                   type="button"

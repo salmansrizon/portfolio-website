@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { useAdminResource } from "@/hooks/useAdminResource";
 import { Plus, Trash2, GripVertical, ExternalLink } from "lucide-react";
 
 interface BrandLogo {
@@ -20,21 +21,12 @@ interface BrandLogo {
 
 const BrandLogosManager = () => {
   const { toast } = useToast();
-  const [logos, setLogos] = useState<BrandLogo[]>([]);
-  const [loading, setLoading] = useState(true);
+  const resource = useAdminResource<BrandLogo>({
+    table: "brand_logos",
+    orderBy: { column: "order_index", ascending: true },
+  });
+  const { items: logos, loading, saving, editingItem, startCreate, startEdit, save, remove, refresh } = resource;
   const [form, setForm] = useState({ name: "", logo_url: "", website_url: "", hover_text: "" });
-  const [editingId, setEditingId] = useState<string | null>(null);
-
-  const fetchLogos = async () => {
-    const { data } = await supabase
-      .from("brand_logos")
-      .select("*")
-      .order("order_index", { ascending: true });
-    if (data) setLogos(data as BrandLogo[]);
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchLogos(); }, []);
 
   const handleSave = async () => {
     if (!form.name || !form.logo_url) {
@@ -42,32 +34,20 @@ const BrandLogosManager = () => {
       return;
     }
 
-    if (editingId) {
-      const { error } = await supabase.from("brand_logos").update({
-        name: form.name,
-        logo_url: form.logo_url,
-        website_url: form.website_url || null,
-        hover_text: form.hover_text || null,
-      }).eq("id", editingId);
-      if (!error) toast({ title: "Updated", description: "Brand logo updated" });
-    } else {
-      const { error } = await supabase.from("brand_logos").insert({
-        name: form.name,
-        logo_url: form.logo_url,
-        website_url: form.website_url || null,
-        hover_text: form.hover_text || null,
-        order_index: logos.length,
-      });
-      if (!error) toast({ title: "Added", description: "Brand logo added" });
-    }
+    const payload: Record<string, unknown> = {
+      name: form.name,
+      logo_url: form.logo_url,
+      website_url: form.website_url || null,
+      hover_text: form.hover_text || null,
+    };
+    if (!editingItem) payload.order_index = logos.length;
 
-    setForm({ name: "", logo_url: "", website_url: "", hover_text: "" });
-    setEditingId(null);
-    fetchLogos();
+    const ok = await save(payload);
+    if (ok) setForm({ name: "", logo_url: "", website_url: "", hover_text: "" });
   };
 
   const handleEdit = (logo: BrandLogo) => {
-    setEditingId(logo.id);
+    startEdit(logo);
     setForm({
       name: logo.name,
       logo_url: logo.logo_url,
@@ -76,15 +56,14 @@ const BrandLogosManager = () => {
     });
   };
 
-  const handleDelete = async (id: string) => {
-    await supabase.from("brand_logos").delete().eq("id", id);
-    toast({ title: "Deleted", description: "Brand logo removed" });
-    fetchLogos();
+  const handleCancelEdit = () => {
+    startCreate();
+    setForm({ name: "", logo_url: "", website_url: "", hover_text: "" });
   };
 
   const toggleVisibility = async (id: string, current: boolean) => {
     await supabase.from("brand_logos").update({ is_visible: !current }).eq("id", id);
-    fetchLogos();
+    refresh();
   };
 
   if (loading) return <p>Loading...</p>;
@@ -93,7 +72,7 @@ const BrandLogosManager = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>{editingId ? "Edit Brand Logo" : "Add Brand Logo"}</CardTitle>
+          <CardTitle>{editingItem ? "Edit Brand Logo" : "Add Brand Logo"}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -115,11 +94,11 @@ const BrandLogosManager = () => {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button onClick={handleSave}>
-              <Plus className="h-4 w-4 mr-1" /> {editingId ? "Update" : "Add"}
+            <Button onClick={handleSave} disabled={saving}>
+              <Plus className="h-4 w-4 mr-1" /> {editingItem ? "Update" : "Add"}
             </Button>
-            {editingId && (
-              <Button variant="outline" onClick={() => { setEditingId(null); setForm({ name: "", logo_url: "", website_url: "", hover_text: "" }); }}>
+            {editingItem && (
+              <Button variant="outline" onClick={handleCancelEdit}>
                 Cancel
               </Button>
             )}
@@ -150,7 +129,7 @@ const BrandLogosManager = () => {
                   </div>
                   <Switch checked={logo.is_visible} onCheckedChange={() => toggleVisibility(logo.id, logo.is_visible)} />
                   <Button variant="outline" size="sm" onClick={() => handleEdit(logo)}>Edit</Button>
-                  <Button variant="destructive" size="sm" onClick={() => handleDelete(logo.id)}>
+                  <Button variant="destructive" size="sm" onClick={() => remove(logo.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
