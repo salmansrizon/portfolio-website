@@ -35,6 +35,7 @@ import { addMinutes } from "date-fns";
 import { cn } from "@/lib/utils";
 import PaymentModal, { PaymentModalData } from "@/components/PaymentModal";
 import { resolveCoursePricing } from "@/lib/pricing";
+import { enrollStudent } from "@/lib/coursePersistence";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Course {
@@ -289,26 +290,7 @@ export default function CourseDetails() {
   const handleEnrollment = async (data: PaymentModalData) => {
     setEnrolling(true);
     try {
-      const { error } = await (supabase
-        .from("course_enrollments")
-        .insert({
-          course_id: courseId,
-          user_name: data.name,
-          user_email: data.email,
-          whatsapp_number: data.whatsapp,
-          profession: data.extras.profession,
-          institute_name: data.extras.institute_name,
-          payment_method: course?.is_free ? 'free' : data.paymentMethod,
-          transaction_id: course?.is_free ? null : data.transactionId,
-          promo_code: data.promoCode || null,
-          discount_amount: data.discountAmount || null,
-        } as any) as any);
-
-      if (error) throw error;
-
-      if (data.promoCode) {
-        await (supabase.rpc("increment_promo_code_usage" as any, { code_input: data.promoCode }) as any);
-      }
+      await enrollStudent(courseId!, data, { isFree: !!course?.is_free });
 
       toast({
         title: "Success",
