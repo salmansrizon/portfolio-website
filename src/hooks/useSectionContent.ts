@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { SECTION_DEFAULTS, type SectionContentMap, type SectionName } from "@/lib/sections";
 
 /**
  * Loads a homepage Section's editable copy from portfolio_sections.
- * The component's hardcoded copy is the fallback: it renders immediately and
- * stays in place whenever no published row exists, so the page can never go
- * blank from missing data. DB fields win over fallback fields (shallow merge).
+ * The Section module's default copy renders immediately and stays in place
+ * whenever no published row exists, so the page can never go blank from
+ * missing data. DB fields win over default fields (shallow merge).
  */
-export function useSectionContent<T extends Record<string, unknown>>(
-  sectionName: string,
-  fallback: T,
-): { content: T; loading: boolean } {
-  const [content, setContent] = useState<T>(fallback);
+export function useSectionContent<K extends SectionName>(
+  sectionName: K,
+): { content: SectionContentMap[K]; loading: boolean } {
+  const [content, setContent] = useState<SectionContentMap[K]>(SECTION_DEFAULTS[sectionName]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,7 +25,7 @@ export function useSectionContent<T extends Record<string, unknown>>(
           .eq("status", "published")
           .maybeSingle();
         if (!cancelled && !error && data?.content && typeof data.content === "object") {
-          setContent((prev) => ({ ...prev, ...(data.content as Partial<T>) }));
+          setContent((prev) => ({ ...prev, ...(data.content as Partial<SectionContentMap[K]>) }));
         }
       } catch (err) {
         console.error(`Failed to load section content for "${sectionName}":`, err);

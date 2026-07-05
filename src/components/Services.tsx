@@ -5,10 +5,6 @@ import { ArrowRight, Loader2 } from "lucide-react";
 import DynamicIcon from "@/components/DynamicIcon";
 import { useSectionContent } from "@/hooks/useSectionContent";
 
-const SERVICES_FALLBACK = {
-  title: "Services",
-  subtitle: "Comprehensive data analytics solutions tailored to your business needs",
-};
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,7 +21,7 @@ interface Service {
 }
 
 const Services = () => {
-  const { content: sectionContent } = useSectionContent("services", SERVICES_FALLBACK);
+  const { content: sectionContent } = useSectionContent("services");
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
 

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
+import { SECTION_DEFAULTS } from "@/lib/sections";
 
 const maybeSingle = vi.fn();
 
@@ -20,29 +21,25 @@ import { useSectionContent } from "./useSectionContent";
 describe("useSectionContent", () => {
   beforeEach(() => maybeSingle.mockReset());
 
-  it("keeps the hardcoded fallback when no published row exists", async () => {
+  it("keeps the module's default copy when no published row exists", async () => {
     maybeSingle.mockResolvedValue({ data: null, error: null });
 
-    const { result } = renderHook(() =>
-      useSectionContent("services", { title: "Services", subtitle: "Fallback tagline" }),
-    );
+    const { result } = renderHook(() => useSectionContent("services"));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.content).toEqual({ title: "Services", subtitle: "Fallback tagline" });
+    expect(result.current.content).toEqual(SECTION_DEFAULTS.services);
   });
 
-  it("lets database content win over the fallback when a row exists", async () => {
+  it("lets database content win over the default when a row exists", async () => {
     maybeSingle.mockResolvedValue({
       data: { content: { title: "What I Offer" } },
       error: null,
     });
 
-    const { result } = renderHook(() =>
-      useSectionContent("services", { title: "Services", subtitle: "Fallback tagline" }),
-    );
+    const { result } = renderHook(() => useSectionContent("services"));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
-    // DB title wins; untouched fields keep their fallback
-    expect(result.current.content).toEqual({ title: "What I Offer", subtitle: "Fallback tagline" });
+    // DB title wins; untouched fields keep the module's default
+    expect(result.current.content).toEqual({ ...SECTION_DEFAULTS.services, title: "What I Offer" });
   });
 });

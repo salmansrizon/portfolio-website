@@ -23,7 +23,7 @@ interface Project {
 const DESC_LIMIT = 120;
 
 const PortfolioPage = () => {
-  const { content: sectionContent } = useSectionContent("portfolio", { title: "Portfolio", subtitle: "", description: "A showcase of my projects and technical implementations" });
+  const { content: sectionContent } = useSectionContent("portfolio");
   usePageView("/portfolio");
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);

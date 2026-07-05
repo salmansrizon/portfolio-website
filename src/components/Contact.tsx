@@ -39,7 +39,7 @@ import { useSectionContent } from "@/hooks/useSectionContent";
 type BookingStep = 'form' | 'confirmed';
 
 const Contact = () => {
-  const { content: sectionContent } = useSectionContent("contact", { title: "Let's Work Together", description: "Ready to transform your data into strategic insights?", email: "salmansrizon2016@gmail.com", phone: "", location: "Dhaka, Bangladesh" });
+  const { content: sectionContent } = useSectionContent("contact");
   const [currentTime, setCurrentTime] = useState('');
   const [isBusinessHours, setIsBusinessHours] = useState(false);
   const [formData, setFormData] = useState({

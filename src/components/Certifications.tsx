@@ -5,7 +5,7 @@ import { ExternalLink, Award } from "lucide-react";
 import { useSectionContent } from "@/hooks/useSectionContent";
 
 const Certifications = () => {
-  const { content: sectionContent } = useSectionContent("certifications", { title: "Certifications", subtitle: "Validated expertise in data and analytics" });
+  const { content: sectionContent } = useSectionContent("certifications");
   const certifications = [
     {
       code: "PL-300",

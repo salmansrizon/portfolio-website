@@ -6,20 +6,8 @@ import { Link } from "react-router-dom"
 import LottieAnimation from "@/components/LottieAnimation"
 import { useSectionContent } from "@/hooks/useSectionContent"
 
-const HERO_FALLBACK = {
-  title: { main: "Transforming Data into", highlight: "Strategic Insights" },
-  subtitle: "Google Certified Data Analytics Professional",
-  name: "Salman Sakib",
-  description:
-    "Google Certified Analytics Engineer with 7+ years of experience transforming complex data into actionable insights. Specializing in data driven business growth with data analysis and data engineering solutions.",
-  cta: {
-    primary: { text: "Book 1-1 Session", link: "/book-session" },
-    secondary: { text: "Get in Touch", link: "#contact" },
-  },
-}
-
 const Hero = () => {
-  const { content } = useSectionContent("hero", HERO_FALLBACK)
+  const { content } = useSectionContent("hero")
   return (
     <section
       id="home"

@@ -21,7 +21,7 @@ interface ExpandedTestimonials {
 }
 
 const Testimonials = () => {
-  const { content: sectionContent } = useSectionContent("testimonials", { title: "Client Testimonials", subtitle: "What clients say about working with me" });
+  const { content: sectionContent } = useSectionContent("testimonials");
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expanded, setExpanded] = useState<ExpandedTestimonials>({});
