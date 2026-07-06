@@ -166,23 +166,9 @@ const Admin = () => {
   );
 
   return (
-    <div className="min-h-screen relative flex flex-col bg-gradient-to-br from-background to-accent/30 overflow-hidden">
-      {/* Background Blur Elements (From Hero) */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-400/15 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-accent/10 rounded-full blur-2xl animate-pulse delay-2000"></div>
-        <div className="absolute top-1/3 right-1/4 w-48 h-48 bg-primary/10 rounded-full blur-xl animate-float"></div>
-        <div className="absolute bottom-1/3 left-1/3 w-56 h-56 bg-blue-300/8 rounded-full blur-xl animate-float-delayed"></div>
-        <div className="absolute top-1/5 left-1/2 w-32 h-32 bg-primary/15 rounded-full blur-lg animate-bounce-slow"></div>
-        <div className="absolute bottom-1/5 right-1/2 w-24 h-24 bg-accent/12 rounded-full blur-lg animate-bounce-slow delay-500"></div>
-      </div>
-      
-      {/* Gradient overlay for depth */}
-      <div className="absolute inset-0 bg-gradient-to-t from-background/50 via-transparent to-background/30 pointer-events-none z-0"></div>
-
+    <div className="min-h-screen relative flex flex-col bg-paper overflow-hidden">
       {/* Top Header */}
-      <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-4 border-b/50 bg-background/60 backdrop-blur-xl px-4 md:px-6 shadow-sm">
+      <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-4 border-b border-border bg-background px-4 md:px-6">
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="md:hidden">

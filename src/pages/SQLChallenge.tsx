@@ -296,7 +296,7 @@ const SQLChallenge = () => {
        </div>
        <div className="relative z-10 w-full max-w-md text-center">
           <div ref={resultsRef} className="p-8 space-y-6 bg-card/60 backdrop-blur-2xl border border-border/80 rounded-[32px] shadow-2xl">
-              <div className="w-16 h-16 bg-gradient-to-br from-success to-emerald-600 rounded-2xl flex items-center justify-center mb-4 mx-auto shadow-lg shadow-success/20"><CheckCircle2 className="w-8 h-8 text-white" /></div>
+              <div className="w-16 h-16 bg-success rounded-2xl flex items-center justify-center mb-4 mx-auto"><CheckCircle2 className="w-8 h-8 text-white" /></div>
               <div className="space-y-1">
                 <h2 className="text-2xl font-black uppercase tracking-tight italic text-foreground">Mission Complete</h2>
                 <p className="text-[11px] text-muted-foreground font-medium px-4">Finalized <span className="text-primary font-bold uppercase">{question?.title}</span>.</p>
@@ -368,7 +368,7 @@ const SQLChallenge = () => {
   const showsEditor = currentQ?.question_type === 'code' || currentQ?.question_type === 'case_study';
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-background via-background to-accent/30 text-foreground font-sans overflow-hidden relative">
+    <div className="flex flex-col h-screen bg-background text-foreground font-sans overflow-hidden relative">
       <MemoizedNavbar />
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] animate-pulse"></div>
@@ -403,7 +403,7 @@ const SQLChallenge = () => {
               <div className="flex items-center gap-2 md:gap-4 overflow-hidden">
                 <Badge className="hidden sm:inline-flex bg-primary/10 text-primary border-primary/30 text-[9px] font-black uppercase tracking-[0.2em] h-5 px-2.5 shrink-0">Mission Step {cursorIdx + 1}</Badge>
                 <div className="flex items-center gap-2 min-w-0">
-                  <h1 className="text-sm md:text-xl font-black tracking-tight text-foreground uppercase italic bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent truncate pr-2">
+                  <h1 className="text-sm md:text-xl font-black tracking-tight text-foreground uppercase italic truncate pr-2">
                     {currentQ?.title || question?.title}
                   </h1>
                 </div>

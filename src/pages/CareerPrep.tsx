@@ -235,26 +235,18 @@ const CareerPrep = () => {
   const currentCourse = courses[currentCourseIndex];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-accent/30 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
-      
+
       {/* Hero Section Aligned with Home/Courses */}
       <div className="relative pt-32 pb-12 overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-primary/15 rounded-full blur-3xl animate-pulse delay-1000"></div>
-          <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-accent/10 rounded-full blur-2xl animate-pulse delay-2000"></div>
-          <div className="absolute top-1/3 right-1/4 w-48 h-48 bg-primary/10 rounded-full blur-xl animate-float"></div>
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-background/50 via-transparent to-background/30 pointer-events-none"></div>
-
         <main className="container max-w-7xl mx-auto px-4 relative z-10">
           <div className="flex flex-col gap-4 mb-6">
-            <Badge className="bg-primary/10 text-primary border-primary/20 w-fit px-4 py-1.5 font-semibold">
+            <div className="text-sm font-bold text-accent uppercase tracking-wider w-fit">
               Mission Command
-            </Badge>
+            </div>
             <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
-              <span className="bg-gradient-to-r from-primary via-blue-500 to-blue-400 bg-[length:200%_100%] bg-clip-text text-transparent animate-gradient-move">
+              <span className="text-accent">
                 Career Missions
               </span>
               <br />
@@ -452,7 +444,7 @@ const CareerPrep = () => {
                      transition={{ duration: 0.4, ease: "easeInOut" }}
                      className="flex-1 flex flex-col"
                    >
-                     <div className="relative bg-gradient-to-br from-primary via-blue-600 to-blue-500 p-6 text-white text-center pb-8 shrink-0">
+                     <div className="relative bg-accent p-6 text-white text-center pb-8 shrink-0">
                        <h3 className="text-xs font-bold mb-1 uppercase tracking-[0.2em] opacity-80 flex items-center justify-center gap-1.5">
                          <Sparkles className="w-3 h-3" /> Featured Course
                        </h3>

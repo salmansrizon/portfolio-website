@@ -184,9 +184,9 @@ const RoadmapDetailPage = () => {
 
           {/* Customize Guideline CTA */}
           {nodes.length > 0 && (
-            <div className="mt-10 sm:mt-14 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-accent/5 to-background p-6 sm:p-8 text-center shadow-sm">
-              <div className="mx-auto w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center mb-3">
-                <MessageCircleQuestion className="w-6 h-6 text-primary" />
+            <div className="mt-10 sm:mt-14 rounded-[20px] border border-border bg-secondary p-6 sm:p-8 text-center">
+              <div className="mx-auto w-12 h-12 rounded-full bg-accent flex items-center justify-center mb-3">
+                <MessageCircleQuestion className="w-6 h-6 text-white" />
               </div>
               <h2 className="text-xl sm:text-2xl font-bold mb-2">Need Customize Guideline?</h2>
               <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto mb-5">

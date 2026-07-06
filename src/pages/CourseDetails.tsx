@@ -177,6 +177,7 @@ export default function CourseDetails() {
         reviewsResult,
         paymentResult,
         sectionsResult,
+        outlineResult,
         contentResult,
         relatedResult
       ] = await Promise.all([
@@ -197,7 +198,9 @@ export default function CourseDetails() {
         supabase.from("payment_settings").select("*").limit(1).single(),
         // Sections fetch
         supabase.from("course_sections").select("*").eq("course_id", courseId).order("order_index"),
-        // Content fetch
+        // Curriculum outline (public view — metadata only, visible to everyone)
+        (supabase.from("course_content_outline" as any) as any).select("*").eq("course_id", courseId).order("order_index"),
+        // Content fetch (RLS-gated — returns only rows the viewer may access, incl. content_data)
         supabase.from("course_content").select("*").eq("course_id", courseId).order("order_index"),
         // Related courses fetch
         (async () => {
@@ -225,10 +228,18 @@ export default function CourseDetails() {
       if (paymentResult.data) setPaymentSettings(paymentResult.data);
       setRelatedCourses(relatedResult as Course[]);
 
-      // Process sections and content
+      // Process sections and content: the outline view lists every lesson
+      // (metadata only); the gated table supplies content_data for rows the
+      // viewer is allowed to play. Merge the two by id.
       const sectionsData = sectionsResult.data || [];
-      const contentData = contentResult.data || [];
-      
+      const gatedById = new Map<string, any>(
+        ((contentResult.data as any[]) || []).map(row => [row.id, row])
+      );
+      const contentData = (((outlineResult.data as any[]) || []).map(item => ({
+        ...item,
+        content_data: gatedById.get(item.id)?.content_data ?? null,
+      }))) as any[];
+
       const sectionsMap = new Map<string, CourseSection>();
       sectionsData.forEach(section => {
         sectionsMap.set(section.id, { ...section, contents: [] });
@@ -332,7 +343,7 @@ export default function CourseDetails() {
       <div className="min-h-screen bg-background pb-20">
         <Navbar />
 
-        <div className="relative bg-gradient-to-br from-slate-950 via-slate-900 to-[#0c1a3d] overflow-hidden">
+        <div className="relative bg-gradient-hero overflow-hidden">
           <div className="relative z-10 pt-28 pb-16 lg:pb-40 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="lg:w-[62%]">
               <Skeleton className="h-4 w-32 mb-6 bg-white/10" />
@@ -407,12 +418,7 @@ export default function CourseDetails() {
       <Navbar />
 
       {/* Premium Hero Banner */}
-      <div className="relative bg-gradient-to-br from-slate-950 via-slate-900 to-[#0c1a3d] overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 right-0 w-[32rem] h-[32rem] bg-primary/25 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4"></div>
-          <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-        </div>
-
+      <div className="relative bg-gradient-hero overflow-hidden">
         <div className="relative z-10 pt-28 pb-16 lg:pb-40 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="lg:w-[62%]">
             <div className="flex items-center flex-wrap text-sm text-slate-400 mb-5 gap-2">
@@ -548,7 +554,7 @@ export default function CourseDetails() {
                     {(course.learning_outcomes && course.learning_outcomes.length > 0) ? (
                       course.learning_outcomes.map((outcome, idx) => (
                         <div key={idx} className="flex items-start gap-4 group">
-                          <CheckCircle2 className="w-5 h-5 text-[#10b981] shrink-0 mt-1 transition-transform group-hover:scale-110" />
+                          <CheckCircle2 className="w-5 h-5 text-success shrink-0 mt-1 transition-transform group-hover:scale-110" />
                           <span className="text-base font-semibold text-slate-700 dark:text-slate-300 leading-tight transition-colors group-hover:text-foreground">
                             {outcome}
                           </span>
@@ -557,7 +563,7 @@ export default function CourseDetails() {
                     ) : (
                       course.technologies?.map((tech, idx) => (
                         <div key={idx} className="flex items-start gap-4 group">
-                          <CheckCircle2 className="w-5 h-5 text-[#10b981] shrink-0 mt-1 transition-transform group-hover:scale-110" />
+                          <CheckCircle2 className="w-5 h-5 text-success shrink-0 mt-1 transition-transform group-hover:scale-110" />
                           <span className="text-base font-semibold text-slate-700 dark:text-slate-300 leading-tight transition-colors group-hover:text-foreground">
                             Master {tech} concepts and build projects.
                           </span>
@@ -778,7 +784,7 @@ export default function CourseDetails() {
                    );
                  })()}
                  <div className="flex gap-3 mb-6">
-                    <Button size="lg" className="flex-1 bg-[#d91d79] hover:bg-[#b0145e] h-14 rounded-xl text-white font-bold" onClick={() => setShowEnrollmentModal(true)}>Start course</Button>
+                    <Button size="lg" className="flex-1 bg-series-webinar hover:bg-series-webinar/90 h-14 text-white font-bold" onClick={() => setShowEnrollmentModal(true)}>Start course</Button>
                     <Button size="lg" variant="outline" className="w-14 h-14 p-0 rounded-xl" onClick={handleShare}><Share2 className="w-5 h-5" /></Button>
                  </div>
                  <ul className="space-y-4">
@@ -832,7 +838,7 @@ export default function CourseDetails() {
                            </div>
                            <Link 
                              to={`/course/${rc.id}`} 
-                             className="inline-flex items-center text-[10px] font-black uppercase tracking-widest text-[#d91d79] hover:text-[#b0145e] transition-colors"
+                             className="inline-flex items-center text-[10px] font-black uppercase tracking-widest text-series-webinar hover:text-series-webinar/80 transition-colors"
                            >
                              Enroll Now <ChevronRight className="w-3 h-3 ml-0.5" />
                            </Link>

@@ -19,8 +19,8 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				sans: ['"Work Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-				display: ['"Bricolage Grotesque"', '"Work Sans"', 'ui-sans-serif', 'sans-serif'],
+				sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+				display: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',

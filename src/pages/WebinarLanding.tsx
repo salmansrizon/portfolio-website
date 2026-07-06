@@ -167,15 +167,6 @@ const WebinarLanding = () => {
             <Navbar />
 
             {/* Background Blur Elements (Matching Hero) */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[100px] animate-pulse"></div>
-                <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-primary/10 rounded-full blur-[100px] animate-pulse delay-1000"></div>
-                <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-accent/5 rounded-full blur-[80px] animate-pulse delay-2000"></div>
-            </div>
-
-            {/* Gradient overlay for depth */}
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/50 pointer-events-none z-0"></div>
-
             <div className="relative z-10 pt-32 pb-20 max-w-6xl mx-auto px-6">
 
                 {/* HERO SECTION - Aligned with Index Hero */}
@@ -192,7 +183,7 @@ const WebinarLanding = () => {
                                 {webinar.is_free ? 'Free Live Session' : 'Exclusive Masterclass'}
                             </Badge>
                             <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black leading-[1.1] tracking-tight">
-                                <span className="bg-gradient-to-r from-primary via-blue-600 to-indigo-500 bg-[length:200%_100%] bg-clip-text text-transparent animate-gradient-move">
+                                <span className="text-foreground">
                                     {webinar.content_blocks?.find((b: any) => b.type === 'hero')?.title || webinar.title}
                                 </span>
                             </h1>
@@ -290,8 +281,8 @@ const WebinarLanding = () => {
                                     />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center relative overflow-hidden group/fallback">
-                                        <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-blue-500/10 to-indigo-500/20 group-hover/fallback:rotate-12 transition-transform duration-1000" />
-                                        <PlayCircle className="h-20 w-20 text-primary/40 group-hover/fallback:scale-110 transition-transform cursor-pointer z-10" />
+                                        <div className="absolute inset-0 bg-secondary" />
+                                        <PlayCircle className="h-20 w-20 text-accent group-hover/fallback:scale-110 transition-transform cursor-pointer z-10" />
                                     </div>
                                 )}
                             </div>
@@ -397,16 +388,10 @@ const WebinarLanding = () => {
 
                                         return (
                                             <div key={i} className="relative group/card w-full overflow-hidden">
-                                                {/* Ambient Background Glow - Blue Theme */}
-                                                <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-blue-400/5 to-primary/10 opacity-30 group-hover/card:opacity-60 transition-opacity duration-700 blur-3xl " />
-                                                
-                                                <div className="relative bg-primary/[0.03] dark:bg-primary/[0.05] backdrop-blur-2xl border border-primary/20 rounded-[40px] p-8 md:p-10 grid grid-cols-1 md:grid-cols-12 gap-10 items-center w-full min-h-[200px] shadow-[0_8px_32px_0_rgba(59,130,246,0.05)]">
+                                                <div className="relative bg-secondary border border-border rounded-[20px] p-8 md:p-10 grid grid-cols-1 md:grid-cols-12 gap-10 items-center w-full min-h-[200px]">
                                                     
                                                     <div className="md:col-span-3 flex justify-center md:justify-end">
                                                         <div className="relative group/avatar">
-                                                            {/* Ring effect */}
-                                                            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-primary to-blue-400 scale-105 opacity-0 group-hover/avatar:opacity-20 transition-opacity duration-500 blur-sm" />
-                                                            
                                                             <div className="relative w-36 h-36 md:w-40 md:h-40">
                                                                 <div className="w-full h-full rounded-full overflow-hidden bg-white dark:bg-slate-900 shadow-2xl border-4 border-white dark:border-slate-800 relative z-10">
                                                                     {hostData.avatar ? (

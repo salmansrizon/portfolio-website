@@ -49,6 +49,16 @@ const Contact = () => {
     message: ''
   });
 
+  // Admin-managed services for the "Service Needed" dropdown
+  const [serviceOptions, setServiceOptions] = useState<{ id: string; title: string }[]>([]);
+  useEffect(() => {
+    supabase
+      .from('services')
+      .select('id, title')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => setServiceOptions(data || []));
+  }, []);
+
   // ── Booking state ──────────────────────────────────────────
   const {
     sessionTypes,
@@ -279,12 +289,10 @@ ${formData.message}
                         <SelectValue placeholder="Select a service" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="power-bi">Power BI Consulting</SelectItem>
-                        <SelectItem value="data-engineering">Data Engineering</SelectItem>
-                        <SelectItem value="fabric">Microsoft Fabric Implementation</SelectItem>
-                        <SelectItem value="training">Training & Mentoring</SelectItem>
-                        <SelectItem value="custom">Custom Analytics Solutions</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
+                        {serviceOptions.map(s => (
+                          <SelectItem key={s.id} value={s.title}>{s.title}</SelectItem>
+                        ))}
+                        <SelectItem value="Other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -690,7 +698,7 @@ ${formData.message}
             </Card>
 
             {/* Quick Response */}
-            <Card className="shadow-card bg-gradient-hero text-white border-primary/20 backdrop-blur-md hover:shadow-hover transition-all">
+            <Card className="shadow-card bg-gradient-hero text-white border-transparent hover:shadow-hover transition-all">
               <CardContent className="p-6">
                 <div className="flex items-start space-x-4">
                   <Zap className="h-8 w-8 flex-shrink-0 mt-1" />
