@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -58,12 +59,33 @@ export default function CourseContentManager() {
   useEffect(() => {
     supabase.from("courses").select("id, title").order("title").then(({ data }) => setCourses(data || []));
   }, []);
+
+  const fetchContents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("course_content")
+        .select("*")
+        .eq("course_id", selectedCourse)
+        .order("order_index");
+      if (error) throw error;
+      setContents(data || []);
+    } catch (error) {
+      console.error("Error loading contents:", error);
+      toast({
         title: "Error",
         description: "Failed to load contents",
         variant: "destructive",
       });
     }
   };
+
+  useEffect(() => {
+    if (selectedCourse) {
+      fetchContents();
+    } else {
+      setContents([]);
+    }
+  }, [selectedCourse]);
 
   const handleContentSubmit = async () => {
     try {

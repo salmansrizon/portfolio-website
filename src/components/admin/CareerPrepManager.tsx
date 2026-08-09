@@ -19,7 +19,7 @@ import {
   GraduationCap, CircleUser, Code2, ListChecks, BookOpen,
   FolderTree, Clock, Tags, X, ChevronRight, ChevronDown, Sparkles
 } from 'lucide-react';
-import type { CareerPrepQuestion } from '@/hooks/useCareerPrep';
+import type { CareerPrepQuestion, QuestionType } from '@/hooks/useCareerPrep';
 
 const careerPrepRepository = createRepository(careerPrepQuestionConfig);
 
@@ -311,17 +311,6 @@ INSERT INTO ecom_orders (customer_id, amount, order_date) VALUES (1, 5000, CURRE
           },
         });
       }
-      return;
-
-      toast({ 
-        title: 'Saved ✓', 
-        description: editingQ ? 'Question updated successfully.' : 'New question created.' 
-      });
-      
-      await fetchQuestions();
-      setDialogOpen(false); 
-      setEditingQ(null); 
-      reset();
     } catch (err: any) {
       console.error("Form submission catch error:", err);
       toast({ 

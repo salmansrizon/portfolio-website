@@ -94,13 +94,6 @@ const UnavailableSlotsManager = () => {
       onSuccess: () => toast({ title: "Success", description: "Unavailable slot removed successfully" }),
       onError: () => toast({ title: "Error", description: "Failed to remove unavailable slot", variant: "destructive" }),
     });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to remove unavailable slot",
-        variant: "destructive"
-      });
-    }
   };
 
   if (loading) {
