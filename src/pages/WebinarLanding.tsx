@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
+import { createRepository } from "@/integrations/supabase/repository";
+import { webinarConfig, instructorConfig } from "@/adapters/entityConfigs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,55 +36,31 @@ import { useBookingData } from "@/hooks/useBookingData";
 import { cn } from "@/lib/utils";
 import PaymentModal, { PaymentModalData } from "@/components/PaymentModal";
 
+const webinarRepository = createRepository(webinarConfig);
+const instructorRepository = createRepository(instructorConfig);
+
 const WebinarLanding = () => {
     const { id } = useParams();
-    const [webinar, setWebinar] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
     const [isRegistering, setIsRegistering] = useState(false);
     const { toast } = useToast();
     const navigate = useNavigate();
     // Form loading and error handling
     const [formLoading, setFormLoading] = useState(false);
     const [timeLeft, setTimeLeft] = useState<{ d: number, h: number, m: number, s: number }>({ d: 0, h: 0, m: 0, s: 0 });
-    const [instructors, setInstructors] = useState<any[]>([]);
     const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
     const [expandedFaqIdx, setExpandedFaqIdx] = useState<number | null>(null);
     const [isHeroExpanded, setIsHeroExpanded] = useState(false);
     const { paymentSettings } = useBookingData();
 
+    const { data: webinar, isLoading: loading, error: webinarError } = webinarRepository.useFindById(id || '');
+    const { data: instructors = [] } = instructorRepository.useFindAll();
+
     useEffect(() => {
-        const fetchWebinar = async () => {
-            setLoading(true);
-            try {
-                const { data, error } = await (supabase
-                    .from('webinars' as any)
-                    .select('*')
-                    .eq('id', id)
-                    .single() as any);
-
-                if (error || !data) {
-                    toast({ title: "Webinar not found", variant: "destructive" });
-                    navigate('/');
-                } else {
-                    setWebinar(data);
-                }
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        const fetchInstructors = async () => {
-            const { data } = await supabase.from('instructors').select('*');
-            if (data) setInstructors(data);
-        };
-
-        if (id) {
-            fetchWebinar();
-            fetchInstructors();
+        if (!loading && id && (webinarError || !webinar)) {
+            toast({ title: "Webinar not found", variant: "destructive" });
+            navigate('/');
         }
-    }, [id, navigate, toast]);
+    }, [id, loading, webinar, webinarError, navigate, toast]);
 
     useEffect(() => {
         if (!webinar) return;
@@ -377,7 +355,7 @@ const WebinarLanding = () => {
                                         const inst = instId ? instructors.find(ins => ins.id === instId) : null;
                                         const hostData = inst ? {
                                             name: inst.name,
-                                            role: inst.specialization || inst.role,
+                                            role: inst.specialization,
                                             avatar: inst.avatar_url,
                                             bio: inst.bio,
                                             linkedin: inst.linkedin_url
@@ -554,7 +532,7 @@ const WebinarLanding = () => {
                 onOpenChange={setIsRegistering}
                 title={webinar.title}
                 isFree={webinar.is_free}
-                priceLabel={webinar.price}
+                priceLabel={webinar.price != null ? String(webinar.price) : undefined}
                 onSubmit={handleRegister}
                 extraFields={[
                     { key: 'role', label: 'Role / Profession', placeholder: 'e.g. Student, UX Designer', required: true }

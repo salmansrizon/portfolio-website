@@ -1,5 +1,6 @@
 import * as React from 'react';
 const { useState, useEffect, useCallback } = React;
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { createRepository } from '@/integrations/supabase/repository';
@@ -51,47 +52,32 @@ export function useQuestions() {
   return { questions, loading };
 }
 
+// A stable empty-array reference — useMissionRunner's effect is keyed on
+// `children` by reference, so a fresh `[]` default on every render (while the
+// children query is disabled/pending) would re-fire it forever.
+const NO_CHILDREN: CareerPrepQuestion[] = [];
+
 export function useQuestion(slug?: string) {
-  const [question, setQuestion] = useState<CareerPrepQuestion | null>(null);
-  const [children, setChildren] = useState<CareerPrepQuestion[]>([]);
-  const [loading, setLoading]   = useState(true);
+  // useFindAll has no `enabled` gate, so an empty slug still issues a query
+  // (matching nothing) rather than skipping — harmless today since the only
+  // caller always passes a defined string, but worth knowing if that changes.
+  const { data: matches, isLoading: loadingQuestion } = questionRepository.useFindAll({ slug: slug || '' });
+  const question = matches?.[0] || null;
 
-  useEffect(() => {
-    if (!slug) return;
-    const fetchQuestionData = async () => {
-      setLoading(true);
-      const table = (supabase as any).from('careerprep_questions');
-      
-      // 1. Fetch ALL questions related to missions (to be safe and consistent with Admin panel)
-      const { data: allQuestions, error: allErr } = await table.select('*');
-      
-      if (allErr || !allQuestions) {
-        setLoading(false);
-        return;
-      }
+  const { data: children = NO_CHILDREN, isLoading: loadingChildren } = useQuery({
+    queryKey: ['careerprep_questions', 'children', question?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('careerprep_questions' as any)
+        .select('*')
+        .eq('parent_id', question!.id);
+      if (error) throw error;
+      return (data || []) as unknown as CareerPrepQuestion[];
+    },
+    enabled: !!question?.id,
+  });
 
-      // 2. Find the target question by slug
-      const target = allQuestions.find((q: any) => q.slug === slug);
-      
-      if (!target) {
-        setQuestion(null);
-        setLoading(false);
-        return;
-      }
-
-      setQuestion(target);
-
-      // 3. Filter children locally by parent_id match
-      const kids = allQuestions.filter((q: any) => q.parent_id === target.id);
-      setChildren(kids);
-
-      setLoading(false);
-    };
-
-    fetchQuestionData();
-  }, [slug]);
-
-  return { question, children, loading };
+  return { question, children, loading: loadingQuestion || loadingChildren };
 }
 
 export function useSubmissions(questionId?: string) {

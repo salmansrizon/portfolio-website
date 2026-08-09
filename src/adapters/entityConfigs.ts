@@ -336,8 +336,15 @@ export const brandLogoConfig: EntityConfig<BrandLogo> = {
 export const instructorSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().min(1, 'Name is required'),
+  email: z.string().email(),
   bio: z.string().optional(),
   avatar_url: z.string().url().optional().or(z.literal('')),
+  phone: z.string().optional(),
+  specialization: z.string().optional(),
+  linkedin_url: z.string().optional(),
+  website: z.string().optional(),
+  is_active: z.boolean().default(true),
+  assigned_courses: z.array(z.string()).optional(),
   created_at: z.string().optional(),
 });
 
@@ -350,8 +357,13 @@ export const instructorConfig: EntityConfig<Instructor> = {
   realtime: false,
   fields: [
     { name: 'name', type: 'text', label: 'Name', required: true },
+    { name: 'email', type: 'text', label: 'Email', required: true },
+    { name: 'phone', type: 'text', label: 'Phone' },
     { name: 'bio', type: 'textarea', label: 'Bio' },
+    { name: 'specialization', type: 'text', label: 'Specialization' },
     { name: 'avatar_url', type: 'text', label: 'Avatar URL' },
+    { name: 'linkedin_url', type: 'text', label: 'LinkedIn URL' },
+    { name: 'is_active', type: 'boolean', label: 'Active' },
   ],
 };
 
@@ -516,12 +528,16 @@ export const sessionBookingConfig: EntityConfig<SessionBooking> = {
 export const webinarSchema = z.object({
   id: z.string().uuid().optional(),
   title: z.string().min(1, 'Title is required'),
-  description: z.string().optional(),
+  description: z.string().nullable().optional(),
   webinar_date: z.string(),
-  webinar_time: z.string(),
-  meeting_url: z.string().url().optional().or(z.literal('')),
-  is_published: z.boolean().default(false),
+  banner_url: z.string().nullable().optional(),
+  is_free: z.boolean().nullable().default(true),
+  price: z.number().nullable().optional(),
+  status: z.enum(['draft', 'published']).nullable().default('draft'),
+  booked_count: z.number().nullable().default(0),
+  content_blocks: z.any().nullable().optional(),
   created_at: z.string().optional(),
+  updated_at: z.string().optional(),
 });
 
 export type Webinar = z.infer<typeof webinarSchema>;
@@ -535,9 +551,14 @@ export const webinarConfig: EntityConfig<Webinar> = {
     { name: 'title', type: 'text', label: 'Title', required: true },
     { name: 'description', type: 'textarea', label: 'Description' },
     { name: 'webinar_date', type: 'text', label: 'Webinar Date', required: true },
-    { name: 'webinar_time', type: 'text', label: 'Webinar Time', required: true },
-    { name: 'meeting_url', type: 'text', label: 'Meeting URL' },
-    { name: 'is_published', type: 'boolean', label: 'Published' },
+    { name: 'banner_url', type: 'text', label: 'Banner URL' },
+    { name: 'is_free', type: 'boolean', label: 'Free' },
+    { name: 'price', type: 'number', label: 'Price' },
+    { name: 'status', type: 'select', label: 'Status', options: [
+      { label: 'Draft', value: 'draft' },
+      { label: 'Published', value: 'published' },
+    ]},
+    { name: 'booked_count', type: 'number', label: 'Booked Count' },
   ],
 };
 

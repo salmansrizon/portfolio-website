@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,13 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -21,10 +25,6 @@ import {
   CalendarIcon, CalendarX
 } from "lucide-react";
 import { format } from "date-fns";
-import { createRepository } from "@/integrations/supabase/repository";
-import { sessionBookingConfig } from "@/adapters/entityConfigs";
-
-const bookingRepository = createRepository(sessionBookingConfig);
 
 // ── Types ────────────────────────────────────────────────────
 interface SessionType {
@@ -97,11 +97,8 @@ const SessionBookingManager = () => {
   const [paymentSettings, setPaymentSettings] = useState<any>(null);
   const [unavailableSlots, setUnavailableSlots] = useState<any[]>([]);
   const [availabilitySettings, setAvailabilitySettings] = useState<any>(null);
-
-  const { data: bookings = [], isLoading } = bookingRepository.useFindAll();
-  const { mutate: deleteBooking } = bookingRepository.useDelete();
-  const { mutate: updateBooking } = bookingRepository.useUpdate();
-  const { mutate: createBooking } = bookingRepository.useCreate();
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // ── Edit state ─────────────────────────────────────────────
   const [editingBooking, setEditingBooking] = useState<any>(null);
@@ -116,6 +113,28 @@ const SessionBookingManager = () => {
     reason: '',
     isFullDay: false
   });
+
+  // ── Fetch all data ─────────────────────────────────────────
+  const fetchAll = async () => {
+    setLoading(true);
+    const [{ data: types }, { data: payments }, { data: bookingsData }, { data: slots }, { data: avail }] = await Promise.all([
+      supabase.from('session_types').select('*'),
+      supabase.from('payment_settings').select('*').single(),
+      supabase.from('session_bookings').select('*').order('created_at', { ascending: false }),
+      supabase.from('unavailable_slots').select('*'),
+      supabase.from('availability_settings').select('*').single(),
+    ]);
+    setSessionTypes(types || []);
+    setPaymentSettings(payments || null);
+    setBookings(bookingsData || []);
+    setUnavailableSlots(slots || []);
+    setAvailabilitySettings(avail || null);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchAll();
+  }, []);
 
   // ═══════════════════════════════════════════════════════════
   // Session Types CRUD
