@@ -2,7 +2,6 @@ import * as React from 'react';
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { PGlite } from '@electric-sql/pglite';
 import Editor from '@monaco-editor/react';
 import { 
   Play, 
@@ -43,6 +42,11 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useTheme } from 'next-themes';
 import { useToast } from '@/hooks/use-toast';
+import { useMissionRunner } from './sql-challenge/modules/MissionRunner';
+import { useQueryExecutor } from './sql-challenge/modules/QueryExecutor';
+import { useTimerController } from './sql-challenge/modules/TimerController';
+import { useResultRenderer } from './sql-challenge/modules/ResultRenderer';
+import { bootPGlite, getPGliteInstance } from './sql-challenge/modules/PGliteEngine';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 // ── Performance Memoization ──────────────────────────────────────────────
@@ -92,126 +96,67 @@ const SQLChallenge = () => {
   const { question, children, loading: qLoading } = useQuestion(slug || '');
   const { logSubmission, isSubmitting } = useSubmitCode();
 
-  // ── Mission State ────────────────────────────────────────────────────────
-  const [missionQueue, setMissionQueue] = useState<any[]>([]);
-  const [cursorIdx, setCursorIdx]       = useState(0);
-  const [isMissionComplete, setIsMissionComplete] = useState(false);
-  const currentQ = missionQueue[cursorIdx] || null;
+  // ── Mission State (from useMissionRunner hook) ───────────────────────────
+  const { missionQueue, cursorIdx, isMissionComplete, currentQuestion, advanceMission, resetMission } = useMissionRunner(question, children);
+  const currentQ = currentQuestion || question;
 
   // ── Database / Execution State ───────────────────────────────────────────
   const { submissions, loading: sLoading, refresh: refreshSubmissions } = useSubmissions(currentQ?.id || '');
   const [code, setCode] = useState('');
   const [mcqAnswer, setMcqAnswer] = useState<string | null>(null);
   const [status, setStatus] = useState<'idle' | 'booting' | 'seeding' | 'ready' | 'error'>('idle');
-  const [results, setResults] = useState<any[]>([]);
-  const [columns, setColumns] = useState<string[]>([]);
-  const [execError, setExecError] = useState<string | null>(null);
-  const [executionTime, setExecutionTime] = useState<number | null>(null);
 
   // Use extracted modules
-  const { execute, isExecuting } = useQueryExecutor();
-  const { timeLeft, timerActive, totalMistakes, formatTime, recordMistake, getTimeTaken, setTimerActive: setTimer } = useTimerController(question?.time_limit_secs);
-  const { missionQueue, cursorIdx, isMissionComplete, currentQuestion, advanceMission, resetMission } = useMissionRunner(question, children);
+  const { execute, isExecuting, results: queryResult } = useQueryExecutor();
+  const { timeLeft, totalMistakes, formatTime, recordMistake, getTimeTaken } = useTimerController(question?.time_limit_secs);
   const { missionResults, recordMissionResults, shareResults, downloadShareImage, setShowShareDialog } = useResultRenderer();
   const [activeTab, setActiveTab] = useState<'description' | 'schema' | 'submission'>('description');
-  const [missionResults, setMissionResults] = useState<{
-    correctSteps: number;
-    totalSteps: number;
-    timeTaken: number;
-    xpEarned: number;
-    accuracy: number;
-  } | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
   // ── Timer & Metrics ───────────────────────────────────────────────────
-  const [timeLeft, setTimeLeft] = useState<number | null>(null);
-  const [timerActive, setTimerActive] = useState(false);
   const missionStartTime = useRef<number>(Date.now());
-  const [totalMistakes, setTotalMistakes] = useState(0);
 
   const [stepResults, setStepResults] = useState<Record<number, boolean>>({});
   const [showFailedDialog, setShowFailedDialog] = useState(false);
   const [failCount, setFailCount] = useState<Record<number, number>>({});
 
+  // Mission queue building and timer initialization are owned by
+  // useMissionRunner/useTimerController's own effects (watching question/children
+  // and question?.time_limit_secs respectively) — only the per-mission-load
+  // bookkeeping specific to this page lives here.
   useEffect(() => {
     if (!qLoading && question) {
-      if (question.question_type === 'root') {
-        const sortedChildren = [...(children || [])].sort((a,b) => (a.order_index || 0) - (b.order_index || 0));
-        setMissionQueue(sortedChildren.length > 0 ? sortedChildren : [question]);
-        if (question.time_limit_secs) setTimeLeft(question.time_limit_secs);
-      } else {
-        setMissionQueue([question]);
-        if (question.time_limit_secs) setTimeLeft(question.time_limit_secs);
-      }
-      setCursorIdx(0);
-      setIsMissionComplete(false);
-      setSeededSqlSet(new Set());
       setStepResults({});
       missionStartTime.current = Date.now();
     }
-  }, [qLoading, question, children]);
+  }, [qLoading, question]);
 
+  // Countdown itself is owned by useTimerController; this only reacts once time runs out.
   useEffect(() => {
-    let interval: any;
-    if (status === 'ready' && !isMissionComplete && timeLeft !== null && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft(prev => (prev !== null && prev > 0) ? prev - 1 : 0);
-      }, 1000);
-    } else if (timeLeft === 0 && !isMissionComplete) {
+    if (timeLeft === 0 && !isMissionComplete && status === 'ready') {
       toast({ title: 'Time Up!', description: 'Finalizing current step.', variant: 'destructive' });
-      const currentIdx = cursorIdx;
-      setStepResults(prev => ({ ...prev, [currentIdx]: false }));
-      handleAdvance();
+      setStepResults(prev => ({ ...prev, [cursorIdx]: false }));
+      advanceMission();
     }
-    return () => clearInterval(interval);
-  }, [status, isMissionComplete, timeLeft]);
-
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
-
-  useEffect(() => {
-    const db = new PGlite();
-    pgRef.current = db;
-    setStatus('ready');
-    return () => { try { db.close(); } catch(e) {} };
-  }, []);
-
-  const [seededSqlSet, setSeededSqlSet] = useState<Set<string>>(new Set());
+  }, [timeLeft, isMissionComplete, status]);
 
   useEffect(() => {
     const seed = async () => {
-      const pg = pgRef.current;
-      if (!pg || !currentQ || currentQ.question_type === 'mcq') {
-        if (currentQ?.question_type === 'mcq' && status !== 'ready') setStatus('ready');
-        return;
-      }
-
-      const fullSql = (currentQ.schema_sql || '') + (currentQ.initial_sql || '');
-      if (!fullSql || seededSqlSet.has(fullSql)) {
-        const tableName = extractFirstTable(currentQ.schema_sql || 'your_table');
-        if (!code) setCode(`-- Write your SQL query here\nSELECT * FROM ${tableName};`);
-        if (status !== 'ready') setStatus('ready');
+      if (!currentQ || currentQ.question_type === 'mcq') {
+        if (currentQ?.question_type === 'mcq') setStatus('ready');
         return;
       }
 
       setStatus('seeding');
       try {
-        // Run schema separately first if it contains CREATE statements
-        if (currentQ.schema_sql) await pg.exec(currentQ.schema_sql);
-        if (currentQ.initial_sql) await pg.exec(currentQ.initial_sql);
-        
-        setSeededSqlSet(prev => new Set(prev).add(fullSql));
-        const tableName = extractFirstTable(currentQ.schema_sql);
+        await bootPGlite(currentQ.schema_sql || '', currentQ.initial_sql || '');
+        const tableName = extractFirstTable(currentQ.schema_sql || 'your_table');
         setCode(`-- Write your SQL query here\nSELECT * FROM ${tableName};`);
         setStatus('ready');
       } catch (err: any) {
         console.warn('Seeding warning:', err);
         // If it's just a duplicate key/table error, we can still proceed if the tables exist
-        if (err.message.includes('already exists') || err.message.includes('duplicate key')) {
-          setSeededSqlSet(prev => new Set(prev).add(fullSql));
+        if (err.message?.includes('already exists') || err.message?.includes('duplicate key')) {
           setStatus('ready');
         } else {
           setStatus('ready'); // Still mark as ready so user can try to fix SQL
@@ -220,60 +165,32 @@ const SQLChallenge = () => {
       }
     };
     seed();
-  }, [currentQ?.id, status]);
+  }, [currentQ?.id]);
 
-  const handleRun = useCallback(async () => {
-    const pg = pgRef.current;
-    if (!pg || !code.trim()) return;
-    setExecError(null);
-    const start = performance.now();
-    try {
-      const res = await pg.query(code);
-      setResults(res.rows);
-      setColumns(res.fields.map((f: any) => f.name));
-      setExecutionTime(performance.now() - start);
-    } catch (err: any) {
-      setExecError(err.message);
-      setResults([]);
-      setColumns([]);
-    }
+  const handleRun = useCallback(() => {
+    if (!code.trim()) return;
+    execute(code);
   }, [code]);
 
   const [attemptsRecord, setAttemptsRecord] = useState<Record<number, number>>({});
 
   const handleAdvance = () => {
     if (cursorIdx < missionQueue.length - 1) {
-      setCursorIdx(prev => prev + 1);
-      setResults([]);
-      setColumns([]);
-      setExecError(null);
-      setExecutionTime(null);
+      advanceMission();
       setActiveTab('description');
       setMcqAnswer(null);
     } else {
       const timeTaken = Math.floor((Date.now() - missionStartTime.current) / 1000);
-      const totalSteps = missionQueue.length;
-      
-      const totalWeight = missionQueue.reduce((acc, q) => acc + (q.weight || 1), 0);
-      const correctWeights = missionQueue.reduce((acc, q, idx) => acc + (stepResults[idx] ? (q.weight || 1) : 0), 0);
-      
-      const xpEarned = correctWeights * 100;
-      const accuracy = totalWeight > 0 ? Math.round((correctWeights / totalWeight) * 100) : 100;
-      
-      setMissionResults({
-        correctSteps: missionQueue.filter((_, idx) => stepResults[idx]).length,
-        totalSteps,
-        timeTaken,
-        xpEarned,
-        accuracy
-      });
-      setIsMissionComplete(true);
+      const correctSteps = missionQueue.filter((_, idx) => stepResults[idx]).length;
+
+      recordMissionResults(correctSteps, missionQueue.length, timeTaken, totalMistakes);
+      advanceMission();
     }
   };
 
   const handleSubmit = async () => {
     if (!currentQ) return;
-    const pg = pgRef.current;
+    const pg = getPGliteInstance();
     const isMultiStep = missionQueue.length > 1;
     let isCorrect = false;
 
@@ -296,7 +213,7 @@ const SQLChallenge = () => {
 
     if (isCorrect) {
       // Log submission only on correct answer
-      await logSubmission(currentQ.id, currentQ.question_type === 'mcq' ? `Choice: ${mcqAnswer}` : code, true, executionTime || 0);
+      await logSubmission(currentQ.id, currentQ.question_type === 'mcq' ? `Choice: ${mcqAnswer}` : code, true, queryResult?.executionTime || 0);
       refreshSubmissions();
       setStepResults(prev => ({ ...prev, [currentIdx]: true }));
       
@@ -309,6 +226,7 @@ const SQLChallenge = () => {
       }
     } else {
       // Increment fail count and show Mission Failed dialog
+      recordMistake();
       setFailCount(prev => ({ ...prev, [currentIdx]: (prev[currentIdx] || 0) + 1 }));
       setShowFailedDialog(true);
     }
@@ -377,10 +295,8 @@ const SQLChallenge = () => {
                  </div>
                  {Object.values(stepResults).includes(false) && (
                    <Button variant="ghost" className="h-11 w-full rounded-xl border border-dashed border-red-500/30 text-red-500/80 hover:bg-red-500/5 text-xs font-black uppercase tracking-widest gap-2" onClick={() => {
-                     setCursorIdx(0);
-                     setIsMissionComplete(false);
+                     resetMission();
                      setStepResults({});
-                     setSeededSqlSet(new Set());
                      missionStartTime.current = Date.now();
                    }}>
                      <RotateCcw className="w-4 h-4" /> Retry Failed Steps
@@ -454,7 +370,7 @@ const SQLChallenge = () => {
             )}
             
             {showsEditor && (
-              <Button size="sm" onClick={handleRun} disabled={!envReady} className="bg-primary/10 hover:bg-primary/20 text-primary h-9 px-3 rounded-xl font-black text-[10px] uppercase gap-2 border border-primary/20 transition-all active:scale-95">
+              <Button size="sm" onClick={handleRun} disabled={!envReady || isExecuting} className="bg-primary/10 hover:bg-primary/20 text-primary h-9 px-3 rounded-xl font-black text-[10px] uppercase gap-2 border border-primary/20 transition-all active:scale-95">
                 {envBooting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" fill="currentColor" />}
                 <span>Run</span>
               </Button>
@@ -571,7 +487,7 @@ activeTab === 'schema' ? <pre className="bg-muted rounded-xl p-5 border border-b
                          <div className="h-full flex flex-col relative">
                            <div className="h-8 shrink-0 flex items-center px-4 justify-between bg-muted/50 border-b border-border">
                              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground"><Layout className="w-3.5 h-3.5 text-primary" />Terminal</div>
-                             <Button size="sm" onClick={handleRun} disabled={!envReady} variant="ghost" className="h-6 px-3 text-[10px] font-black uppercase tracking-widest gap-1.5 text-primary hover:bg-primary/10 rounded-lg">
+                             <Button size="sm" onClick={handleRun} disabled={!envReady || isExecuting} variant="ghost" className="h-6 px-3 text-[10px] font-black uppercase tracking-widest gap-1.5 text-primary hover:bg-primary/10 rounded-lg">
                                {envBooting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" fill="currentColor" />}
                                Run
                              </Button>
@@ -582,13 +498,13 @@ activeTab === 'schema' ? <pre className="bg-muted rounded-xl p-5 border border-b
                       <PanelResizeHandle className="h-[1px] bg-border hover:bg-primary/40 transition-colors z-50 cursor-row-resize" />
                       <Panel defaultSize={35} minSize={20}>
                          <div className="h-full flex flex-col bg-card">
-                            <div className="h-9 shrink-0 flex items-center justify-between px-4 bg-muted/50 border-b border-border"><div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-primary"><span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />STDOUT</div>{executionTime !== null && <span className="text-[9px] font-mono text-muted-foreground">{executionTime.toFixed(1)}ms</span>}</div>
+                            <div className="h-9 shrink-0 flex items-center justify-between px-4 bg-muted/50 border-b border-border"><div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-primary"><span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />STDOUT</div>{queryResult?.executionTime !== undefined && <span className="text-[9px] font-mono text-muted-foreground">{queryResult.executionTime.toFixed(1)}ms</span>}</div>
                             <div className="flex-1 overflow-auto p-5 font-mono text-[12px]">
-                               {execError ? <div className="bg-destructive/10 text-destructive p-4 rounded-xl border border-destructive/20">{execError}</div> : results.length > 0 ? (
+                               {queryResult?.error ? <div className="bg-destructive/10 text-destructive p-4 rounded-xl border border-destructive/20">{queryResult.error}</div> : (queryResult?.rows.length || 0) > 0 ? (
                                  <div className="rounded-xl border border-border bg-card overflow-hidden shadow-lg">
                                     <table className="w-full text-left">
-                                      <thead className="bg-muted/50 border-b border-border"><tr>{columns.map(col => <th key={col} className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">{col}</th>)}</tr></thead>
-                                      <tbody>{results.map((row, i) => <tr key={i} className="border-b border-border/50 hover:bg-muted/30">{columns.map(col => <td key={col} className="px-4 py-3 text-foreground/80">{String(row[col])}</td>)}</tr>)}</tbody>
+                                      <thead className="bg-muted/50 border-b border-border"><tr>{queryResult.columns.map(col => <th key={col} className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">{col}</th>)}</tr></thead>
+                                      <tbody>{queryResult.rows.map((row, i) => <tr key={i} className="border-b border-border/50 hover:bg-muted/30">{queryResult.columns.map(col => <td key={col} className="px-4 py-3 text-foreground/80">{String(row[col])}</td>)}</tr>)}</tbody>
                                     </table>
                                  </div>
                                ) : <div className="h-full flex items-center justify-center opacity-20"><span className="font-black uppercase tracking-[0.5em] text-[10px]">Awaiting Instructions</span></div>}
