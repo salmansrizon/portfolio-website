@@ -2,6 +2,8 @@
 // Singleton analytics service with Supabase and Console (test) adapters.
 // Tracks page views (with duration) and click events.
 
+import { supabase } from '@/integrations/supabase/client';
+
 export interface AnalyticsEvent {
   type: 'page_view' | 'click' | 'custom';
   page_path: string;
@@ -22,12 +24,30 @@ export interface AnalyticsService {
 // ── Supabase Analytics Adapter ────────────────────────────────────────────────
 // Sends analytics events to Supabase `page_views` (and future `analytics_events`) table.
 
-class SupabaseAnalyticsAdapter implements AnalyticsService {
+export const FLUSH_INTERVAL_MS = 10_000;
+
+export class SupabaseAnalyticsAdapter implements AnalyticsService {
   private queue: AnalyticsEvent[] = [];
   private visitorId: string;
+  private flushIntervalId: ReturnType<typeof setInterval> | null = null;
+  private handleVisibilityChange = () => {
+    if (document.visibilityState === 'hidden') this.flush();
+  };
+  private handleBeforeUnload = () => {
+    this.flush();
+  };
 
   constructor() {
     this.visitorId = this.getVisitorId();
+
+    if (typeof window !== 'undefined') {
+      this.flushIntervalId = setInterval(() => this.flush(), FLUSH_INTERVAL_MS);
+      // 'visibilitychange' fires reliably when a tab is backgrounded/closed on
+      // mobile, where 'beforeunload' often doesn't — flush on both for the
+      // best realistic chance of not losing the final batch.
+      document.addEventListener('visibilitychange', this.handleVisibilityChange);
+      window.addEventListener('beforeunload', this.handleBeforeUnload);
+    }
   }
 
   private getVisitorId(): string {
@@ -73,28 +93,42 @@ class SupabaseAnalyticsAdapter implements AnalyticsService {
     this.sendEvent(event);
   }
 
-  private async sendEvent(event: AnalyticsEvent) {
+  private sendEvent(event: AnalyticsEvent) {
+    this.queue.push(event);
+  }
+
+  async flush(): Promise<void> {
+    if (this.queue.length === 0) return;
+    const batch = this.queue;
+    this.queue = [];
+
     try {
-      // Send immediately (no batching for now)
-      await supabase
-        .from('page_views')
-        .insert({
-          page_path: event.page_path,
-          visitor_id: event.visitor_id,
-          event_type: event.type,
-          event_name: event.event_name,
-          duration_secs: event.duration_secs,
-          metadata: event.metadata,
-        });
+      // page_views only has page_path/visitor_id columns — event_type,
+      // event_name, duration_secs, and metadata have no column to land in
+      // yet, so a single batched insert covers page views, clicks, and
+      // custom events alike (matching what the schema can actually store).
+      await supabase.from('page_views').insert(
+        batch.map((e) => ({
+          page_path: e.page_path,
+          visitor_id: e.visitor_id,
+        }))
+      );
     } catch (error) {
       console.error('Analytics error (non-blocking):', error);
       // Don't throw — analytics should never break the app
     }
   }
 
-  async flush(): Promise<void> {
-    // No-op for now (immediate send)
-    // Will be implemented when batching is added
+  // Tears down the interval/listeners this instance registered. The
+  // long-lived singleton from getAnalytics() never calls this, but tests
+  // that construct their own instances should, to avoid leaking timers and
+  // document/window listeners across test cases.
+  destroy(): void {
+    if (this.flushIntervalId !== null) clearInterval(this.flushIntervalId);
+    if (typeof window !== 'undefined') {
+      document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+      window.removeEventListener('beforeunload', this.handleBeforeUnload);
+    }
   }
 }
 
@@ -148,7 +182,6 @@ export function getAnalytics(): AnalyticsService {
 // useClickTracking for manual click tracking
 
 import { useEffect, useRef } from 'react';
-import { getAnalytics } from './analytics';
 
 export function usePageView(pagePath: string) {
   const startTime = useRef<number>(Date.now());
@@ -156,15 +189,14 @@ export function usePageView(pagePath: string) {
 
   useEffect(() => {
     // Track page view on mount
-    const visitorId = getVisitorId();
-    analytics.trackPageView(pagePath, visitorId);
+    analytics.trackPageView(pagePath, '');
 
     // Track duration on unmount
     return () => {
       const durationSecs = Math.round((Date.now() - startTime.current) / 1000);
       if (durationSecs > 0) {
-        // Send duration as a separate event or update the page_views record
-        // For now, just log it (Supabase table needs a duration column)
+        // Not persisted: page_views has no duration column, and adding one
+        // is a schema migration beyond batching this event pipeline.
         console.log('[Analytics] Page duration:', { pagePath, durationSecs });
       }
     };
@@ -175,21 +207,9 @@ export function useClickTracking() {
   const analytics = getAnalytics();
 
   const trackClick = (eventName: string) => {
-    const visitorId = getVisitorId();
     const pagePath = window.location.pathname;
-    analytics.trackClick(eventName, pagePath, visitorId);
+    analytics.trackClick(eventName, pagePath, '');
   };
 
   return { trackClick };
-}
-
-// ── Visitor ID helper (shared with analytics service) ─────────────────────────
-function getVisitorId(): string {
-  const key = 'analytics_visitor_id';
-  let id = localStorage.getItem(key);
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem(key, id);
-  }
-  return id;
 }
