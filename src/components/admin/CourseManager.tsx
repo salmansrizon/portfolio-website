@@ -15,6 +15,9 @@ import CourseEnrollmentManager from "./CourseEnrollmentManager";
 import CourseCategoryManager from "./CourseCategoryManager";
 import { createRepository } from "@/integrations/supabase/repository";
 import { courseConfig } from "@/adapters/entityConfigs";
+import { ImageUploadField } from "./ImageUploadField";
+
+const courseRepository = createRepository(courseConfig);
 
 // Using the exact variant types that the toast component expects
 type ToastVariant = 'default' | 'destructive';
@@ -213,10 +216,19 @@ export default function CourseManager() {
   const [isLoadingSections, setIsLoadingSections] = useState(false);
   const [instructorsList, setInstructorsList] = useState<any[]>([]);
 
-  const { data: courses = [], isLoading } = createRepository(courseConfig).useFindAll();
-  const { mutate: deleteCourse } = createRepository(courseConfig).useDelete();
-  const courseCreateMutation = createRepository(courseConfig).useCreate();
-  const courseUpdateMutation = createRepository(courseConfig).useUpdate();
+  const { data: courses = [], isLoading } = courseRepository.useFindAll();
+  const { mutateAsync: deleteCourseMutation } = courseRepository.useDelete();
+  const courseCreateMutation = courseRepository.useCreate();
+  const courseUpdateMutation = courseRepository.useUpdate();
+
+  const handleDeleteCourse = async (id: string) => {
+    try {
+      await deleteCourseMutation(id);
+      showSuccess("Course deleted successfully");
+    } catch (error: any) {
+      showError(error?.message || "Failed to delete course");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -305,21 +317,6 @@ export default function CourseManager() {
     } catch (error: any) {
       console.error("Error saving course:", error);
       showError(error?.message || "Failed to save course");
-    }
-  };
-
-  const deleteCourse = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from("courses")
-        .delete()
-        .eq("id", id);
-      if (error) throw error;
-      showSuccess("Course deleted successfully");
-      fetchCourses();
-    } catch (error) {
-      console.error("Error deleting course:", error);
-      showError("Failed to delete course");
     }
   };
 
@@ -918,11 +915,12 @@ export default function CourseManager() {
                     </div>
                     <div className="md:col-span-2">
                       <Label htmlFor="banner_image">Banner Image URL</Label>
-                      <Input
-                        id="banner_image"
+                      <ImageUploadField
                         value={formData.banner_image}
-                        onChange={(e) => setFormData({ ...formData, banner_image: e.target.value })}
-                        placeholder="Image URL"
+                        onChange={(url) => setFormData({ ...formData, banner_image: url })}
+                        bucket="admin-uploads"
+                        pathPrefix="courses"
+                        label="Banner Image"
                       />
                     </div>
                     <div className="md:col-span-2">
@@ -1553,7 +1551,7 @@ export default function CourseManager() {
                       size="sm"
                       onClick={() => {
                         if (window.confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
-                          deleteCourse(course.id);
+                          handleDeleteCourse(course.id);
                         }
                       }}
                     >

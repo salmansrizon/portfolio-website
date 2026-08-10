@@ -13,6 +13,7 @@ export default function CourseEnrollmentManager() {
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [coursesLoading, setCoursesLoading] = useState(true);
   const { toast } = useToast();
 
   const fetchEnrollments = async () => {
@@ -30,8 +31,10 @@ export default function CourseEnrollmentManager() {
   };
 
   const fetchCourses = async () => {
+    setCoursesLoading(true);
     const { data } = await supabase.from('courses').select('id, title, is_free, price');
     setCourses(data || []);
+    setCoursesLoading(false);
   };
 
   useEffect(() => {
@@ -108,7 +111,7 @@ export default function CourseEnrollmentManager() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
+            {isLoading || coursesLoading ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   Loading enrollments...

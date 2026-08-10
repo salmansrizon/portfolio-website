@@ -29,16 +29,19 @@ export interface Repository<T extends Record<string, unknown>> {
   // ── Mutation hooks ─────────────────────────────────────────────────────
   useCreate(): {
     mutate: (item: Partial<T>) => void;
+    mutateAsync: (item: Partial<T>) => Promise<T>;
     isPending: boolean;
     error: any;
   };
   useUpdate(): {
-    mutate: (id: string, item: Partial<T>) => void;
+    mutate: (params: { id: string; item: Partial<T> }) => void;
+    mutateAsync: (params: { id: string; item: Partial<T> }) => Promise<T>;
     isPending: boolean;
     error: any;
   };
   useDelete(): {
     mutate: (id: string) => void;
+    mutateAsync: (id: string) => Promise<void>;
     isPending: boolean;
     error: any;
   };
@@ -55,11 +58,17 @@ export function createRepository<T extends Record<string, unknown>>(
 
   // ── Query hooks ──────────────────────────────────────────────────────
   function useFindAll(filter?: Partial<T>) {
+    // An empty-string filter value (e.g. a master-detail screen before its
+    // "master" selection is made) can never match a real row and, for
+    // UUID/foreign-key columns, Postgrest rejects `eq.<empty>` outright with
+    // a 400 — so skip the fetch entirely rather than firing a doomed query.
+    const hasEmptyFilterValue = filter != null && Object.values(filter).some((value) => value === '');
+
     return useQuery({
       queryKey: [table, filter],
       queryFn: async () => {
         let query = supabase.from(table).select('*');
-        
+
         // Apply filter if provided
         if (filter) {
           for (const [key, value] of Object.entries(filter)) {
@@ -68,11 +77,12 @@ export function createRepository<T extends Record<string, unknown>>(
             }
           }
         }
-        
+
         const { data, error } = await query;
         if (error) throw error;
         return data as T[];
       },
+      enabled: !hasEmptyFilterValue,
     });
   }
 

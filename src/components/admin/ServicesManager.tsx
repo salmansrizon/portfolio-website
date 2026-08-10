@@ -1,112 +1,12 @@
-import { useState } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Edit, Trash2, X } from 'lucide-react';
-import { createRepository } from '@/integrations/supabase/repository';
+import { Loader2, Plus, Edit, Trash2 } from 'lucide-react';
 import { serviceConfig } from '@/adapters/entityConfigs';
-
-const serviceRepository = createRepository(serviceConfig);
-
-interface Service {
-  id: string;
-  title: string;
-  description: string;
-  features: string[];
-  icon?: string;
-  created_at: string;
-}
+import { EntityFormDialog } from './EntityFormDialog';
+import { useEntityManager } from '@/hooks/useEntityManager';
 
 const ServicesManager = () => {
-  const [editingService, setEditingService] = useState<any>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { toast } = useToast();
-  const { register, handleSubmit, reset, control, setValue } = useForm({
-    defaultValues: {
-      title: '',
-      description: '',
-      icon: '',
-      features: [{ value: '' }]
-    }
-  });
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'features'
-  });
-
-  const { data: services = [], isLoading: loading } = serviceRepository.useFindAll();
-  const { mutate: deleteService } = serviceRepository.useDelete();
-  const { mutate: createService } = serviceRepository.useCreate();
-  const { mutate: updateService } = serviceRepository.useUpdate();
-
-  const onSubmit = async (formData: any) => {
-    const serviceData = {
-      title: formData.title,
-      description: formData.description,
-      icon: formData.icon,
-      features: formData.features.map((f: any) => f.value).filter((f: string) => f.trim() !== '')
-    };
-
-    if (editingService) {
-      updateService(
-        { id: editingService.id, item: serviceData },
-        {
-          onSuccess: () => {
-            toast({ title: "Success", description: "Service updated successfully!" });
-            setIsDialogOpen(false);
-            setEditingService(null);
-            reset();
-          },
-          onError: () => toast({ title: "Error", description: "Failed to save service", variant: "destructive" }),
-        }
-      );
-    } else {
-      createService(serviceData, {
-        onSuccess: () => {
-          toast({ title: "Success", description: "Service created successfully!" });
-          setIsDialogOpen(false);
-          setEditingService(null);
-          reset();
-        },
-        onError: () => toast({ title: "Error", description: "Failed to save service", variant: "destructive" }),
-      });
-    }
-  };
-
-  const handleEdit = (service: any) => {
-    setEditingService(service);
-    setValue('title', service.title);
-    setValue('description', service.description);
-    setValue('icon', service.icon || '');
-    setValue('features', service.features.map((f: any) => ({ value: f })));
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = (serviceId: string) => {
-    if (!confirm('Are you sure you want to delete this service?')) return;
-
-    deleteService(serviceId, {
-      onSuccess: () => toast({ title: "Success", description: "Service deleted successfully!" }),
-      onError: () => toast({ title: "Error", description: "Failed to delete service", variant: "destructive" }),
-    });
-  };
-
-  const handleNewService = () => {
-    setEditingService(null);
-    reset({
-      title: '',
-      description: '',
-      icon: '',
-      features: [{ value: '' }]
-    });
-    setIsDialogOpen(true);
-  };
+  const { items: services, isLoading: loading, openCreate, openEdit, remove, dialog } = useEntityManager(serviceConfig);
 
   if (loading) {
     return (
@@ -120,99 +20,13 @@ const ServicesManager = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Services</h3>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleNewService}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Service
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingService ? 'Edit Service' : 'Create New Service'}
-              </DialogTitle>
-            </DialogHeader>
-            
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div>
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  {...register('title', { required: true })}
-                  placeholder="Service title"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  {...register('description', { required: true })}
-                  placeholder="Service description"
-                  rows={4}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="icon">Icon Name (Lucide React)</Label>
-                <Input
-                  id="icon"
-                  {...register('icon')}
-                  placeholder="e.g., BarChart3, Brain, Cloud"
-                />
-              </div>
-              
-              <div>
-                <Label>Features</Label>
-                <div className="space-y-2">
-                  {fields.map((field, index) => (
-                    <div key={field.id} className="flex gap-2">
-                      <Input
-                        {...register(`features.${index}.value` as const)}
-                        placeholder="Feature description"
-                      />
-                      {fields.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => remove(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => append({ value: '' })}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Feature
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="flex justify-end space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={saving}>
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                  {editingService ? 'Update' : 'Create'} Service
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={openCreate}>
+          <Plus className="h-4 w-4 mr-2" />
+          New Service
+        </Button>
       </div>
+
+      <EntityFormDialog config={serviceConfig} {...dialog} />
 
       <div className="grid gap-6">
         {services.map((service) => (
@@ -223,14 +37,14 @@ const ServicesManager = () => {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleEdit(service)}
+                  onClick={() => openEdit(service)}
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleDelete(service.id)}
+                  onClick={() => remove(service)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

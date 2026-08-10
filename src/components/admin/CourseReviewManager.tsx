@@ -13,20 +13,43 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createRepository } from "@/integrations/supabase/repository";
-import { courseReviewConfig } from "@/adapters/entityConfigs";
+import { courseReviewConfig, courseConfig } from "@/adapters/entityConfigs";
+import { useEntityManager } from "@/hooks/useEntityManager";
 
 const reviewRepository = createRepository(courseReviewConfig);
+const courseRepository = createRepository(courseConfig);
 
 const CourseReviewManager = () => {
   const { toast } = useToast();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterCourse, setFilterCourse] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState("");
 
+  const { data: courses = [] } = courseRepository.useFindAll();
+  // Stats need the full (unfiltered) count regardless of search/status/course
+  // filters — shares the same query cache as useEntityManager's own
+  // useFindAll(), so this isn't a second network request.
   const { data: reviews = [], isLoading: loading } = reviewRepository.useFindAll();
-  const { mutate: deleteReview } = reviewRepository.useDelete();
   const { mutate: updateReview } = reviewRepository.useUpdate();
+
+  // Only the free-text axis (name/email/review text) goes through the hook —
+  // status and course are separate, locally-owned filters composed on top,
+  // same as before this migration.
+  const {
+    items: searchedReviews,
+    search: searchQuery,
+    setSearch: setSearchQuery,
+    remove,
+  } = useEntityManager(courseReviewConfig, {
+    searchPredicate: (review, query) => {
+      const q = query.toLowerCase();
+      return (
+        review.student_name.toLowerCase().includes(q) ||
+        review.student_email.toLowerCase().includes(q) ||
+        (review.review_text || "").toLowerCase().includes(q)
+      );
+    },
+  });
 
   const handleApprove = (reviewId: string) => {
     setActionLoading(reviewId);
@@ -50,35 +73,16 @@ const CourseReviewManager = () => {
     );
   };
 
-  const handleDelete = (reviewId: string) => {
-    if (!confirm("Are you sure you want to permanently delete this review?")) return;
-    setActionLoading(reviewId);
-    deleteReview(reviewId, {
-      onSuccess: () => { toast({ title: "Review Deleted", description: "The review has been permanently removed." }); setActionLoading(null); },
-      onError: (err: any) => { toast({ title: "Error", description: err.message, variant: "destructive" }); setActionLoading(null); },
-    });
-  };
-      setActionLoading(null);
-    }
-  };
+  const getCourseName = (courseId: string) => courses.find(c => c.id === courseId)?.title || "Unknown Course";
 
-  const getCourseName = (courseId: string) => {
-    return courseId || "Unknown Course";
-  };
-
-  // Filter reviews
-  const filteredReviews = reviews.filter(review => {
+  // Status/course filters apply on top of the hook's already search-filtered list.
+  const filteredReviews = searchedReviews.filter(review => {
     const matchesStatus =
       filterStatus === "all" ||
       (filterStatus === "approved" && review.is_approved) ||
       (filterStatus === "pending" && !review.is_approved);
     const matchesCourse = filterCourse === "all" || review.course_id === filterCourse;
-    const matchesSearch =
-      !searchQuery ||
-      review.student_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      review.student_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (review.review_text || "").toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesStatus && matchesCourse && matchesSearch;
+    return matchesStatus && matchesCourse;
   });
 
   const approvedCount = reviews.filter(r => r.is_approved).length;
@@ -205,7 +209,7 @@ const CourseReviewManager = () => {
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">{review.student_email}</p>
-                      
+
                       {/* Course Badge */}
                       <Badge variant="outline" className="mt-2 text-[10px] font-medium">
                         {getCourseName(review.course_id)}
@@ -260,10 +264,10 @@ const CourseReviewManager = () => {
                       size="sm"
                       variant="outline"
                       className="text-red-600 border-red-200 hover:bg-red-50 dark:hover:bg-red-500/10 gap-1.5"
-                      onClick={() => handleDelete(review.id)}
+                      onClick={() => remove(review)}
                       disabled={actionLoading === review.id}
                     >
-                      {actionLoading === review.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                      <Trash2 className="w-3.5 h-3.5" />
                       Delete
                     </Button>
                   </div>

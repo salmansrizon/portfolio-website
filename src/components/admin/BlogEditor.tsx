@@ -19,6 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Check, ChevronsUpDown, Image as ImageIcon, Code, Link as LinkIcon, Type, Plus, Trash2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { supabase } from '@/integrations/supabase/client';
+import { uploadCompressedImage } from '@/integrations/supabase/imageUpload';
 import { useToast } from "@/components/ui/use-toast";
 import { BlogContent, BlogPost } from '@/types/blog';
 import { parseBlogContent, BlogContentRenderer } from '@/components/BlogContentRenderer';
@@ -109,50 +110,7 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
   };
 
   const handleImageUpload = async (file: File): Promise<string> => {
-    try {
-      // Check if bucket exists, if not create it
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const blogImagesBucket = buckets?.find(b => b.name === 'blog-images');
-      
-      if (!blogImagesBucket) {
-        console.log('Creating blog-images bucket...');
-        const { error: bucketError } = await supabase.storage.createBucket('blog-images', {
-          public: true,
-          allowedMimeTypes: ['image/*'],
-          fileSizeLimit: 5242880, // 5MB
-        });
-        
-        if (bucketError) {
-          console.error('Error creating bucket:', bucketError);
-          throw new Error('Failed to create storage bucket');
-        }
-      }
-
-      const fileName = `${Date.now()}-${file.name}`;
-      console.log('Uploading image:', fileName);
-      
-      const { data, error } = await supabase.storage
-        .from('blog-images')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false,
-        });
-
-      if (error) {
-        console.error('Upload error:', error);
-        throw error;
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('blog-images')
-        .getPublicUrl(data.path);
-
-      console.log('Image uploaded successfully:', publicUrl);
-      return publicUrl;
-    } catch (error: any) {
-      console.error('Error in handleImageUpload:', error);
-      throw new Error(error.message || 'Failed to upload image');
-    }
+    return uploadCompressedImage(file, 'blog-images');
   };
 
   const handleSave = async () => {

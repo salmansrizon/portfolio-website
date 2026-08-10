@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { ImageUploadField } from "./ImageUploadField";
 import {
   Plus, Trash2, Edit, CheckCircle, XCircle, Clock, Save,
   CalendarIcon, CalendarX
@@ -678,12 +679,26 @@ const SessionBookingManager = () => {
                     <Input value={paymentSettings.nagad_number || ''} onChange={e => setPaymentSettings(p => p ? { ...p, nagad_number: e.target.value } : p)} />
                   </div>
                   <div className="space-y-2">
-                    <Label>bKash QR Code (Image URL)</Label>
-                    <Input placeholder="https://..." value={paymentSettings.bkash_qr_code || ''} onChange={e => setPaymentSettings(p => p ? { ...p, bkash_qr_code: e.target.value } : p)} />
+                    <Label>bKash QR Code</Label>
+                    <ImageUploadField
+                      value={paymentSettings.bkash_qr_code}
+                      onChange={url => setPaymentSettings(p => p ? { ...p, bkash_qr_code: url } : p)}
+                      bucket="admin-uploads"
+                      pathPrefix="payment-qr"
+                      maxWidthOrHeight={800}
+                      label="bKash QR Code"
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label>Nagad QR Code (Image URL)</Label>
-                    <Input placeholder="https://..." value={paymentSettings.nagad_qr_code || ''} onChange={e => setPaymentSettings(p => p ? { ...p, nagad_qr_code: e.target.value } : p)} />
+                    <Label>Nagad QR Code</Label>
+                    <ImageUploadField
+                      value={paymentSettings.nagad_qr_code}
+                      onChange={url => setPaymentSettings(p => p ? { ...p, nagad_qr_code: url } : p)}
+                      bucket="admin-uploads"
+                      pathPrefix="payment-qr"
+                      maxWidthOrHeight={800}
+                      label="Nagad QR Code"
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">

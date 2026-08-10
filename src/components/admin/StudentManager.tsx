@@ -1,125 +1,32 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, UserPlus, Mail, Phone, GraduationCap, BookOpen, Search, Users } from "lucide-react";
+import { Edit, Trash2, UserPlus, Mail, Phone, GraduationCap, BookOpen, Search, Users } from "lucide-react";
 import { createRepository } from "@/integrations/supabase/repository";
-import { studentConfig } from "@/adapters/entityConfigs";
+import { studentConfig, courseConfig } from "@/adapters/entityConfigs";
+import { EntityFormDialog } from "./EntityFormDialog";
+import { useEntityManager } from "@/hooks/useEntityManager";
 
 const studentRepository = createRepository(studentConfig);
-
-const initialFormData = {
-  name: "",
-  email: "",
-  phone: "",
-  bio: "",
-  avatar_url: "",
-  institution: "",
-  is_active: true,
-  enrolled_courses: [] as string[],
-};
+const courseRepository = createRepository(courseConfig);
 
 export default function StudentManager() {
-  const { toast } = useToast();
-  const [courses, setCourses] = useState<any[]>([]);
-  const [formData, setFormData] = useState(initialFormData);
-  const [editingStudent, setEditingStudent] = useState<any | null>(null);
-  const [showDialog, setShowDialog] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const { data: students = [], isLoading } = studentRepository.useFindAll();
-  const { mutate: deleteStudent } = studentRepository.useDelete();
-  const { mutate: createStudent } = studentRepository.useCreate();
-  const { mutate: updateStudent } = studentRepository.useUpdate();
-
-  const handleSubmit = async () => {
-    if (!formData.name || !formData.email) {
-      toast({ title: "Error", description: "Name and email are required.", variant: "destructive" });
-      return;
-    }
-
-    const payload = {
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone || null,
-      bio: formData.bio || null,
-      avatar_url: formData.avatar_url || null,
-      institution: formData.institution || null,
-      is_active: formData.is_active,
-      enrolled_courses: formData.enrolled_courses,
-    };
-
-    if (editingStudent) {
-      updateStudent(
-        { id: editingStudent.id, item: payload },
-        {
-          onSuccess: () => {
-            toast({ title: "Success", description: "Student updated successfully." });
-            setShowDialog(false);
-            resetForm();
-          },
-          onError: (error: any) => toast({ title: "Error", description: error.message || "Failed to save student.", variant: "destructive" }),
-        }
-      );
-    } else {
-      createStudent(payload, {
-        onSuccess: () => {
-          toast({ title: "Success", description: "Student created successfully." });
-          setShowDialog(false);
-          resetForm();
-        },
-        onError: (error: any) => toast({ title: "Error", description: error.message || "Failed to save student.", variant: "destructive" }),
-      });
-    }
-  };
-
-  const handleEdit = (student: any) => {
-    setEditingStudent(student);
-    setFormData({
-      name: student.name,
-      email: student.email,
-      phone: student.phone || "",
-      bio: student.bio || "",
-      avatar_url: student.avatar_url || "",
-      institution: student.institution || "",
-      is_active: student.is_active,
-      enrolled_courses: student.enrolled_courses || [],
-    });
-    setShowDialog(true);
-  };
-
-  const handleDelete = (id: string) => {
-    if (!confirm("Are you sure you want to remove this student?")) return;
-    deleteStudent(id, {
-      onSuccess: () => toast({ title: "Deleted", description: "Student removed successfully." }),
-      onError: (error: any) => toast({ title: "Error", description: error.message || "Failed to delete.", variant: "destructive" }),
-    });
-  };
-
-  const resetForm = () => {
-    setEditingStudent(null);
-    setFormData(initialFormData);
-  };
-
-  const toggleCourseEnrollment = (courseId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      enrolled_courses: prev.enrolled_courses.includes(courseId)
-        ? prev.enrolled_courses.filter(id => id !== courseId)
-        : [...prev.enrolled_courses, courseId]
-    }));
-  };
-
-  const filteredStudents = students.filter(s =>
-    s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const { data: courses = [] } = courseRepository.useFindAll();
+  // Stats below need the full (unfiltered) count regardless of the search box —
+  // shares the same query cache as useEntityManager's own useFindAll(), so this
+  // isn't a second network request.
+  const { data: allStudents = [] } = studentRepository.useFindAll();
+  const {
+    items: filteredStudents,
+    isLoading,
+    search: searchQuery,
+    setSearch: setSearchQuery,
+    openCreate,
+    openEdit,
+    remove,
+    dialog,
+  } = useEntityManager(studentConfig);
 
   const getCourseName = (courseId: string) => courses.find(c => c.id === courseId)?.title || "Unknown Course";
 
@@ -130,80 +37,19 @@ export default function StudentManager() {
           <h2 className="text-2xl font-bold">Student Management</h2>
           <p className="text-muted-foreground">Manage student profiles, enrollments, and access</p>
         </div>
-        <Dialog open={showDialog} onOpenChange={(open) => { setShowDialog(open); if (!open) resetForm(); }}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <UserPlus className="w-4 h-4" />
-              Add Student
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{editingStudent ? `Edit: ${editingStudent.name}` : "Add New Student"}</DialogTitle>
-              <DialogDescription>Fill in the student's details and enroll them in courses.</DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-6 py-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <Label>Full Name *</Label>
-                  <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Student name" />
-                </div>
-                <div>
-                  <Label>Email *</Label>
-                  <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="student@example.com" />
-                </div>
-                <div>
-                  <Label>Phone</Label>
-                  <Input type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+8801XXXXXXXXX" />
-                </div>
-                <div className="md:col-span-2">
-                  <Label>Institution / Company</Label>
-                  <Input value={formData.institution} onChange={(e) => setFormData({ ...formData, institution: e.target.value })} placeholder="e.g., BUET, University of Dhaka" />
-                </div>
-                <div className="md:col-span-2">
-                  <Label>Avatar URL</Label>
-                  <Input value={formData.avatar_url} onChange={(e) => setFormData({ ...formData, avatar_url: e.target.value })} placeholder="https://example.com/avatar.jpg" />
-                </div>
-                <div className="md:col-span-2">
-                  <Label>Notes / Bio</Label>
-                  <Textarea value={formData.bio} onChange={(e) => setFormData({ ...formData, bio: e.target.value })} placeholder="Any notes about the student..." rows={2} />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch checked={formData.is_active} onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })} />
-                  <Label>Active Student</Label>
-                </div>
-              </div>
-
-              {/* Course Enrollment */}
-              <div className="border rounded-lg p-4 space-y-3">
-                <h4 className="font-semibold flex items-center gap-2">
-                  <BookOpen className="w-4 h-4" />
-                  Enroll in Courses
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                  {courses.map(course => (
-                    <label key={course.id} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${formData.enrolled_courses.includes(course.id) ? 'bg-primary/10 border-primary/30' : 'hover:bg-muted'}`}>
-                      <input
-                        type="checkbox"
-                        checked={formData.enrolled_courses.includes(course.id)}
-                        onChange={() => toggleCourseEnrollment(course.id)}
-                        className="rounded"
-                      />
-                      <span className="text-sm font-medium truncate">{course.title}</span>
-                    </label>
-                  ))}
-                  {courses.length === 0 && <p className="text-sm text-muted-foreground col-span-2">No courses available.</p>}
-                </div>
-              </div>
-
-              <Button onClick={handleSubmit} className="w-full">
-                {editingStudent ? "Update Student" : "Add Student"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button className="gap-2" onClick={openCreate}>
+          <UserPlus className="w-4 h-4" />
+          Add Student
+        </Button>
       </div>
+
+      <EntityFormDialog
+        config={studentConfig}
+        {...dialog}
+        dynamicOptions={{
+          enrolled_courses: courses.map(c => ({ label: c.title, value: c.id })),
+        }}
+      />
 
       {/* Search */}
       <div className="relative max-w-md">
@@ -221,19 +67,19 @@ export default function StudentManager() {
         <Card>
           <CardContent className="pt-4 pb-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><Users className="w-5 h-5 text-primary" /></div>
-            <div><p className="text-2xl font-bold">{students.length}</p><p className="text-xs text-muted-foreground">Total</p></div>
+            <div><p className="text-2xl font-bold">{allStudents.length}</p><p className="text-xs text-muted-foreground">Total</p></div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-500/10 flex items-center justify-center"><Users className="w-5 h-5 text-emerald-600" /></div>
-            <div><p className="text-2xl font-bold">{students.filter(s => s.is_active).length}</p><p className="text-xs text-muted-foreground">Active</p></div>
+            <div><p className="text-2xl font-bold">{allStudents.filter(s => s.is_active).length}</p><p className="text-xs text-muted-foreground">Active</p></div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-500/10 flex items-center justify-center"><BookOpen className="w-5 h-5 text-orange-600" /></div>
-            <div><p className="text-2xl font-bold">{students.reduce((acc, s) => acc + (s.enrolled_courses?.length || 0), 0)}</p><p className="text-xs text-muted-foreground">Enrollments</p></div>
+            <div><p className="text-2xl font-bold">{allStudents.reduce((acc, s) => acc + (s.enrolled_courses?.length || 0), 0)}</p><p className="text-xs text-muted-foreground">Enrollments</p></div>
           </CardContent>
         </Card>
         <Card>
@@ -305,10 +151,10 @@ export default function StudentManager() {
                 )}
 
                 <div className="flex gap-2 pt-2 border-t">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEdit(student)}>
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => openEdit(student)}>
                     <Edit className="w-3.5 h-3.5 mr-1" /> Edit
                   </Button>
-                  <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDelete(student.id)}>
+                  <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => remove(student)}>
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
                 </div>

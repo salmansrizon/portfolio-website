@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,25 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { createRepository } from "@/integrations/supabase/repository";
+import { courseContentConfig, courseConfig } from "@/adapters/entityConfigs";
+import { useEntityManager } from "@/hooks/useEntityManager";
 import { Plus, Edit, Trash2, FileText, HelpCircle, Code, Video, BookOpen } from "lucide-react";
 
-interface Course {
-  id: string;
-  title: string;
-}
-
-interface Content {
-  id: string;
-  title: string;
-  description?: string;
-  content_type: string;
-  content_category: 'lesson' | 'quiz' | 'project' | 'assignment' | 'text' | 'video';
-  order_index: number;
-  is_free: boolean;
-  duration_minutes?: number;
-}
+const courseRepository = createRepository(courseConfig);
 
 const CONTENT_TYPES = [
   { value: "video", label: "Video", icon: Video },
@@ -37,125 +24,57 @@ const CONTENT_TYPES = [
   { value: "project", label: "Project", icon: Code },
 ];
 
+const defaultForm = {
+  title: "",
+  description: "",
+  content_type: "video",
+  // 'lesson' isn't a real content_category value (the DB enum is
+  // video|text|quiz) — this used to be the default and silently failed
+  // every write; 'text' is a real, valid default.
+  content_category: "text",
+  order_index: 0,
+  is_free: false,
+  duration_minutes: 0,
+};
+
 export default function CourseContentManager() {
-  const { toast } = useToast();
-  const [courses, setCourses] = useState<any[]>([]);
+  const { data: courses = [] } = courseRepository.useFindAll();
   const [selectedCourse, setSelectedCourse] = useState<string>("");
-  const [contents, setContents] = useState<any[]>([]);
-  const [showContentDialog, setShowContentDialog] = useState(false);
-  const [editingContent, setEditingContent] = useState<any>(null);
-  
-  const [contentForm, setContentForm] = useState({
-    title: "",
-    description: "",
-    content_type: "video",
-    content_category: "lesson" as any,
-    order_index: 0,
-    is_free: false,
-    duration_minutes: 0,
+  const [contentForm, setContentForm] = useState(defaultForm);
+
+  const { items: contents, openCreate, openEdit, remove, dialog } = useEntityManager(courseContentConfig, {
+    filter: { course_id: selectedCourse },
+    extraFields: { course_id: selectedCourse },
   });
 
-  // Fetch courses on mount
+  // Bespoke form (not EntityFormDialog), so it keeps its own local draft
+  // state — re-synced from the hook's initialData whenever the dialog is
+  // about to show a (possibly different) item.
   useEffect(() => {
-    supabase.from("courses").select("id, title").order("title").then(({ data }) => setCourses(data || []));
-  }, []);
-
-  const fetchContents = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("course_content")
-        .select("*")
-        .eq("course_id", selectedCourse)
-        .order("order_index");
-      if (error) throw error;
-      setContents(data || []);
-    } catch (error) {
-      console.error("Error loading contents:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load contents",
-        variant: "destructive",
+    if (!dialog.open) return;
+    if (dialog.initialData) {
+      setContentForm({
+        title: dialog.initialData.title,
+        description: dialog.initialData.description || "",
+        content_type: dialog.initialData.content_type,
+        content_category: dialog.initialData.content_category ?? "text",
+        order_index: dialog.initialData.order_index,
+        is_free: dialog.initialData.is_free,
+        duration_minutes: dialog.initialData.duration_minutes || 0,
       });
-    }
-  };
-
-  useEffect(() => {
-    if (selectedCourse) {
-      fetchContents();
     } else {
-      setContents([]);
+      setContentForm({ ...defaultForm, order_index: contents.length });
     }
-  }, [selectedCourse]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dialog.open, dialog.initialData]);
 
-  const handleContentSubmit = async () => {
-    try {
-      const contentData = {
-        ...contentForm,
-        course_id: selectedCourse,
-        content_data: {},
-      };
-
-      if (editingContent) {
-        const { error } = await supabase
-          .from("course_content")
-          .update(contentData)
-          .eq("id", editingContent.id);
-
-        if (error) throw error;
-        toast({ title: "Success", description: "Content updated successfully" });
-      } else {
-        const { error } = await supabase
-          .from("course_content")
-          .insert(contentData);
-
-        if (error) throw error;
-        toast({ title: "Success", description: "Content created successfully" });
-      }
-
-      resetContentForm();
-      fetchContents();
-      setShowContentDialog(false);
-    } catch (error) {
-      console.error("Error saving content:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save content",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const deleteContent = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from("course_content")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-      
-      toast({ title: "Success", description: "Content deleted successfully" });
-      fetchContents();
-    } catch (error) {
-      console.error("Error deleting content:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete content",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const resetContentForm = () => {
-    setEditingContent(null);
-    setContentForm({
-      title: "",
-      description: "",
-      content_type: "video",
-      content_category: "lesson",
-      order_index: contents.length,
-      is_free: false,
-      duration_minutes: 0,
+  const handleContentSubmit = () => {
+    dialog.onSubmit({
+      ...contentForm,
+      // Preserve whatever content_data the row already has on edit — this
+      // used to be hardcoded to {} on every save, silently wiping real
+      // stored content data each time an existing row was edited.
+      content_data: dialog.initialData?.content_data ?? {},
     });
   };
 
@@ -192,9 +111,9 @@ export default function CourseContentManager() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Course Content</CardTitle>
-              <Dialog open={showContentDialog} onOpenChange={setShowContentDialog}>
+              <Dialog open={dialog.open} onOpenChange={dialog.onOpenChange}>
                 <DialogTrigger asChild>
-                  <Button onClick={resetContentForm}>
+                  <Button onClick={openCreate}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Content
                   </Button>
@@ -202,7 +121,7 @@ export default function CourseContentManager() {
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>
-                      {editingContent ? "Edit Content" : "Add New Content"}
+                      {dialog.initialData ? "Edit Content" : "Add New Content"}
                     </DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
@@ -224,9 +143,9 @@ export default function CourseContentManager() {
                     </div>
                     <div>
                       <Label htmlFor="content_type">Content Type</Label>
-                      <Select 
-                        value={contentForm.content_type} 
-                        onValueChange={(value) => setContentForm({...contentForm, content_type: value})}
+                      <Select
+                        value={contentForm.content_type}
+                        onValueChange={(value) => setContentForm({ ...contentForm, content_type: value })}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select content type" />
@@ -270,7 +189,7 @@ export default function CourseContentManager() {
                       <Label htmlFor="is_free">Free Content</Label>
                     </div>
                     <Button onClick={handleContentSubmit} className="w-full">
-                      {editingContent ? "Update Content" : "Create Content"}
+                      {dialog.initialData ? "Update Content" : "Create Content"}
                     </Button>
                   </div>
                 </DialogContent>
@@ -307,26 +226,14 @@ export default function CourseContentManager() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        setEditingContent(content);
-                        setContentForm({
-                          title: content.title,
-                          description: content.description || "",
-                          content_type: content.content_type,
-                          content_category: content.content_category,
-                          order_index: content.order_index,
-                          is_free: content.is_free,
-                          duration_minutes: content.duration_minutes || 0,
-                        });
-                        setShowContentDialog(true);
-                      }}
+                      onClick={() => openEdit(content)}
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => deleteContent(content.id)}
+                      onClick={() => remove(content)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>

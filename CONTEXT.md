@@ -23,3 +23,7 @@ _Avoid_: form modal, edit dialog
 **Composite Screen**:
 An admin screen whose data can't come from one Repository's `useFindAll` — it needs a join (enrollments with their course), several tables fetched together (the session-booking dashboard), or nested/hierarchical structure (course content and sections, career-prep's parent/child question tree). Fetches directly against Supabase and hand-rolls its own state, deliberately outside both the Repository seam's single-table shape and the Entity Manager shell. Examples: Course Manager, Session Booking Manager, Career Prep Manager, Course Enrollment Manager.
 _Avoid_: composite manager, dashboard, custom screen
+
+**Editor Screen**:
+An admin screen backed by a Repository for a single Entity Config — its data fits the flat, single-table shape fine — but whose create/edit UI is too specialized for Entity Form Dialog (a rich content editor, a nested block builder), so it hand-rolls its own form instead. Distinct from a Composite Screen, where it's the *data* that breaks the single-entity shape; here it's the *form*. Examples: Blog Manager (delegates to a dedicated content editor), Webinar Manager (nested content-block builder).
+_Avoid_: custom screen, specialized manager

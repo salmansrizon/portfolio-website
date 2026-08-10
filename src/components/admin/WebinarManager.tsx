@@ -1,22 +1,23 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Calendar, Users, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar, Users, ChevronDown, ChevronUp, LayoutGrid, X, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { createRepository } from "@/integrations/supabase/repository";
-import { webinarConfig } from "@/adapters/entityConfigs";
+import { webinarConfig, instructorConfig } from "@/adapters/entityConfigs";
+import { useEntityManager } from "@/hooks/useEntityManager";
 
-const webinarRepository = createRepository(webinarConfig);
+const instructorRepository = createRepository(instructorConfig);
 
 interface WebinarContentBlock {
     id: string;
@@ -26,52 +27,33 @@ interface WebinarContentBlock {
     order_index: number;
 }
 
-interface Webinar {
-    id: string;
-    title: string;
-    description: string;
-    webinar_date: string;
-    price: number | string;
-    is_free: boolean;
-    banner_url: string;
-    content_blocks: WebinarContentBlock[];
-    status: 'draft' | 'published';
-    booked_count: number;
-    created_at: string;
-}
-
-interface Booking {
-    id: string;
-    webinar_id: string;
-    student_name: string;
-    student_email: string;
-    student_whatsapp: string;
-    student_role: string;
-    payment_status: string;
-    payment_method: string;
-    payment_transaction_id: string;
-    booking_date: string;
-}
+const defaultDraft = { is_free: true, content_blocks: [] as WebinarContentBlock[], status: 'draft', price: 0, booked_count: 0 };
 
 export default function WebinarManager() {
-    const [bookings, setBookings] = useState<any[]>([]);
-    const [instructors, setInstructors] = useState<any[]>([]);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [currentWebinar, setCurrentWebinar] = useState<any>(null);
+    // Bookings tab is a separate, unrelated read-only display feature (not
+    // part of the create/edit dialog this migration covers) — left as-is,
+    // pre-existing and out of scope here, same as before this migration.
+    const [bookings] = useState<any[]>([]);
+    const [currentWebinar, setCurrentWebinar] = useState<any>(defaultDraft);
     const { toast } = useToast();
 
-    const { data: webinars = [], isLoading } = webinarRepository.useFindAll();
-    const { mutate: deleteWebinar } = webinarRepository.useDelete();
-    const { mutate: createWebinar } = webinarRepository.useCreate();
-    const { mutate: updateWebinar } = webinarRepository.useUpdate();
+    const { data: instructors = [] } = instructorRepository.useFindAll();
+    const { items: webinars, openCreate, openEdit, remove, dialog } = useEntityManager(webinarConfig);
 
-    const handleSaveWebinar = async () => {
+    // The content-block builder isn't react-hook-form-driven, so it keeps its
+    // own local draft state — re-synced from the hook's initialData whenever
+    // the dialog is about to show a (possibly different) item.
+    useEffect(() => {
+        if (dialog.open) setCurrentWebinar(dialog.initialData ?? defaultDraft);
+    }, [dialog.open, dialog.initialData]);
+
+    const handleSaveWebinar = () => {
         if (!currentWebinar?.title || !currentWebinar?.webinar_date) {
             toast({ title: "Missing fields", description: "Please enter title and date", variant: "destructive" });
             return;
         }
 
-        const payload = {
+        dialog.onSubmit({
             title: currentWebinar.title,
             description: currentWebinar.description,
             webinar_date: currentWebinar.webinar_date,
@@ -80,30 +62,7 @@ export default function WebinarManager() {
             banner_url: currentWebinar.banner_url || '',
             content_blocks: currentWebinar.content_blocks || [],
             status: currentWebinar.status || 'draft',
-            booked_count: currentWebinar.booked_count || 0
-        };
-
-        if (currentWebinar.id) {
-            updateWebinar(
-                { id: currentWebinar.id, item: payload },
-                {
-                    onSuccess: () => { toast({ title: "Success", description: "Webinar updated successfully" }); setIsDialogOpen(false); },
-                    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
-                }
-            );
-        } else {
-            createWebinar(payload, {
-                onSuccess: () => { toast({ title: "Success", description: "Webinar created successfully" }); setIsDialogOpen(false); },
-                onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
-            });
-        }
-    };
-
-    const handleDeleteWebinar = (id: string) => {
-        if (!confirm("Are you sure you want to delete this webinar?")) return;
-        deleteWebinar(id, {
-            onSuccess: () => toast({ title: "Success", description: "Webinar deleted" }),
-            onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+            booked_count: currentWebinar.booked_count || 0,
         });
     };
 
@@ -138,6 +97,14 @@ export default function WebinarManager() {
         setCurrentWebinar({ ...currentWebinar, content_blocks: blocks });
     };
 
+    const moveBlock = (index: number, direction: -1 | 1) => {
+        const blocks = [...(currentWebinar?.content_blocks || [])];
+        const target = index + direction;
+        if (target < 0 || target >= blocks.length) return;
+        [blocks[index], blocks[target]] = [blocks[target], blocks[index]];
+        setCurrentWebinar({ ...currentWebinar, content_blocks: blocks });
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -145,14 +112,14 @@ export default function WebinarManager() {
                     <h2 className="text-3xl font-bold tracking-tight text-foreground">Webinar Management</h2>
                     <p className="text-muted-foreground text-sm">Create and manage your webinar landing pages and attendees.</p>
                 </div>
-                <Button onClick={() => { setCurrentWebinar({ is_free: true, content_blocks: [], status: 'draft', price: 0, booked_count: 0 }); setIsDialogOpen(true); }}>
+                <Button onClick={openCreate}>
                     <Plus className="mr-2 h-4 w-4" /> New Webinar
                 </Button>
             </div>
 
             <Tabs defaultValue="webinars">
                 <TabsList className="mb-4">
-                    <TabsTrigger value="webinars" className="gap-2"><Layout className="h-4 w-4" /> Webinars</TabsTrigger>
+                    <TabsTrigger value="webinars" className="gap-2"><LayoutGrid className="h-4 w-4" /> Webinars</TabsTrigger>
                     <TabsTrigger value="bookings" className="gap-2"><Users className="h-4 w-4" /> All Bookings</TabsTrigger>
                 </TabsList>
 
@@ -174,10 +141,10 @@ export default function WebinarManager() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="flex gap-2">
-                                        <Button variant="outline" size="sm" className="flex-1" onClick={() => { setCurrentWebinar(w); setIsDialogOpen(true); }}>
+                                        <Button variant="outline" size="sm" className="flex-1" onClick={() => openEdit(w)}>
                                             <Edit className="mr-2 h-3 w-3" /> Edit
                                         </Button>
-                                        <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDeleteWebinar(w.id)}>
+                                        <Button variant="ghost" size="sm" className="text-destructive" onClick={() => remove(w)}>
                                             <Trash2 className="h-3 w-3" />
                                         </Button>
                                     </div>
@@ -255,12 +222,12 @@ export default function WebinarManager() {
             </Tabs>
 
             {/* Webinar Edit Dialog */}
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Dialog open={dialog.open} onOpenChange={dialog.onOpenChange}>
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-background/95 backdrop-blur-xl border-primary/20">
                     <DialogHeader>
-                        <DialogTitle>{currentWebinar?.id ? 'Edit Webinar' : 'Add New Webinar'}</DialogTitle>
+                        <DialogTitle>{dialog.initialData?.id ? 'Edit Webinar' : 'Add New Webinar'}</DialogTitle>
                     </DialogHeader>
-                    
+
                     <div className="flex-1 overflow-y-auto pr-2 space-y-6 py-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2 col-span-2">
@@ -318,8 +285,8 @@ export default function WebinarManager() {
                                                 <span className="text-xs font-bold uppercase tracking-wider">{block.type}</span>
                                             </div>
                                             <div className="flex gap-1">
-                                                <Button variant="ghost" size="icon" className="h-6 w-6"><ChevronUp className="h-3 w-3" /></Button>
-                                                <Button variant="ghost" size="icon" className="h-6 w-6"><ChevronDown className="h-3 w-3" /></Button>
+                                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveBlock(idx, -1)} disabled={idx === 0}><ChevronUp className="h-3 w-3" /></Button>
+                                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveBlock(idx, 1)} disabled={idx === (currentWebinar?.content_blocks?.length ?? 0) - 1}><ChevronDown className="h-3 w-3" /></Button>
                                                 <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10" onClick={() => {
                                                     const blocks = [...(currentWebinar.content_blocks || [])];
                                                     blocks.splice(idx, 1);
@@ -336,30 +303,30 @@ export default function WebinarManager() {
                                                     setCurrentWebinar({ ...currentWebinar, content_blocks: blocks });
                                                 }} />
                                             </div>
-                                            
+
                                             {block.type === 'hero' && (
                                                 <div className="space-y-4">
                                                     <div className="space-y-1">
                                                         <Label className="text-[10px] uppercase font-bold text-muted-foreground">Subtitle / Description</Label>
-                                                        <Textarea 
-                                                            value={block.content.subtitle} 
-                                                            onChange={e => updateBlock(idx, { ...block.content, subtitle: e.target.value })} 
-                                                            placeholder="Short intro text..." 
+                                                        <Textarea
+                                                            value={block.content.subtitle}
+                                                            onChange={e => updateBlock(idx, { ...block.content, subtitle: e.target.value })}
+                                                            placeholder="Short intro text..."
                                                         />
                                                     </div>
                                                     <div className="grid grid-cols-2 gap-4">
                                                         <div className="space-y-1">
                                                             <Label className="text-[10px] uppercase font-bold text-muted-foreground">Hero Image URL</Label>
-                                                            <Input 
-                                                                value={block.content.imageUrl || ''} 
+                                                            <Input
+                                                                value={block.content.imageUrl || ''}
                                                                 onChange={e => updateBlock(idx, { ...block.content, imageUrl: e.target.value })}
                                                                 placeholder="https://path/to/image.jpg"
                                                             />
                                                         </div>
                                                         <div className="space-y-1">
                                                             <Label className="text-[10px] uppercase font-bold text-muted-foreground">YouTube Video URL</Label>
-                                                            <Input 
-                                                                value={block.content.videoUrl || ''} 
+                                                            <Input
+                                                                value={block.content.videoUrl || ''}
                                                                 onChange={e => updateBlock(idx, { ...block.content, videoUrl: e.target.value })}
                                                                 placeholder="https://youtube.com/watch?v=..."
                                                             />
@@ -367,7 +334,7 @@ export default function WebinarManager() {
                                                     </div>
                                                 </div>
                                             )}
-                                            
+
                                             {block.type === 'benefits' && (
                                                 <div className="space-y-4">
                                                     <div className="flex justify-between items-center bg-muted/40 p-2 rounded-lg mb-2">
@@ -379,13 +346,13 @@ export default function WebinarManager() {
                                                             <Plus className="h-3 w-3 mr-1" /> Add Benefit
                                                         </Button>
                                                     </div>
-                                                    
+
                                                     {block.content.items?.map((item: any, itemIdx: number) => (
                                                         <div key={itemIdx} className="bg-accent/5 p-4 rounded-xl border border-border/50 relative group/benefit space-y-3">
                                                             <div className="space-y-1">
                                                                 <Label className="text-[10px] uppercase font-bold text-muted-foreground">Title</Label>
-                                                                <Input 
-                                                                    value={item.title || ''} 
+                                                                <Input
+                                                                    value={item.title || ''}
                                                                     onChange={e => {
                                                                         const newItems = [...block.content.items];
                                                                         newItems[itemIdx].title = e.target.value;
@@ -396,8 +363,8 @@ export default function WebinarManager() {
                                                             </div>
                                                             <div className="space-y-1">
                                                                 <Label className="text-[10px] uppercase font-bold text-muted-foreground">Description</Label>
-                                                                <Textarea 
-                                                                    value={item.description || item.text || ''} 
+                                                                <Textarea
+                                                                    value={item.description || item.text || ''}
                                                                     onChange={e => {
                                                                         const newItems = [...block.content.items];
                                                                         newItems[itemIdx].description = e.target.value;
@@ -406,9 +373,9 @@ export default function WebinarManager() {
                                                                     placeholder="Detailed description..."
                                                                 />
                                                             </div>
-                                                            <Button 
-                                                                variant="ghost" 
-                                                                size="icon" 
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
                                                                 className="absolute top-2 right-2 h-6 w-6 text-destructive opacity-0 group-hover/benefit:opacity-100 transition-opacity"
                                                                 onClick={() => {
                                                                     const newItems = block.content.items.filter((_: any, i: number) => i !== itemIdx);
@@ -433,7 +400,7 @@ export default function WebinarManager() {
                                                                         {inst.avatar_url ? <img src={inst.avatar_url} className="w-full h-full object-cover" /> : <Users className="h-3 w-3 text-primary" />}
                                                                     </div>
                                                                     <span className="text-xs font-bold text-foreground">{inst.name}</span>
-                                                                    <button 
+                                                                    <button
                                                                         onClick={() => {
                                                                             const newIds = block.content.instructor_ids.filter((hid: string) => hid !== id);
                                                                             updateBlock(idx, { ...block.content, instructor_ids: newIds });
@@ -497,8 +464,8 @@ export default function WebinarManager() {
                                                         <div key={qIdx} className="bg-accent/5 p-4 rounded-xl border border-border/50 relative group/faq space-y-3">
                                                             <div className="space-y-1">
                                                                 <Label className="text-[10px] uppercase font-bold text-muted-foreground">Question {qIdx + 1}</Label>
-                                                                <Input 
-                                                                    value={q.q} 
+                                                                <Input
+                                                                    value={q.q}
                                                                     onChange={e => {
                                                                         const newQs = [...block.content.questions];
                                                                         newQs[qIdx].q = e.target.value;
@@ -509,8 +476,8 @@ export default function WebinarManager() {
                                                             </div>
                                                             <div className="space-y-1">
                                                                 <Label className="text-[10px] uppercase font-bold text-muted-foreground">Answer</Label>
-                                                                <Textarea 
-                                                                    value={q.a} 
+                                                                <Textarea
+                                                                    value={q.a}
                                                                     onChange={e => {
                                                                         const newQs = [...block.content.questions];
                                                                         newQs[qIdx].a = e.target.value;
@@ -519,9 +486,9 @@ export default function WebinarManager() {
                                                                     placeholder="Enter detailed answer..."
                                                                 />
                                                             </div>
-                                                            <Button 
-                                                                variant="ghost" 
-                                                                size="icon" 
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
                                                                 className="absolute top-2 right-2 h-6 w-6 text-destructive opacity-0 group-hover/faq:opacity-100 transition-opacity"
                                                                 onClick={() => {
                                                                     const newQs = block.content.questions.filter((_: any, i: number) => i !== qIdx);
@@ -547,7 +514,7 @@ export default function WebinarManager() {
                     </div>
 
                     <DialogFooter className="border-t border-border/50 pt-4 px-6 pb-6 bg-muted/20">
-                        <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                        <Button variant="outline" onClick={() => dialog.onOpenChange(false)}>Cancel</Button>
                         <Button onClick={handleSaveWebinar} className="bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20">
                             <CheckCircle2 className="mr-2 h-4 w-4" /> Save Webinar
                         </Button>

@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, Settings, FileText, Award, Briefcase, MessageSquare, User, FolderKanban, GraduationCap, CalendarCheck, LayoutDashboard, Menu, Image, UserCheck, Users, Star, Database, Calendar, Map } from 'lucide-react';
+import { LogOut, Settings, FileText, Award, Briefcase, MessageSquare, User, FolderKanban, GraduationCap, CalendarCheck, LayoutDashboard, Menu, Image, UserCheck, Users, Star, Database, Calendar, Map, CalendarX, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -26,6 +26,8 @@ import CourseReviewManager from '@/components/admin/CourseReviewManager';
 import CareerPrepManager from '@/components/admin/CareerPrepManager';
 import WebinarManager from '@/components/admin/WebinarManager';
 import RoadmapManager from '@/components/admin/RoadmapManager';
+import UnavailableSlotsManager from '@/components/admin/UnavailableSlotsManager';
+import CourseContentManager from '@/components/admin/CourseContentManager';
 
 const navigation = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -40,6 +42,8 @@ const navigation = [
   { id: 'instructors', label: 'Instructors', icon: UserCheck },
   { id: 'students', label: 'Students', icon: Users },
   { id: 'sessions', label: 'Sessions', icon: CalendarCheck },
+  { id: 'unavailable-slots', label: 'Unavailable Slots', icon: CalendarX },
+  { id: 'course-content', label: 'Course Content', icon: BookOpen },
   { id: 'reviews', label: 'Reviews', icon: Star },
   { id: 'brand-logos', label: 'Brand Logos', icon: Image },
   { id: 'career-prep', label: 'Career Prep', icon: Database },
@@ -99,6 +103,10 @@ const Admin = () => {
         return <StudentManager />;
       case 'sessions':
         return <SessionBookingManager />;
+      case 'unavailable-slots':
+        return <UnavailableSlotsManager />;
+      case 'course-content':
+        return <CourseContentManager />;
       case 'reviews':
         return <CourseReviewManager />;
       case 'brand-logos':

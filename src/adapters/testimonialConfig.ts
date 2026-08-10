@@ -16,6 +16,7 @@ export type Testimonial = z.infer<typeof testimonialSchema>;
 // ── Testimonial Config ──────────────────────────────────────────────────────
 export const testimonialConfig: EntityConfig<Testimonial> = {
   table: 'testimonials',
+  entityLabel: 'Testimonial',
   schema: testimonialSchema,
   defaultSort: 'created_at',
   realtime: false,

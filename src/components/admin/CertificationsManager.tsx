@@ -1,98 +1,12 @@
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Plus, Edit, Trash2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { createRepository } from '@/integrations/supabase/repository';
 import { certificationConfig } from '@/adapters/entityConfigs';
-import EntityFormDialog from './EntityFormDialog';
-
-// Create repository instance for certifications
-const certificationRepository = createRepository(certificationConfig);
+import { EntityFormDialog } from './EntityFormDialog';
+import { useEntityManager } from '@/hooks/useEntityManager';
 
 const CertificationsManager = () => {
-  const [editingCert, setEditingCert] = useState(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { toast } = useToast();
-
-  // Use repository hooks
-  const { data: certifications = [], isLoading: loading } = certificationRepository.useFindAll();
-  const { mutate: deleteCertification, isPending: isDeleting } = certificationRepository.useDelete();
-  const { mutate: createCertification } = certificationRepository.useCreate();
-  const { mutate: updateCertification } = certificationRepository.useUpdate();
-
-  const handleSave = (formData: any) => {
-    if (editingCert) {
-      updateCertification(
-        { id: editingCert.id, item: formData },
-        {
-          onSuccess: () => {
-            toast({
-              title: "Success",
-              description: "Certification updated successfully!",
-            });
-            setIsDialogOpen(false);
-            setEditingCert(null);
-          },
-          onError: (error: any) => {
-            toast({
-              title: "Error",
-              description: error.message || "Failed to update certification",
-              variant: "destructive",
-            });
-          },
-        }
-      );
-    } else {
-      createCertification(formData, {
-        onSuccess: () => {
-          toast({
-            title: "Success",
-            description: "Certification created successfully!",
-          });
-          setIsDialogOpen(false);
-        },
-        onError: (error: any) => {
-          toast({
-            title: "Error",
-            description: error.message || "Failed to create certification",
-            variant: "destructive",
-          });
-        },
-      });
-    }
-  };
-
-  const handleEdit = (cert: any) => {
-    setEditingCert(cert);
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = (certId: string) => {
-    if (!confirm('Are you sure you want to delete this certification?')) return;
-
-    deleteCertification(certId, {
-      onSuccess: () => {
-        toast({
-          title: "Success",
-          description: "Certification deleted successfully!",
-        });
-      },
-      onError: (error: any) => {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to delete certification",
-          variant: "destructive",
-        });
-      },
-    });
-  };
-
-  const handleNewCertification = () => {
-    setEditingCert(null);
-
-    setIsDialogOpen(true);
-  };
+  const { items: certifications, isLoading: loading, openCreate, openEdit, remove, dialog } = useEntityManager(certificationConfig);
 
   if (loading) {
     return (
@@ -106,20 +20,13 @@ const CertificationsManager = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Certifications</h3>
-        <Button onClick={handleNewCert}>
+        <Button onClick={openCreate}>
           <Plus className="h-4 w-4 mr-2" />
           New Certification
         </Button>
       </div>
 
-      <EntityFormDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        config={certificationConfig}
-        editingItem={editingCert}
-        onSave={handleSave}
-        title="Certification"
-      />
+      <EntityFormDialog config={certificationConfig} {...dialog} />
 
       <div className="grid gap-6">
         {certifications.map((cert: any) => (
@@ -130,14 +37,14 @@ const CertificationsManager = () => {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleEdit(cert)}
+                  onClick={() => openEdit(cert)}
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => handleDelete(cert.id)}
+                  onClick={() => remove(cert)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

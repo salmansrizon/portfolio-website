@@ -1,65 +1,17 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, GripVertical } from "lucide-react";
-import { createRepository } from "@/integrations/supabase/repository";
-import { brandLogoConfig } from "@/adapters/entityConfigs";
-import EntityFormDialog from "./EntityFormDialog";
-
-const brandLogoRepository = createRepository(brandLogoConfig);
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Plus, Trash2, GripVertical } from 'lucide-react';
+import { brandLogoConfig } from '@/adapters/entityConfigs';
+import { EntityFormDialog } from './EntityFormDialog';
+import { useEntityManager } from '@/hooks/useEntityManager';
 
 const BrandLogosManager = () => {
-  const { toast } = useToast();
-  const [editingLogo, setEditingLogo] = useState<any>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { items: logos, isLoading: loading, openCreate, openEdit, remove, dialog } = useEntityManager(brandLogoConfig);
 
-  const { data: logos = [], isLoading: loading } = brandLogoRepository.useFindAll();
-  const { mutate: deleteLogo } = brandLogoRepository.useDelete();
-  const { mutate: createLogo } = brandLogoRepository.useCreate();
-  const { mutate: updateLogo } = brandLogoRepository.useUpdate();
-
-  const handleSave = (formData: any) => {
-    if (editingLogo) {
-      updateLogo(
-        { id: editingLogo.id, item: formData },
-        {
-          onSuccess: () => {
-            toast({ title: "Updated", description: "Brand logo updated" });
-            setIsDialogOpen(false);
-            setEditingLogo(null);
-          },
-          onError: () => toast({ title: "Error", description: "Failed to update", variant: "destructive" }),
-        }
-      );
-    } else {
-      createLogo(
-        { ...formData, order_index: logos.length },
-        {
-          onSuccess: () => {
-            toast({ title: "Added", description: "Brand logo added" });
-            setIsDialogOpen(false);
-          },
-          onError: () => toast({ title: "Error", description: "Failed to add", variant: "destructive" }),
-        }
-      );
-    }
-  };
-
-  const handleEdit = (logo: any) => {
-    setEditingLogo(logo);
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = (id: string) => {
-    if (!confirm("Are you sure you want to delete this brand logo?")) return;
-    deleteLogo(id, {
-      onSuccess: () => toast({ title: "Deleted", description: "Brand logo removed" }),
-      onError: () => toast({ title: "Error", description: "Failed to delete", variant: "destructive" }),
-    });
+  // order_index should only be stamped when creating — an edit shouldn't
+  // silently re-append the logo to the end of the list.
+  const handleSubmit = (data: any) => {
+    dialog.onSubmit(dialog.initialData ? data : { ...data, order_index: logos.length });
   };
 
   if (loading) return <p>Loading...</p>;
@@ -68,18 +20,17 @@ const BrandLogosManager = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Brand Logos</h3>
-        <Button onClick={() => { setEditingLogo(null); setIsDialogOpen(true); }}>
+        <Button onClick={openCreate}>
           <Plus className="h-4 w-4 mr-1" /> Add Logo
         </Button>
       </div>
 
       <EntityFormDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
         config={brandLogoConfig}
-        editingItem={editingLogo}
-        onSave={handleSave}
-        title="Brand Logo"
+        open={dialog.open}
+        onOpenChange={dialog.onOpenChange}
+        initialData={dialog.initialData}
+        onSubmit={handleSubmit}
       />
 
       <Card>
@@ -98,8 +49,8 @@ const BrandLogosManager = () => {
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{logo.name}</p>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => handleEdit(logo)}>Edit</Button>
-                  <Button variant="destructive" size="sm" onClick={() => handleDelete(logo.id)}>
+                  <Button variant="outline" size="sm" onClick={() => openEdit(logo)}>Edit</Button>
+                  <Button variant="destructive" size="sm" onClick={() => remove(logo)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
