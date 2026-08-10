@@ -94,35 +94,35 @@ export default function Courses() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {courses.map((course, index) => (
             <ScrollReveal key={course.id} direction="up" delay={index * 0.1}>
-              <div className="bg-white dark:bg-card rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50">
-                
+              <div className="bg-card rounded-2xl shadow-card hover:shadow-hover transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50">
+
                 {/* Header Section */}
-                <div className="relative bg-[#1a56db] text-white p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[200px] shrink-0">
+                <div className="relative bg-primary text-primary-foreground p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[200px] shrink-0">
                   {/* Decorative shapes */}
                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full translate-x-12 -translate-y-12"></div>
                   <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full -translate-x-8 translate-y-8"></div>
-                  
+
                   {/* Title */}
                   <h3 className="font-bold text-2xl z-10 uppercase tracking-wide leading-tight px-4 flex items-center justify-center gap-2">
                     {course.title}
                   </h3>
-                  
+
                   {/* Registration Pill */}
-                  <div className="mt-4 z-10 bg-[#0042a5] text-white text-[10px] font-bold px-4 py-1.5 rounded-full tracking-wider border border-white/10 shadow-sm">
+                  <div className="mt-4 z-10 bg-black/20 text-white text-[10px] font-bold px-4 py-1.5 rounded-full tracking-wider border border-white/10 shadow-sm">
                     REGISTRATION NOW
                   </div>
-                  
+
                   {/* Limited Seat available text */}
-                  <div className="mt-2 text-[9px] z-10 text-blue-100 uppercase tracking-widest font-medium">Limited seat available</div>
+                  <div className="mt-2 text-[9px] z-10 text-primary-foreground/70 uppercase tracking-widest font-medium">Limited seat available</div>
                 </div>
 
                 {/* Body Content */}
                 <div className="p-6 flex flex-col flex-grow gap-5">
                   <div className="flex justify-between items-start gap-4">
-                    <h4 className="font-bold text-lg text-gray-900 dark:text-foreground leading-snug flex items-center gap-2">
+                    <h4 className="font-bold text-lg text-foreground leading-snug flex items-center gap-2">
                        {course.title}
                        {course.is_free && (
-                         <span className="bg-red-500 text-white text-[9px] h-4 px-1.5 rounded-full flex items-center gap-1 font-black animate-pulse shrink-0">
+                         <span className="bg-danger text-danger-foreground text-[9px] h-4 px-1.5 rounded-full flex items-center gap-1 font-black animate-pulse shrink-0">
                            <span className="relative flex h-1 w-1">
                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
                              <span className="relative inline-flex rounded-full h-1 w-1 bg-white"></span>
@@ -133,41 +133,41 @@ export default function Courses() {
                     </h4>
                     <div className="flex flex-col gap-1 items-end shrink-0">
                       {course.start_date && (
-                        <div className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                        <div className="bg-warning-soft text-warning text-[10px] font-bold px-2 py-0.5 rounded-full">
                           <CourseCountdown startDate={course.start_date} showIcon={false} />
                         </div>
                       )}
-                      <div className="bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-emerald-100 dark:border-emerald-800">
+                      <div className="bg-success-soft text-success text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-success/20">
                         {course.difficulty_level || "beginner"}
                       </div>
                     </div>
                   </div>
-                  
-                  <p className="text-sm text-gray-500 dark:text-muted-foreground line-clamp-3 leading-relaxed flex-grow">
+
+                  <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed flex-grow">
                     {course.description}
                   </p>
-                  
+
                   <div className="flex flex-wrap gap-1.5 mt-auto">
                     {course.technologies.slice(0, 3).map(tech => (
-                      <Badge key={tech} variant="secondary" className="text-[10px] font-medium rounded-full py-0.5 px-3 bg-gray-50 dark:bg-muted text-gray-600 dark:text-foreground border border-gray-200 dark:border-border/50 hover:bg-gray-100">
+                      <Badge key={tech} variant="secondary" className="text-[10px] font-medium rounded-full py-0.5 px-3 bg-muted text-muted-foreground border border-border/50">
                         {tech}
                       </Badge>
                     ))}
                     {course.technologies.length > 3 && (
-                      <Badge variant="secondary" className="text-[10px] font-medium rounded-full py-0.5 px-3 bg-gray-50 dark:bg-muted text-gray-600 dark:text-foreground border border-gray-200">
+                      <Badge variant="secondary" className="text-[10px] font-medium rounded-full py-0.5 px-3 bg-muted text-muted-foreground border border-border/50">
                         +{course.technologies.length - 3} more
                       </Badge>
                     )}
                   </div>
-                  
+
                   <div className="flex items-center justify-between text-sm pt-2 border-t border-border/10">
-                    <div className="flex items-center gap-1.5 text-gray-500 dark:text-muted-foreground">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
                       <Clock className="w-4 h-4" />
                       <span className="text-xs font-medium">{course.duration_hours ? `${course.duration_hours}h` : 'N/A'}</span>
                     </div>
-                    <div className="flex items-center gap-2 font-bold text-gray-900 dark:text-foreground">
+                    <div className="flex items-center gap-2 font-bold text-foreground">
                       {(course.is_free || (!course.price && !course.discounted_price)) ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500 text-white text-xs font-bold tracking-wide shadow-sm">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success text-success-foreground text-xs font-bold tracking-wide shadow-sm">
                           <span className="relative flex h-2 w-2">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
@@ -177,20 +177,20 @@ export default function Courses() {
                       ) : course.discounted_price ? (
                         <>
                           <span>৳ {course.discounted_price}</span>
-                          <span className="text-xs text-gray-400 line-through font-normal">৳ {course.price}</span>
+                          <span className="text-xs text-muted-foreground line-through font-normal">৳ {course.price}</span>
                         </>
                       ) : (
                         <span>৳ {course.price}</span>
                       )}
                     </div>
                   </div>
-                  
-                   <Button 
+
+                   <Button
                     className={cn(
                       "w-full rounded-xl mt-1 h-12 font-black shadow-md transition-all active:scale-[0.98] group flex items-center justify-center gap-2",
-                      course.is_free 
-                        ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200" 
-                        : "bg-[#3b62f6] hover:bg-[#254ee6] text-white shadow-blue-200"
+                      course.is_free
+                        ? "bg-success hover:bg-success/90 text-success-foreground"
+                        : "bg-primary hover:bg-primary-hover text-primary-foreground"
                     )}
                     onClick={() => navigate(`/course/${course.id}`)}
                   >

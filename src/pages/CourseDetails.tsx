@@ -6,33 +6,25 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Play, Lock, Star, ChevronRight, Share2, 
-  CheckCircle2, Video, FileText, MonitorPlay, Award, 
-  Info, Loader2, Pin, CheckSquare, ListChecks, Clock as ClockIcon,
-  ChevronDown, Send, UserCircle, Mail, Timer, CreditCard,
+import { motion } from "framer-motion";
+import {
+  Play, Lock, Star, ChevronRight, Share2,
+  CheckCircle2, FileText, MonitorPlay, Award,
+  Info, Pin, CheckSquare,
+  Send, UserCircle,
   GraduationCap, Rocket, BookOpen, Layout, Linkedin,
-  HelpCircle, Quote, ArrowRight, Zap
+  HelpCircle, Zap
 } from "lucide-react";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Card, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 
 import { Textarea } from "@/components/ui/textarea";
-import { addMinutes } from "date-fns";
 import { cn } from "@/lib/utils";
 import PaymentModal, { PaymentModalData } from "@/components/PaymentModal";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -110,7 +102,7 @@ export default function CourseDetails() {
   const { courseId } = useParams();
   usePageView(`/course/${courseId}`);
   const { toast } = useToast();
-  
+
   const [course, setCourse] = useState<Course | null>(null);
   const [sections, setSections] = useState<CourseSection[]>([]);
   const [instructor, setInstructor] = useState<Instructor | null>(null);
@@ -118,7 +110,7 @@ export default function CourseDetails() {
   const [loading, setLoading] = useState(true);
   const [relatedCourses, setRelatedCourses] = useState<Course[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
-  
+
   // Enrollment Modal state
   const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
@@ -203,11 +195,11 @@ export default function CourseDetails() {
              (supabase.from("courses") as any).select("*").eq("category_id", cData.category_id).neq("id", courseId).limit(6),
              (supabase.from("courses") as any).select("*").overlaps("technologies", cData.technologies || []).neq("id", courseId).limit(6)
            ]);
-           
+
            let unique = Array.from(new Map([...(catRelated.data || []), ...(tagRelated.data || [])].map(c => [c.id, c])).values())
             .filter(c => c.id !== courseId)
             .slice(0, 3);
-            
+
            if (unique.length === 0) {
              const { data } = await (supabase.from("courses") as any).select("*").neq("id", courseId).limit(3);
              unique = (data || []) as Course[];
@@ -225,7 +217,7 @@ export default function CourseDetails() {
       // Process sections and content
       const sectionsData = sectionsResult.data || [];
       const contentData = contentResult.data || [];
-      
+
       const sectionsMap = new Map<string, CourseSection>();
       sectionsData.forEach(section => {
         sectionsMap.set(section.id, { ...section, contents: [] });
@@ -262,26 +254,20 @@ export default function CourseDetails() {
       setLoading(false);
     }
   };
-  
+
+  const contentTypeIcons: Record<string, typeof MonitorPlay> = {
+    video: MonitorPlay,
+    lecture: GraduationCap,
+    quiz: CheckSquare,
+    assignment: Award,
+    project: Rocket,
+    lesson: BookOpen,
+    text: FileText,
+  };
+
   const getIconForType = (type: string) => {
-    switch (type) {
-      case 'video':
-        return <MonitorPlay className="w-4 h-4 text-primary shrink-0" />;
-      case 'lecture':
-        return <GraduationCap className="w-4 h-4 text-indigo-500 shrink-0" />;
-      case 'quiz':
-        return <CheckSquare className="w-4 h-4 text-amber-500 shrink-0" />;
-      case 'assignment':
-        return <Award className="w-4 h-4 text-purple-500 shrink-0" />;
-      case 'project':
-        return <Rocket className="w-4 h-4 text-pink-500 shrink-0" />;
-      case 'lesson':
-        return <BookOpen className="w-4 h-4 text-emerald-500 shrink-0" />;
-      case 'text':
-        return <FileText className="w-4 h-4 text-orange-500 shrink-0" />;
-      default:
-        return <Layout className="w-4 h-4 text-muted-foreground shrink-0" />;
-    }
+    const Icon = contentTypeIcons[type] ?? Layout;
+    return <Icon className="w-4 h-4 text-muted-foreground shrink-0" />;
   };
 
   const handleEnrollment = async (data: PaymentModalData) => {
@@ -368,7 +354,7 @@ export default function CourseDetails() {
               <Skeleton className="h-64 w-full rounded-2xl" />
             </div>
             <div className="w-full lg:w-[35%]">
-              <div className="sticky top-24 border rounded-2xl overflow-hidden shadow-sm">
+              <div className="sticky top-24 border border-border rounded-2xl overflow-hidden shadow-card">
                 <Skeleton className="aspect-video w-full" />
                 <div className="p-7 space-y-6">
                   <Skeleton className="h-10 w-1/2" />
@@ -401,33 +387,26 @@ export default function CourseDetails() {
   const isFree = course.is_free || (!course.price && !course.discounted_price);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-accent/30 pb-20 relative">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-400/8 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-accent/5 rounded-full blur-2xl animate-pulse delay-2000"></div>
-      </div>
-      <div className="absolute inset-0 bg-gradient-to-t from-background/50 via-transparent to-background/30 pointer-events-none"></div>
-
+    <div className="min-h-screen bg-background pb-20">
       <Navbar />
-      
-      <div className="pt-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+
+      <div className="pt-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
-          
+
           <div className="w-full lg:w-[65%]">
             <div className="flex items-center flex-wrap text-sm text-muted-foreground mb-6 gap-2">
-              <Link to="/courses" className="hover:text-primary transition-colors font-medium">All courses</Link>
+              <Link to="/courses" className="hover:text-accent transition-colors font-medium">All courses</Link>
               <ChevronRight className="w-4 h-4 shrink-0" />
               <span className="text-foreground font-semibold">{course.title}</span>
               <div className="ml-auto w-full sm:w-auto mt-2 sm:mt-0 flex gap-2">
-                <Badge variant="secondary" className="bg-pink-100 text-pink-700 hover:bg-pink-200 dark:bg-pink-900/30 dark:text-pink-300 pointer-events-none capitalize">
+                <Badge variant="secondary" className="bg-success-soft text-success border border-success/20 pointer-events-none capitalize">
                   {course.difficulty_level || 'beginner'}
                 </Badge>
               </div>
             </div>
 
             {isFree && (
-              <Badge className="mb-3 inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 text-xs font-bold border-none shadow-md w-fit">
+              <Badge className="mb-3 inline-flex items-center gap-2 bg-success hover:bg-success/90 text-success-foreground px-3 py-1 text-xs font-bold border-none shadow-sm w-fit">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
@@ -439,31 +418,31 @@ export default function CourseDetails() {
             <h1 className="text-3xl md:text-4xl lg:text-[42px] font-bold text-foreground mb-4 leading-tight">
               {course.title}
             </h1>
-            
+
             <div className="flex items-center flex-wrap gap-4 text-sm mb-6">
-              <div className="flex items-center gap-1.5 text-yellow-600 dark:text-yellow-500 font-bold bg-yellow-100/50 dark:bg-yellow-500/10 px-2 py-0.5 rounded">
-                <Star className="w-4 h-4 fill-current" />
+              <div className="flex items-center gap-1.5 text-foreground font-bold bg-secondary px-2 py-0.5 rounded">
+                <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
                 <span>{course.rating || '4.8'}</span>
               </div>
               <span className="text-muted-foreground underline decoration-dotted underline-offset-4 cursor-help">{Math.floor((course.student_count || 0) * 0.82)} reviews</span>
               <span className="text-foreground font-medium">{course.student_count || 0} students</span>
             </div>
-            
+
             <p className="text-lg text-muted-foreground mb-8 leading-relaxed max-w-3xl">
               {course.short_description || `${course.description.substring(0, 160)}...`}
             </p>
-            
-          <Card className="border border-primary/20 shadow-card hover:shadow-hover transition-shadow mb-8">
+
+          <Card className="border border-border shadow-card mb-8">
             <CardHeader className="flex flex-col sm:flex-row items-center gap-4 p-6">
-              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-primary/20 bg-primary/10 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-border bg-secondary flex items-center justify-center">
                 {instructor?.avatar_url ? (
                   <img src={instructor.avatar_url} alt={instructor.name} className="w-full h-full object-cover" />
                 ) : (
-                  <UserCircle className="w-8 h-8 text-primary" />
+                  <UserCircle className="w-8 h-8 text-muted-foreground" />
                 )}
               </div>
               <div className="flex-1">
-                <p className="text-sm text-primary font-semibold uppercase tracking-wider mb-1">Instructor</p>
+                <p className="text-sm text-accent font-semibold uppercase tracking-wider mb-1">Instructor</p>
                 <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
                   {instructor?.name || 'To be announced'}
                   {instructor?.specialization && (
@@ -477,14 +456,14 @@ export default function CourseDetails() {
                   </a>
                 )}
               </div>
-              <div className="flex items-center gap-1 text-muted-foreground bg-muted/10 px-3 py-1 rounded-full text-sm border border-border/30">
+              <div className="flex items-center gap-1 text-muted-foreground bg-secondary px-3 py-1 rounded-full text-sm border border-border">
                 <Info className="w-3 h-3" />
                 <span>Updated {new Date(course.updated_at || Date.now()).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}</span>
               </div>
             </CardHeader>
           </Card>
-            
-            <div className="flex space-x-1 border border-border/50 bg-muted/30 rounded-xl p-1 mb-8 overflow-x-auto no-scrollbar relative min-h-[48px]">
+
+            <div className="flex space-x-1 border border-border bg-secondary rounded-xl p-1 mb-8 overflow-x-auto no-scrollbar relative min-h-[48px]">
               {['overview', 'content', 'reviews', 'faq'].map(tab => (
                 <button
                   key={tab}
@@ -494,17 +473,17 @@ export default function CourseDetails() {
                   {activeTab === tab && (
                     <motion.div
                       layoutId="activeTab"
-                      className="absolute inset-0 bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-border/20"
+                      className="absolute inset-0 bg-card rounded-lg shadow-sm border border-border"
                       transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                     />
                   )}
-                  <span className={`relative z-10 block ${activeTab === tab ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
+                  <span className={`relative z-10 block ${activeTab === tab ? 'text-accent' : 'text-muted-foreground hover:text-foreground'}`}>
                     {tab === 'content' ? 'Course content' : tab === 'faq' ? 'FAQ' : tab}
                   </span>
                 </button>
               ))}
             </div>
-            
+
             {activeTab === 'faq' && (
               <div className="space-y-6 animate-in fade-in duration-500">
                 <div className="grid gap-4">
@@ -515,13 +494,13 @@ export default function CourseDetails() {
                     { question: "Are there prerequisites?", answer: "Basic computer literacy and a passion for learning are all you need!" },
                     { question: "Access on mobile?", answer: "Yes! Our platform is fully responsive. You can learn on any device anytime." }
                   ]).map((faq: any, i: number) => (
-                    <div key={i} className="bg-card border border-border/50 rounded-2xl p-6 shadow-sm group hover:border-primary/30 transition-colors">
+                    <div key={i} className="bg-card border border-border rounded-2xl p-6 shadow-card group hover:border-accent/30 transition-colors">
                       <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20 group-hover:bg-primary/20 transition-colors">
-                          <HelpCircle className="h-5 w-5 text-primary" />
+                        <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center shrink-0 group-hover:bg-accent/10 transition-colors">
+                          <HelpCircle className="h-5 w-5 text-accent" />
                         </div>
                         <div>
-                          <h4 className="text-base sm:text-lg font-bold mb-2 group-hover:text-primary transition-colors">{faq.question || faq.q}</h4>
+                          <h4 className="text-base sm:text-lg font-bold mb-2 group-hover:text-accent transition-colors">{faq.question || faq.q}</h4>
                           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">{faq.answer || faq.a}</p>
                         </div>
                       </div>
@@ -530,21 +509,21 @@ export default function CourseDetails() {
                 </div>
               </div>
             )}
-            
+
             {activeTab === 'overview' && (
               <div className="space-y-8 animate-in fade-in duration-500">
                 <div className="px-2">
                    <h3 className="text-2xl font-bold mb-5">Description</h3>
                    <div className="text-muted-foreground leading-relaxed whitespace-pre-wrap text-base sm:text-lg">{course.description}</div>
                 </div>
-                <div className="bg-card border border-border/50 rounded-2xl p-6 sm:p-8 shadow-sm scale-in duration-500 overflow-hidden">
-                  <h3 className="text-xl font-bold mb-6 flex items-center gap-3 text-foreground">📚 What you'll learn</h3>
+                <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-card scale-in duration-500 overflow-hidden">
+                  <h3 className="text-xl font-bold mb-6 text-foreground">What you'll learn</h3>
                   <div className="grid sm:grid-cols-2 gap-4 gap-y-6 sm:gap-x-12">
                     {(course.learning_outcomes && course.learning_outcomes.length > 0) ? (
                       course.learning_outcomes.map((outcome, idx) => (
                         <div key={idx} className="flex items-start gap-4 group">
-                          <CheckCircle2 className="w-5 h-5 text-[#10b981] shrink-0 mt-1 transition-transform group-hover:scale-110" />
-                          <span className="text-base font-semibold text-slate-700 dark:text-slate-300 leading-tight transition-colors group-hover:text-foreground">
+                          <CheckCircle2 className="w-5 h-5 text-success shrink-0 mt-1 transition-transform group-hover:scale-110" />
+                          <span className="text-base font-semibold text-foreground leading-tight transition-colors group-hover:text-accent">
                             {outcome}
                           </span>
                         </div>
@@ -552,8 +531,8 @@ export default function CourseDetails() {
                     ) : (
                       course.technologies?.map((tech, idx) => (
                         <div key={idx} className="flex items-start gap-4 group">
-                          <CheckCircle2 className="w-5 h-5 text-[#10b981] shrink-0 mt-1 transition-transform group-hover:scale-110" />
-                          <span className="text-base font-semibold text-slate-700 dark:text-slate-300 leading-tight transition-colors group-hover:text-foreground">
+                          <CheckCircle2 className="w-5 h-5 text-success shrink-0 mt-1 transition-transform group-hover:scale-110" />
+                          <span className="text-base font-semibold text-foreground leading-tight transition-colors group-hover:text-accent">
                             Master {tech} concepts and build projects.
                           </span>
                         </div>
@@ -573,42 +552,42 @@ export default function CourseDetails() {
             )}
 
             {activeTab === 'content' && (
-               <div className="bg-card border border-border/50 rounded-2xl p-6 shadow-sm animate-in fade-in duration-500">
+               <div className="bg-card border border-border rounded-2xl p-6 shadow-card animate-in fade-in duration-500">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-xl font-bold">Course Content</h3>
                   <p className="text-sm text-muted-foreground">{sections.length} sections • {sections.reduce((acc, s) => acc + (s.contents?.length || 0), 0)} lectures</p>
                 </div>
                 <div className="w-full relative pl-0 sm:pl-6 overflow-hidden">
-                  <div className="absolute left-[31px] sm:left-[39px] top-4 bottom-4 w-[2px] bg-primary/10 z-0 hidden sm:block"></div>
+                  <div className="absolute left-[31px] sm:left-[39px] top-4 bottom-4 w-[2px] bg-border z-0 hidden sm:block"></div>
                   <div className="space-y-6 relative z-10">
                     {sections.length > 0 ? (
                       sections.map((section, sIndex) => (
                         <div key={section.id} className="space-y-4">
                           <div className="flex items-center gap-3 mb-2">
-                             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 shadow-sm border border-primary/20"><Pin className="w-4 h-4 rotate-45" /></div>
+                             <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-foreground shrink-0 border border-border"><Pin className="w-4 h-4 rotate-45" /></div>
                              <div>
-                               <h4 className="font-bold text-gray-900 dark:text-foreground text-base sm:text-lg leading-tight">{section.title}</h4>
+                               <h4 className="font-bold text-foreground text-base sm:text-lg leading-tight">{section.title}</h4>
                                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-bold mt-0.5">Section {sIndex + 1}</p>
                              </div>
                           </div>
                           <Accordion type="single" collapsible className="w-full space-y-3">
                             {section.contents?.map((item) => (
-                              <AccordionItem key={item.id} value={item.id} className="bg-background border border-border/40 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all group/item">
+                              <AccordionItem key={item.id} value={item.id} className="bg-background border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-card transition-all group/item">
                                 <AccordionTrigger className="w-full hover:no-underline px-4 py-4">
                                   <div className="flex items-center gap-4 flex-1 text-left pr-2">
-                                    <div className="hidden sm:flex relative items-center justify-center w-6 shrink-0"><div className="w-3 h-3 rounded-full border-2 border-primary bg-background z-10" /></div>
+                                    <div className="hidden sm:flex relative items-center justify-center w-6 shrink-0"><div className="w-3 h-3 rounded-full border-2 border-foreground bg-background z-10" /></div>
                                     <div className="flex-1 select-none pr-4">
-                                      <p className="font-semibold text-foreground text-sm sm:text-base flex items-center gap-2 group-hover/item:text-primary transition-colors">
+                                      <p className="font-semibold text-foreground text-sm sm:text-base flex items-center gap-2 group-hover/item:text-accent transition-colors">
                                         {getIconForType(item.content_type)} <span className="line-clamp-1">{item.title}</span>
                                       </p>
                                     </div>
                                     <div className="flex items-center gap-3 pl-4 shrink-0 mr-4">
-                                      {(isFree ? freeUnlocked : item.is_free) ? <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"><Play className="w-3.5 h-3.5 text-primary fill-current" /></div> : <Lock className="w-4 h-4 text-muted-foreground/40 shrink-0" />}
+                                      {(isFree ? freeUnlocked : item.is_free) ? <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center"><Play className="w-3.5 h-3.5 text-accent fill-current" /></div> : <Lock className="w-4 h-4 text-muted-foreground/40 shrink-0" />}
                                     </div>
                                   </div>
                                 </AccordionTrigger>
                                 <AccordionContent className="px-4 sm:px-14 pb-4 pt-0">
-                                  <div className="space-y-3 border-l-2 border-primary/20 pl-6 py-2 mt-2 bg-muted/5 rounded-r-lg relative">
+                                  <div className="space-y-3 border-l-2 border-border pl-6 py-2 mt-2 bg-secondary/40 rounded-r-lg relative">
                                      {item.description && <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{item.description}</p>}
                                      {(() => {
                                        const videoUrl = (item.content_data as any)?.video_url;
@@ -616,11 +595,11 @@ export default function CourseDetails() {
                                        const ytMatch = videoUrl.match(/(?:v=|\/embed\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
                                        const ytId = ytMatch?.[1];
                                        if (!ytId) return null;
-                                       
+
                                         if (isFree ? freeUnlocked : item.is_free) {
                                           const isPlaying = playingLessons.has(item.id);
                                           return (
-                                             <div className="mt-3 rounded-xl overflow-hidden border border-border/50 shadow-sm bg-black">
+                                             <div className="mt-3 rounded-xl overflow-hidden border border-border shadow-sm bg-black">
                                                <div className="relative w-full overflow-hidden" style={{ paddingBottom: '56.25%' }}>
                                                   {isPlaying ? (
                                                     <>
@@ -649,7 +628,7 @@ export default function CourseDetails() {
                                                       />
                                                       <div className="absolute inset-0 bg-black/30 group-hover/play:bg-black/40 transition-colors" />
                                                       <div className="absolute inset-0 flex items-center justify-center">
-                                                        <div className="w-16 h-16 rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center shadow-2xl ring-4 ring-white/20 group-hover/play:scale-110 transition-transform">
+                                                        <div className="w-16 h-16 rounded-full bg-accent/90 backdrop-blur-sm flex items-center justify-center shadow-pop ring-4 ring-white/20 group-hover/play:scale-110 transition-transform">
                                                           <Play className="w-7 h-7 text-white fill-current ml-1" />
                                                         </div>
                                                       </div>
@@ -660,7 +639,7 @@ export default function CourseDetails() {
                                           );
                                         } else {
                                          return (
-                                           <div className="mt-3 rounded-xl overflow-hidden border border-border/50 shadow-sm relative">
+                                           <div className="mt-3 rounded-xl overflow-hidden border border-border shadow-sm relative">
                                              <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
                                                <img
                                                  src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`}
@@ -691,8 +670,8 @@ export default function CourseDetails() {
 
             {activeTab === 'reviews' && (
               <div className="space-y-6 animate-in fade-in duration-500">
-                <div className="bg-card border border-border/50 rounded-2xl p-6 shadow-sm">
-                  <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><Send className="w-4 h-4 text-primary" /> Write a Review</h3>
+                <div className="bg-card border border-border rounded-2xl p-6 shadow-card">
+                  <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><Send className="w-4 h-4 text-accent" /> Write a Review</h3>
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <Input value={reviewData.student_name} onChange={(e) => setReviewData(p => ({...p, student_name: e.target.value}))} placeholder="Your name" />
@@ -716,7 +695,7 @@ export default function CourseDetails() {
           </div>
 
           <div className="w-full lg:w-[35%] relative">
-            <div className="bg-card border border-border/50 rounded-3xl overflow-hidden shadow-xl sticky top-28">
+            <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-card sticky top-28">
               <div className="relative aspect-video bg-slate-900 group">
                 {playingVideo && course.video_url ? (
                   <div className="w-full h-full relative">
@@ -729,8 +708,8 @@ export default function CourseDetails() {
                         title="Course Preview"
                       />
                     ) : (
-                      <video 
-                        src={course.video_url} 
+                      <video
+                        src={course.video_url}
                         className="w-full h-full object-cover"
                         controls
                         autoPlay
@@ -757,7 +736,7 @@ export default function CourseDetails() {
                   if (isFree) {
                      return (
                        <div className="flex items-end gap-3 mb-6">
-                         <span className="text-4xl font-extrabold text-emerald-600">FREE</span>
+                         <span className="text-4xl font-extrabold text-success">FREE</span>
                        </div>
                      );
                    }
@@ -775,8 +754,17 @@ export default function CourseDetails() {
                    );
                  })()}
                  <div className="flex gap-3 mb-6">
-                    <Button size="lg" className="flex-1 bg-[#d91d79] hover:bg-[#b0145e] h-14 rounded-xl text-white font-bold" onClick={() => setShowEnrollmentModal(true)}>Start course</Button>
-                    <Button size="lg" variant="outline" className="w-14 h-14 p-0 rounded-xl" onClick={handleShare}><Share2 className="w-5 h-5" /></Button>
+                    <Button
+                      size="lg"
+                      className={cn(
+                        "flex-1 h-14",
+                        isFree ? "bg-success hover:bg-success/90 text-success-foreground" : ""
+                      )}
+                      onClick={() => setShowEnrollmentModal(true)}
+                    >
+                      Start course
+                    </Button>
+                    <Button size="lg" variant="outline" className="w-14 h-14 p-0" onClick={handleShare}><Share2 className="w-5 h-5" /></Button>
                  </div>
                  <ul className="space-y-4">
                     <li className="flex items-start gap-4 text-sm font-medium"><MonitorPlay className="w-5 h-5 shrink-0" /> Full lifetime access</li>
@@ -793,28 +781,28 @@ export default function CourseDetails() {
                  </h3>
                  <div className="flex flex-col gap-4">
                    {relatedCourses.map((rc) => (
-                     <div key={rc.id} className="bg-background/40 backdrop-blur-sm border border-border/40 rounded-2xl p-4 shadow-sm group hover:border-primary/40 hover:shadow-md transition-all flex gap-5">
+                     <div key={rc.id} className="bg-card border border-border rounded-2xl p-4 shadow-card group hover:border-accent/40 transition-all flex gap-5">
                        <Link to={`/course/${rc.id}`} className="w-20 h-20 shrink-0 rounded-xl overflow-hidden bg-muted group-hover:scale-95 transition-transform duration-500">
-                         {rc.banner_image ? <img src={rc.banner_image} className="w-full h-full object-cover" loading="lazy" decoding="async" /> : <div className="w-full h-full bg-primary/10 flex items-center justify-center"><Layout className="w-6 h-6 text-primary/40" /></div>}
+                         {rc.banner_image ? <img src={rc.banner_image} className="w-full h-full object-cover" loading="lazy" decoding="async" /> : <div className="w-full h-full bg-secondary flex items-center justify-center"><Layout className="w-6 h-6 text-muted-foreground" /></div>}
                        </Link>
                        <div className="flex-1 min-w-0 flex flex-col justify-center">
                          <div className="mb-2">
-                           <Link to={`/course/${rc.id}`} className="block font-bold text-sm leading-[1.3] text-foreground hover:text-primary transition-colors line-clamp-2">{rc.title}</Link>
+                           <Link to={`/course/${rc.id}`} className="block font-bold text-sm leading-[1.3] text-foreground hover:text-accent transition-colors line-clamp-2">{rc.title}</Link>
                          </div>
                          <div className="flex items-center justify-between gap-2 mt-auto">
                            <div className="flex flex-col">
                              {rc.discounted_price ? (
                                <div className="flex items-center gap-2">
-                                 <span className="text-sm font-black text-primary">৳{rc.discounted_price}</span>
+                                 <span className="text-sm font-black text-foreground">৳{rc.discounted_price}</span>
                                  <span className="text-[10px] text-muted-foreground line-through opacity-60">৳{rc.price}</span>
                                </div>
                              ) : (
-                               <span className="text-sm font-black text-primary">{rc.is_free ? 'FREE' : `৳${rc.price}`}</span>
+                               <span className="text-sm font-black text-foreground">{rc.is_free ? 'FREE' : `৳${rc.price}`}</span>
                              )}
                            </div>
-                           <Link 
-                             to={`/course/${rc.id}`} 
-                             className="inline-flex items-center text-[10px] font-black uppercase tracking-widest text-[#d91d79] hover:text-[#b0145e] transition-colors"
+                           <Link
+                             to={`/course/${rc.id}`}
+                             className="inline-flex items-center text-[10px] font-black uppercase tracking-widest text-accent hover:text-accent/80 transition-colors"
                            >
                              Enroll Now <ChevronRight className="w-3 h-3 ml-0.5" />
                            </Link>
