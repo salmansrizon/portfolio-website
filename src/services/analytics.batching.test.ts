@@ -36,14 +36,14 @@ describe('SupabaseAnalyticsAdapter batching', () => {
 
   it('flush sends every queued event in a single batched insert', async () => {
     adapter.trackPageView('/home', 'visitor-1');
-    adapter.trackClick('cta', '/home', 'visitor-1');
+    adapter.trackPageView('/about', 'visitor-1');
     await adapter.flush();
 
     expect(fromMock).toHaveBeenCalledTimes(1);
     expect(insertMock).toHaveBeenCalledTimes(1);
     expect(insertMock).toHaveBeenCalledWith([
       { page_path: '/home', visitor_id: 'visitor-1' },
-      { page_path: '/home', visitor_id: 'visitor-1' },
+      { page_path: '/about', visitor_id: 'visitor-1' },
     ]);
   });
 

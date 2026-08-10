@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createAnalyticsService, resetAnalyticsService } from './createService';
 import { AnalyticsService, AnalyticsEvent } from './analytics';
 
@@ -8,30 +8,8 @@ class MockAnalyticsAdapter implements AnalyticsService {
 
   trackPageView(pagePath: string, visitorId: string): void {
     this.events.push({
-      type: 'page_view',
       page_path: pagePath,
       visitor_id: visitorId,
-      timestamp: new Date().toISOString(),
-    });
-  }
-
-  trackClick(eventName: string, pagePath: string, visitorId: string): void {
-    this.events.push({
-      type: 'click',
-      page_path: pagePath,
-      visitor_id: visitorId,
-      event_name: eventName,
-      timestamp: new Date().toISOString(),
-    });
-  }
-
-  trackCustom(eventName: string, metadata: Record<string, unknown>): void {
-    this.events.push({
-      type: 'custom',
-      page_path: '/',
-      visitor_id: 'test-visitor', // Note: custom events don't take visitorId param
-      event_name: eventName,
-      metadata,
       timestamp: new Date().toISOString(),
     });
   }
@@ -43,8 +21,6 @@ class MockAnalyticsAdapter implements AnalyticsService {
 
 describe('createAnalyticsService', () => {
   it('should create a service instance with the provided adapter', () => {
-    // RED: Write test first - this should fail because createService doesn't exist yet
-    
     const mockAdapter = new MockAnalyticsAdapter();
     const analytics = createAnalyticsService(mockAdapter);
 
@@ -58,7 +34,6 @@ describe('createAnalyticsService', () => {
     // Assert: adapter received the event
     expect(mockAdapter.events).toHaveLength(1);
     expect(mockAdapter.events[0]).toMatchObject({
-      type: 'page_view',
       page_path: '/test-page',
       visitor_id: 'visitor-123',
     });
@@ -77,56 +52,17 @@ describe('createAnalyticsService', () => {
     expect(instance1).toBe(instance2);
   });
 
-  it('should track click events with correct data', () => {
-    // Arrange
-    const mockAdapter = new MockAnalyticsAdapter();
-    resetAnalyticsService();
-    const analytics = createAnalyticsService(mockAdapter);
-
-    // Act: track a click event
-    analytics.trackClick('button-click', '/home', 'visitor-456');
-
-    // Assert: adapter received the click event
-    expect(mockAdapter.events).toHaveLength(1);
-    expect(mockAdapter.events[0]).toMatchObject({
-      type: 'click',
-      page_path: '/home',
-      visitor_id: 'visitor-456',
-      event_name: 'button-click',
-    });
-  });
-
-  it('should track custom events with metadata', () => {
-    // Arrange
-    const mockAdapter = new MockAnalyticsAdapter();
-    resetAnalyticsService();
-    const analytics = createAnalyticsService(mockAdapter);
-
-    // Act: track a custom event
-    const metadata = { category: 'engagement', value: 42 };
-    analytics.trackCustom('form_submit', metadata);
-
-    // Assert: adapter received the custom event
-    expect(mockAdapter.events).toHaveLength(1);
-    expect(mockAdapter.events[0]).toMatchObject({
-      type: 'custom',
-      event_name: 'form_submit',
-      metadata: metadata,
-    });
-  });
-
   it('should flush queued events when implemented', async () => {
     // Arrange
     const mockAdapter = new MockAnalyticsAdapter();
     resetAnalyticsService();
     const analytics = createAnalyticsService(mockAdapter);
 
-    // Act: track some events
+    // Act: track a page view
     analytics.trackPageView('/page1', 'visitor-1');
-    analytics.trackClick('btn', '/page1', 'visitor-1');
 
     // Assert: events are tracked immediately (no queuing yet)
-    expect(mockAdapter.events).toHaveLength(2);
+    expect(mockAdapter.events).toHaveLength(1);
 
     // Act: flush (no-op for now, but should not throw)
     await analytics.flush();
@@ -139,7 +75,7 @@ describe('createAnalyticsService', () => {
     // Arrange: Create two different mock adapters
     const mockAdapter1 = new MockAnalyticsAdapter();
     const mockAdapter2 = new MockAnalyticsAdapter();
-    
+
     // Act & Assert: First adapter
     resetAnalyticsService();
     const analytics1 = createAnalyticsService(mockAdapter1);
@@ -151,7 +87,7 @@ describe('createAnalyticsService', () => {
     // This is expected behavior - singleton pattern
   });
 
-  it('should pass visitor ID correctly to trackPageView and trackClick', () => {
+  it('should pass visitor ID correctly to trackPageView', () => {
     // Arrange
     const mockAdapter = new MockAnalyticsAdapter();
     resetAnalyticsService();
@@ -159,7 +95,7 @@ describe('createAnalyticsService', () => {
 
     // Act: track events with specific visitor ID
     analytics.trackPageView('/page1', 'visitor-123');
-    analytics.trackClick('btn', '/page1', 'visitor-123');
+    analytics.trackPageView('/page2', 'visitor-123');
 
     // Assert: events have the correct visitor ID
     expect(mockAdapter.events).toHaveLength(2);
@@ -173,12 +109,6 @@ describe('createAnalyticsService', () => {
       trackPageView(): void {
         throw new Error('Simulated error');
       }
-      trackClick(): void {
-        throw new Error('Simulated error');
-      }
-      trackCustom(): void {
-        throw new Error('Simulated error');
-      }
       async flush(): Promise<void> {}
     }
 
@@ -188,7 +118,5 @@ describe('createAnalyticsService', () => {
 
     // Act & Assert: Should not throw
     expect(() => analytics.trackPageView('/page', 'visitor')).not.toThrow();
-    expect(() => analytics.trackClick('btn', '/page', 'visitor')).not.toThrow();
-    expect(() => analytics.trackCustom('event', {})).not.toThrow();
   });
 });

@@ -19,22 +19,6 @@ function createSafeAdapter(adapter: AnalyticsService): AnalyticsService {
       }
     },
 
-    trackClick(eventName: string, pagePath: string, visitorId: string): void {
-      try {
-        adapter.trackClick(eventName, pagePath, visitorId);
-      } catch (error) {
-        console.error('Analytics error (non-blocking):', error);
-      }
-    },
-
-    trackCustom(eventName: string, metadata: Record<string, unknown>): void {
-      try {
-        adapter.trackCustom(eventName, metadata);
-      } catch (error) {
-        console.error('Analytics error (non-blocking):', error);
-      }
-    },
-
     async flush(): Promise<void> {
       try {
         await adapter.flush();

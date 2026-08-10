@@ -1,23 +1,24 @@
 // ── Analytics Service Interface ──────────────────────────────────────────────
 // Singleton analytics service with Supabase and Console (test) adapters.
-// Tracks page views (with duration) and click events.
+// Tracks page views — the only thing the `page_views` table can hold.
+//
+// This used to also promise click and custom-event tracking (event_name,
+// duration_secs, metadata), but page_views has no columns for any of that,
+// so those fields were queued and silently dropped at flush(). Rather than
+// carry an interface that lies about what it persists, it was shrunk to
+// what the schema can actually store. Re-add click/custom tracking once
+// there's a column (or table) for it to land in.
 
 import { supabase } from '@/integrations/supabase/client';
 
 export interface AnalyticsEvent {
-  type: 'page_view' | 'click' | 'custom';
   page_path: string;
   visitor_id: string;
-  event_name?: string;  // for clicks
-  duration_secs?: number;  // for page views
-  metadata?: Record<string, unknown>;
   timestamp: string;
 }
 
 export interface AnalyticsService {
   trackPageView(pagePath: string, visitorId: string): void;
-  trackClick(eventName: string, pagePath: string, visitorId: string): void;
-  trackCustom(eventName: string, metadata: Record<string, unknown>): void;
   flush(): Promise<void>;  // send queued events (for batching later)
 }
 
@@ -62,32 +63,8 @@ export class SupabaseAnalyticsAdapter implements AnalyticsService {
 
   trackPageView(pagePath: string, visitorId: string): void {
     const event: AnalyticsEvent = {
-      type: 'page_view',
       page_path: pagePath,
       visitor_id: visitorId || this.visitorId,
-      timestamp: new Date().toISOString(),
-    };
-    this.sendEvent(event);
-  }
-
-  trackClick(eventName: string, pagePath: string, visitorId: string): void {
-    const event: AnalyticsEvent = {
-      type: 'click',
-      page_path: pagePath,
-      visitor_id: visitorId || this.visitorId,
-      event_name: eventName,
-      timestamp: new Date().toISOString(),
-    };
-    this.sendEvent(event);
-  }
-
-  trackCustom(eventName: string, metadata: Record<string, unknown>): void {
-    const event: AnalyticsEvent = {
-      type: 'custom',
-      page_path: window.location.pathname,
-      visitor_id: this.visitorId,
-      event_name: eventName,
-      metadata,
       timestamp: new Date().toISOString(),
     };
     this.sendEvent(event);
@@ -103,10 +80,6 @@ export class SupabaseAnalyticsAdapter implements AnalyticsService {
     this.queue = [];
 
     try {
-      // page_views only has page_path/visitor_id columns — event_type,
-      // event_name, duration_secs, and metadata have no column to land in
-      // yet, so a single batched insert covers page views, clicks, and
-      // custom events alike (matching what the schema can actually store).
       await supabase.from('page_views').insert(
         batch.map((e) => ({
           page_path: e.page_path,
@@ -140,14 +113,6 @@ class ConsoleAnalyticsAdapter implements AnalyticsService {
     console.log('[Analytics] Page View:', { pagePath, visitorId });
   }
 
-  trackClick(eventName: string, pagePath: string, visitorId: string): void {
-    console.log('[Analytics] Click:', { eventName, pagePath, visitorId });
-  }
-
-  trackCustom(eventName: string, metadata: Record<string, unknown>): void {
-    console.log('[Analytics] Custom:', { eventName, metadata });
-  }
-
   async flush(): Promise<void> {
     // No-op
   }
@@ -179,7 +144,6 @@ export function getAnalytics(): AnalyticsService {
 
 // ── React Hooks ───────────────────────────────────────────────────────────────
 // usePageView enhanced with duration tracking
-// useClickTracking for manual click tracking
 
 import { useEffect, useRef } from 'react';
 
@@ -201,15 +165,4 @@ export function usePageView(pagePath: string) {
       }
     };
   }, [pagePath]);
-}
-
-export function useClickTracking() {
-  const analytics = getAnalytics();
-
-  const trackClick = (eventName: string) => {
-    const pagePath = window.location.pathname;
-    analytics.trackClick(eventName, pagePath, '');
-  };
-
-  return { trackClick };
 }
