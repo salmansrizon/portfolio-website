@@ -7,8 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Mail, Loader2, ShieldCheck } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Lock, Mail } from 'lucide-react';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -69,30 +68,10 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-paper px-4">
-      <motion.div
-        initial={{ opacity: 0, y: 24, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.45, ease: 'easeOut' }}
-        className="w-full max-w-md"
-      >
-      <Card className="w-full shadow-card">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-subtle px-4">
+      <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <motion.div
-            initial={{ scale: 0, rotate: -12 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: 'spring', stiffness: 260, damping: 18, delay: 0.15 }}
-            className="mx-auto mb-4 relative"
-          >
-            <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center animate-bounce-slow">
-              <ShieldCheck className="h-7 w-7 text-primary-foreground" />
-            </div>
-            <span className="absolute -bottom-1 -right-1 flex h-4 w-4">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-60"></span>
-              <span className="relative inline-flex rounded-full h-4 w-4 bg-success border-2 border-card"></span>
-            </span>
-          </motion.div>
-          <CardTitle className="text-2xl font-bold text-foreground">Admin Portal</CardTitle>
+          <CardTitle className="text-2xl font-bold text-primary">Admin Portal</CardTitle>
           <CardDescription>Sign in to manage your portfolio</CardDescription>
         </CardHeader>
         
@@ -140,7 +119,7 @@ const Auth = () => {
               
               <CardFooter>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Signing in...</> : "Sign In"}
+                  {loading ? "Signing in..." : "Sign In"}
                 </Button>
               </CardFooter>
             </form>
@@ -184,14 +163,13 @@ const Auth = () => {
               
               <CardFooter>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Creating account...</> : "Sign Up"}
+                  {loading ? "Creating account..." : "Sign Up"}
                 </Button>
               </CardFooter>
             </form>
           </TabsContent>
         </Tabs>
       </Card>
-      </motion.div>
     </div>
   );
 };

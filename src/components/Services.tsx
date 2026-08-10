@@ -1,10 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Loader2 } from "lucide-react";
-import DynamicIcon from "@/components/DynamicIcon";
-import { useSectionContent } from "@/hooks/useSectionContent";
-
+import { BarChart3, Database, Brain, ArrowRight, Loader2 ,ChartArea} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,7 +18,6 @@ interface Service {
 }
 
 const Services = () => {
-  const { content: sectionContent } = useSectionContent("services");
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -87,9 +83,9 @@ const Services = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal direction="up">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-foreground mb-4">{sectionContent.title}</h2>
+            <h2 className="text-4xl font-bold text-foreground mb-4">Services</h2>
             <p className="text-xl text-muted-foreground text-primary font-semibold">
-              {sectionContent.subtitle}
+              Comprehensive data analytics solutions tailored to your business needs
             </p>
           </div>
         </ScrollReveal>
@@ -97,12 +93,20 @@ const Services = () => {
         <div className="grid lg:grid-cols-3 gap-8 mb-12">
           {/* Map icon string to actual icon component */}
           {services.map((service, index) => {
+            const iconMap: Record<string, React.ElementType> = {
+              BarChart3,
+              Brain,
+              ChartArea
+            };
+            const IconComponent = service.icon ? iconMap[service.icon] : BarChart3;
             return (
               <ScrollReveal key={index} direction="up" delay={index * 0.1}>
                 <Card className="h-full flex flex-col shadow-card hover:shadow-hover transition-all duration-300 group hover:scale-[1.02] hover:border-primary/30">
                 <CardHeader className="text-center pb-4">
-                  <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                    <DynamicIcon name={service.icon} className="h-8 w-8 text-white" />
+                  <div className="w-16 h-16 bg-gradient-hero rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                    {IconComponent ? (
+                      <IconComponent className="h-8 w-8 text-white" />
+                    ) : null}
                   </div>
                   <CardTitle className="text-xl sm:text-2xl font-bold text-foreground break-words">
                     {service.title}
@@ -141,7 +145,7 @@ const Services = () => {
 
         {/* Custom Solution CTA */}
         <ScrollReveal direction="scale" delay={0.3}>
-          <Card className="bg-gradient-hero text-white border-transparent shadow-card">
+          <Card className="bg-gradient-hero text-white shadow-hover border-primary/20 backdrop-blur-md">
           <CardContent className="p-8 text-center">
             <h3 className="text-2xl font-bold mb-4">Need a custom solution?</h3>
             <p className="text-lg mb-6 opacity-90">
@@ -151,7 +155,7 @@ const Services = () => {
               asChild
               variant="secondary"
               size="lg"
-              className="bg-white text-[#131313] hover:bg-white/90 font-semibold"
+              className="bg-white text-primary hover:bg-gray-100 font-semibold"
             >
               <Link to="/book-session">Schedule a Consultation</Link>
             </Button>

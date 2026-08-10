@@ -1,22 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { 
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -27,28 +18,30 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { 
-  CalendarIcon, 
-  Clock, 
-  Plus, 
-  Trash2, 
-  CalendarX 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
+import {
+  CalendarIcon,
+  CalendarX,
+  Clock,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { createRepository } from "@/integrations/supabase/repository";
+import { unavailableSlotConfig } from "@/adapters/entityConfigs";
+import { useEntityManager } from "@/hooks/useEntityManager";
 
-interface UnavailableSlot {
-  id: string;
-  date: string;
-  time_slot?: string;
-  reason?: string;
-  created_at: string;
-}
+const slotRepository = createRepository(unavailableSlotConfig);
 
 const UnavailableSlotsManager = () => {
-  const [unavailableSlots, setUnavailableSlots] = useState<UnavailableSlot[]>([]);
-  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     date: undefined as Date | undefined,
     time_slot: '',
@@ -57,6 +50,19 @@ const UnavailableSlotsManager = () => {
   });
   const { toast } = useToast();
 
+  const { items: unavailableSlots, isLoading: loading, dialog } = useEntityManager(unavailableSlotConfig);
+  // Delete already has a purpose-built AlertDialog confirmation below —
+  // going through useEntityManager's remove() would additionally trigger its
+  // own window.confirm(), so this uses the repository directly instead.
+  const { mutate: deleteSlot } = slotRepository.useDelete();
+
+  const handleDelete = (id: string) => {
+    deleteSlot(id, {
+      onSuccess: () => toast({ title: "Success", description: "Unavailable slot removed successfully" }),
+      onError: () => toast({ title: "Error", description: "Failed to remove unavailable slot", variant: "destructive" }),
+    });
+  };
+
   // Available time slots
   const timeSlots = [
     '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
@@ -64,105 +70,22 @@ const UnavailableSlotsManager = () => {
     '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'
   ];
 
-  useEffect(() => {
-    fetchUnavailableSlots();
-  }, []);
-
-  const fetchUnavailableSlots = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('unavailable_slots')
-        .select('*')
-        .order('date', { ascending: true });
-
-      if (error) throw error;
-      setUnavailableSlots(data || []);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch unavailable slots",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!formData.date) {
-      toast({
-        title: "Error",
-        description: "Please select a date",
-        variant: "destructive"
-      });
+      toast({ title: "Error", description: "Please select a date", variant: "destructive" });
       return;
     }
-
     if (!formData.isFullDay && !formData.time_slot) {
-      toast({
-        title: "Error",
-        description: "Please select a time slot or mark as full day",
-        variant: "destructive"
-      });
+      toast({ title: "Error", description: "Please select a time slot or mark as full day", variant: "destructive" });
       return;
     }
 
-    try {
-      const { error } = await supabase
-        .from('unavailable_slots')
-        .insert({
-          date: format(formData.date, 'yyyy-MM-dd'),
-          time_slot: formData.isFullDay ? null : formData.time_slot,
-          reason: formData.reason || null
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Unavailable slot added successfully"
-      });
-
-      // Reset form
-      setFormData({
-        date: undefined,
-        time_slot: '',
-        reason: '',
-        isFullDay: false
-      });
-
-      fetchUnavailableSlots();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to add unavailable slot",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('unavailable_slots')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Unavailable slot removed successfully"
-      });
-
-      fetchUnavailableSlots();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to remove unavailable slot",
-        variant: "destructive"
-      });
-    }
+    dialog.onSubmit({
+      date: format(formData.date, 'yyyy-MM-dd'),
+      time_slot: formData.isFullDay ? null : formData.time_slot,
+      reason: formData.reason || null,
+    });
+    setFormData({ date: undefined, time_slot: '', reason: '', isFullDay: false });
   };
 
   if (loading) {
@@ -215,10 +138,10 @@ const UnavailableSlotsManager = () => {
 
             <div className="space-y-2">
               <Label>Type</Label>
-              <Select 
-                value={formData.isFullDay ? 'full-day' : 'time-slot'} 
-                onValueChange={(value) => setFormData(prev => ({ 
-                  ...prev, 
+              <Select
+                value={formData.isFullDay ? 'full-day' : 'time-slot'}
+                onValueChange={(value) => setFormData(prev => ({
+                  ...prev,
                   isFullDay: value === 'full-day',
                   time_slot: value === 'full-day' ? '' : prev.time_slot
                 }))}
@@ -237,8 +160,8 @@ const UnavailableSlotsManager = () => {
           {!formData.isFullDay && (
             <div className="space-y-2">
               <Label>Time Slot</Label>
-              <Select 
-                value={formData.time_slot} 
+              <Select
+                value={formData.time_slot}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, time_slot: value }))}
               >
                 <SelectTrigger>
@@ -324,13 +247,13 @@ const UnavailableSlotsManager = () => {
                             <AlertDialogHeader>
                               <AlertDialogTitle>Remove Unavailable Slot</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Are you sure you want to remove this unavailable slot? 
+                                Are you sure you want to remove this unavailable slot?
                                 This will make the time slot available for booking again.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
+                              <AlertDialogAction
                                 onClick={() => handleDelete(slot.id)}
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               >

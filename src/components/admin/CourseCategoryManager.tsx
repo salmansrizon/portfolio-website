@@ -1,75 +1,12 @@
-import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useAdminResource } from "@/hooks/useAdminResource";
 import { FolderTree, Plus, Edit, Trash2 } from "lucide-react";
-
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  parent_id: string | null;
-  created_at: string;
-}
-
-const initialFormData = { name: "", slug: "", parent_id: "none" };
+import { courseCategoryConfig } from "@/adapters/entityConfigs";
+import { EntityFormDialog } from "./EntityFormDialog";
+import { useEntityManager } from "@/hooks/useEntityManager";
 
 export default function CourseCategoryManager() {
-  const {
-    items: categories,
-    loading: isLoading,
-    editingItem: editingCategory,
-    isDialogOpen: showDialog,
-    setIsDialogOpen: setShowDialog,
-    startEdit,
-    clearEditing,
-    save,
-    remove,
-  } = useAdminResource<Category>({ table: "course_categories", orderBy: { column: "name", ascending: true } });
-  const [formData, setFormData] = useState(initialFormData);
-
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const name = e.target.value;
-    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-    setFormData(prev => ({ ...prev, name, slug: editingCategory ? prev.slug : slug }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name || !formData.slug) return;
-
-    const payload = {
-      name: formData.name,
-      slug: formData.slug,
-      parent_id: formData.parent_id === "none" ? null : formData.parent_id
-    };
-
-    const ok = await save(payload);
-    if (ok) setFormData(initialFormData);
-  };
-
-  const resetForm = () => {
-    clearEditing();
-    setFormData(initialFormData);
-  };
-
-  const handleEdit = (category: Category) => {
-    startEdit(category);
-    setFormData({
-      name: category.name,
-      slug: category.slug,
-      parent_id: category.parent_id || "none"
-    });
-  };
-
-  const handleDelete = (id: string) => {
-    if (!window.confirm("Are you sure? This might fail if courses are using this category or if it has child categories.")) return;
-    remove(id);
-  };
+  const { items: categories, isLoading, openCreate, openEdit, remove, dialog } = useEntityManager(courseCategoryConfig);
 
   const getParentName = (parentId: string | null) => {
     if (!parentId) return "None (Root)";
@@ -83,46 +20,18 @@ export default function CourseCategoryManager() {
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <FolderTree className="w-6 h-6" /> Course Categories
         </h2>
-        <Dialog open={showDialog} onOpenChange={(open) => {
-          setShowDialog(open);
-          if (!open) resetForm();
-        }}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm}><Plus className="w-4 h-4 mr-2" /> Add Category</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editingCategory ? "Edit Category" : "New Category"}</DialogTitle>
-              <DialogDescription>Create categories to organize your courses</DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Category Name</Label>
-                <Input id="name" value={formData.name} onChange={handleNameChange} placeholder="e.g. Graphic Design" required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="slug">URL Slug</Label>
-                <Input id="slug" value={formData.slug} onChange={(e) => setFormData({ ...formData, slug: e.target.value })} placeholder="e.g. graphic-design" required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="parent">Parent Category (Optional)</Label>
-                <Select value={formData.parent_id} onValueChange={(v) => setFormData({ ...formData, parent_id: v })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select parent category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">-- None (Root Category) --</SelectItem>
-                    {categories.filter(c => c.id !== editingCategory?.id).map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button type="submit" className="w-full">Save Category</Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" /> Add Category</Button>
       </div>
+
+      <EntityFormDialog
+        config={courseCategoryConfig}
+        {...dialog}
+        dynamicOptions={{
+          parent_id: categories
+            .filter(c => c.id !== dialog.initialData?.id)
+            .map(c => ({ label: c.name, value: c.id })),
+        }}
+      />
 
       <div className="border rounded-lg bg-card">
         <Table>
@@ -156,10 +65,10 @@ export default function CourseCategoryManager() {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(category)}>
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(category)}>
                       <Edit className="w-4 h-4 text-primary" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(category.id)}>
+                    <Button variant="ghost" size="icon" onClick={() => remove(category)}>
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>
                   </TableCell>

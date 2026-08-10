@@ -10,7 +10,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { BlogPost } from '@/types/blog';
 import defaultFeaturedImage from "@/assets/default-blog-featured.webp";
-import { motion } from 'framer-motion';
 
 const BLOG_CATEGORIES = [
   { id: 'all', label: 'All Posts' },
@@ -103,17 +102,12 @@ const Blogs = () => {
   return (
     <section className="py-12 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-          className="text-center mb-12"
-        >
+        <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-foreground mb-4">Blog</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-primary font-semibold">
             Insights and thoughts on data analytics, engineering, and the latest trends in technology
           </p>
-        </motion.div>
+        </div>
 
         {/* Search and Filter Section */}
         <div className="mb-8">
@@ -151,16 +145,8 @@ const Blogs = () => {
 
         {/* Blog Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredBlogs.map((blog, i) => (
-            <motion.div
-              key={blog.id}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.45, delay: (i % 3) * 0.08, ease: 'easeOut' }}
-              className="h-full"
-            >
-            <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 h-full flex flex-col hover:scale-[1.02] hover:border-primary/30">
+          {filteredBlogs.map((blog) => (
+            <Card key={blog.id} className="overflow-hidden hover:shadow-lg transition-all duration-300 h-full flex flex-col hover:scale-[1.02] hover:border-primary/30">
               <div className="aspect-video overflow-hidden">
                 <img
                   src={blog.featured_image || defaultFeaturedImage}
@@ -238,7 +224,6 @@ const Blogs = () => {
                 </CardContent>
               </div>
             </Card>
-            </motion.div>
           ))}
         </div>
 

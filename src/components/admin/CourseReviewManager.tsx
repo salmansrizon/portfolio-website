@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,131 +12,77 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { createRepository } from "@/integrations/supabase/repository";
+import { courseReviewConfig, courseConfig } from "@/adapters/entityConfigs";
+import { useEntityManager } from "@/hooks/useEntityManager";
 
-interface CourseReview {
-  id: string;
-  course_id: string;
-  student_name: string;
-  student_email: string;
-  rating: number;
-  review_text: string | null;
-  is_approved: boolean;
-  created_at: string;
-}
-
-interface Course {
-  id: string;
-  title: string;
-}
+const reviewRepository = createRepository(courseReviewConfig);
+const courseRepository = createRepository(courseConfig);
 
 const CourseReviewManager = () => {
   const { toast } = useToast();
-  const [reviews, setReviews] = useState<CourseReview[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterCourse, setFilterCourse] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState("");
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      // Fetch all reviews (admin can see all)
-      const { data: reviewsData, error: reviewsError } = await (supabase
-        .from("course_reviews" as any)
-        .select("*")
-        .order("created_at", { ascending: false }) as any);
+  const { data: courses = [] } = courseRepository.useFindAll();
+  // Stats need the full (unfiltered) count regardless of search/status/course
+  // filters — shares the same query cache as useEntityManager's own
+  // useFindAll(), so this isn't a second network request.
+  const { data: reviews = [], isLoading: loading } = reviewRepository.useFindAll();
+  const { mutate: updateReview } = reviewRepository.useUpdate();
 
-      if (reviewsError) throw reviewsError;
-      setReviews((reviewsData || []) as CourseReview[]);
+  // Only the free-text axis (name/email/review text) goes through the hook —
+  // status and course are separate, locally-owned filters composed on top,
+  // same as before this migration.
+  const {
+    items: searchedReviews,
+    search: searchQuery,
+    setSearch: setSearchQuery,
+    remove,
+  } = useEntityManager(courseReviewConfig, {
+    searchPredicate: (review, query) => {
+      const q = query.toLowerCase();
+      return (
+        review.student_name.toLowerCase().includes(q) ||
+        review.student_email.toLowerCase().includes(q) ||
+        (review.review_text || "").toLowerCase().includes(q)
+      );
+    },
+  });
 
-      // Fetch courses for filter & display
-      const { data: coursesData } = await supabase
-        .from("courses")
-        .select("id, title")
-        .order("title");
-      setCourses((coursesData || []) as Course[]);
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to load reviews.", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const handleApprove = async (reviewId: string) => {
+  const handleApprove = (reviewId: string) => {
     setActionLoading(reviewId);
-    try {
-      const { error } = await (supabase
-        .from("course_reviews" as any)
-        .update({ is_approved: true })
-        .eq("id", reviewId) as any);
-      if (error) throw error;
-      setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, is_approved: true } : r));
-      toast({ title: "✅ Review Approved", description: "This review is now publicly visible." });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    } finally {
-      setActionLoading(null);
-    }
+    updateReview(
+      { id: reviewId, item: { is_approved: true } },
+      {
+        onSuccess: () => { toast({ title: "✅ Review Approved", description: "This review is now publicly visible." }); setActionLoading(null); },
+        onError: (err: any) => { toast({ title: "Error", description: err.message, variant: "destructive" }); setActionLoading(null); },
+      }
+    );
   };
 
-  const handleReject = async (reviewId: string) => {
+  const handleReject = (reviewId: string) => {
     setActionLoading(reviewId);
-    try {
-      const { error } = await (supabase
-        .from("course_reviews" as any)
-        .update({ is_approved: false })
-        .eq("id", reviewId) as any);
-      if (error) throw error;
-      setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, is_approved: false } : r));
-      toast({ title: "Review Hidden", description: "This review is now hidden from public." });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    } finally {
-      setActionLoading(null);
-    }
+    updateReview(
+      { id: reviewId, item: { is_approved: false } },
+      {
+        onSuccess: () => { toast({ title: "Review Hidden", description: "This review is now hidden from public." }); setActionLoading(null); },
+        onError: (err: any) => { toast({ title: "Error", description: err.message, variant: "destructive" }); setActionLoading(null); },
+      }
+    );
   };
 
-  const handleDelete = async (reviewId: string) => {
-    if (!confirm("Are you sure you want to permanently delete this review?")) return;
-    setActionLoading(reviewId);
-    try {
-      const { error } = await (supabase
-        .from("course_reviews" as any)
-        .delete()
-        .eq("id", reviewId) as any);
-      if (error) throw error;
-      setReviews(prev => prev.filter(r => r.id !== reviewId));
-      toast({ title: "Review Deleted", description: "The review has been permanently removed." });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    } finally {
-      setActionLoading(null);
-    }
-  };
+  const getCourseName = (courseId: string) => courses.find(c => c.id === courseId)?.title || "Unknown Course";
 
-  const getCourseName = (courseId: string) => {
-    return courses.find(c => c.id === courseId)?.title || "Unknown Course";
-  };
-
-  // Filter reviews
-  const filteredReviews = reviews.filter(review => {
+  // Status/course filters apply on top of the hook's already search-filtered list.
+  const filteredReviews = searchedReviews.filter(review => {
     const matchesStatus =
       filterStatus === "all" ||
       (filterStatus === "approved" && review.is_approved) ||
       (filterStatus === "pending" && !review.is_approved);
     const matchesCourse = filterCourse === "all" || review.course_id === filterCourse;
-    const matchesSearch =
-      !searchQuery ||
-      review.student_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      review.student_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (review.review_text || "").toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesStatus && matchesCourse && matchesSearch;
+    return matchesStatus && matchesCourse;
   });
 
   const approvedCount = reviews.filter(r => r.is_approved).length;
@@ -180,9 +125,9 @@ const CourseReviewManager = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Approved</p>
-                <p className="text-3xl font-extrabold text-success mt-1">{approvedCount}</p>
+                <p className="text-3xl font-extrabold text-green-600 mt-1">{approvedCount}</p>
               </div>
-              <CheckCircle2 className="w-8 h-8 text-success/30" />
+              <CheckCircle2 className="w-8 h-8 text-green-500/30" />
             </div>
           </CardContent>
         </Card>
@@ -191,9 +136,9 @@ const CourseReviewManager = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Pending</p>
-                <p className="text-3xl font-extrabold text-warning mt-1">{pendingCount}</p>
+                <p className="text-3xl font-extrabold text-amber-600 mt-1">{pendingCount}</p>
               </div>
-              <EyeOff className="w-8 h-8 text-warning/30" />
+              <EyeOff className="w-8 h-8 text-amber-500/30" />
             </div>
           </CardContent>
         </Card>
@@ -248,7 +193,7 @@ const CourseReviewManager = () => {
       ) : (
         <div className="space-y-4">
           {filteredReviews.map(review => (
-            <Card key={review.id} className={`bg-card/60 backdrop-blur-sm border-border/50 transition-all hover:shadow-md ${!review.is_approved ? 'border-l-4 border-l-warning' : 'border-l-4 border-l-success'}`}>
+            <Card key={review.id} className={`bg-card/60 backdrop-blur-sm border-border/50 transition-all hover:shadow-md ${!review.is_approved ? 'border-l-4 border-l-amber-400' : 'border-l-4 border-l-green-400'}`}>
               <CardContent className="p-5">
                 <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                   {/* Avatar & Info */}
@@ -259,12 +204,12 @@ const CourseReviewManager = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-foreground">{review.student_name}</span>
-                        <Badge variant={review.is_approved ? "default" : "secondary"} className={`text-[10px] px-1.5 py-0 ${review.is_approved ? 'bg-success-soft text-success dark:bg-success/10 dark:text-success hover:bg-success-soft' : 'bg-warning-soft text-warning dark:bg-warning/10 dark:text-warning hover:bg-warning-soft'}`}>
+                        <Badge variant={review.is_approved ? "default" : "secondary"} className={`text-[10px] px-1.5 py-0 ${review.is_approved ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400 hover:bg-green-200' : 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 hover:bg-amber-200'}`}>
                           {review.is_approved ? "Approved" : "Pending"}
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">{review.student_email}</p>
-                      
+
                       {/* Course Badge */}
                       <Badge variant="outline" className="mt-2 text-[10px] font-medium">
                         {getCourseName(review.course_id)}
@@ -273,7 +218,7 @@ const CourseReviewManager = () => {
                       {/* Stars */}
                       <div className="flex items-center gap-0.5 mt-2">
                         {[1, 2, 3, 4, 5].map(s => (
-                          <Star key={s} className={`w-4 h-4 ${s <= review.rating ? 'text-warning fill-warning' : 'text-muted-foreground/20'}`} />
+                          <Star key={s} className={`w-4 h-4 ${s <= review.rating ? 'text-yellow-500 fill-yellow-500' : 'text-muted-foreground/20'}`} />
                         ))}
                         <span className="text-xs text-muted-foreground ml-2">{review.rating}/5</span>
                       </div>
@@ -297,7 +242,7 @@ const CourseReviewManager = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="text-warning border-warning-soft hover:bg-warning-soft dark:hover:bg-warning/10 gap-1.5"
+                        className="text-amber-600 border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-500/10 gap-1.5"
                         onClick={() => handleReject(review.id)}
                         disabled={actionLoading === review.id}
                       >
@@ -307,7 +252,7 @@ const CourseReviewManager = () => {
                     ) : (
                       <Button
                         size="sm"
-                        className="bg-success hover:bg-success text-white gap-1.5"
+                        className="bg-green-600 hover:bg-green-700 text-white gap-1.5"
                         onClick={() => handleApprove(review.id)}
                         disabled={actionLoading === review.id}
                       >
@@ -318,11 +263,11 @@ const CourseReviewManager = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="text-danger border-danger-soft hover:bg-danger-soft dark:hover:bg-danger/10 gap-1.5"
-                      onClick={() => handleDelete(review.id)}
+                      className="text-red-600 border-red-200 hover:bg-red-50 dark:hover:bg-red-500/10 gap-1.5"
+                      onClick={() => remove(review)}
                       disabled={actionLoading === review.id}
                     >
-                      {actionLoading === review.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                      <Trash2 className="w-3.5 h-3.5" />
                       Delete
                     </Button>
                   </div>

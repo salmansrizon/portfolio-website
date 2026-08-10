@@ -34,12 +34,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import ScrollReveal from "./ScrollReveal";
 import { useBookingData } from "@/hooks/useBookingData";
-import { useSectionContent } from "@/hooks/useSectionContent";
 
 type BookingStep = 'form' | 'confirmed';
 
 const Contact = () => {
-  const { content: sectionContent } = useSectionContent("contact");
   const [currentTime, setCurrentTime] = useState('');
   const [isBusinessHours, setIsBusinessHours] = useState(false);
   const [formData, setFormData] = useState({
@@ -48,16 +46,6 @@ const Contact = () => {
     service: '',
     message: ''
   });
-
-  // Admin-managed services for the "Service Needed" dropdown
-  const [serviceOptions, setServiceOptions] = useState<{ id: string; title: string }[]>([]);
-  useEffect(() => {
-    supabase
-      .from('services')
-      .select('id, title')
-      .order('created_at', { ascending: false })
-      .then(({ data }) => setServiceOptions(data || []));
-  }, []);
 
   // ── Booking state ──────────────────────────────────────────
   const {
@@ -234,9 +222,9 @@ ${formData.message}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal direction="up">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-foreground mb-4">{sectionContent.title}</h2>
+            <h2 className="text-4xl font-bold text-foreground mb-4">Let's Work Together</h2>
             <p className="text-xl text-muted-foreground text-primary font-semibold">
-              {sectionContent.description}
+              Ready to transform your data into strategic insights?
             </p>
           </div>
         </ScrollReveal>
@@ -289,10 +277,12 @@ ${formData.message}
                         <SelectValue placeholder="Select a service" />
                       </SelectTrigger>
                       <SelectContent>
-                        {serviceOptions.map(s => (
-                          <SelectItem key={s.id} value={s.title}>{s.title}</SelectItem>
-                        ))}
-                        <SelectItem value="Other">Other</SelectItem>
+                        <SelectItem value="power-bi">Power BI Consulting</SelectItem>
+                        <SelectItem value="data-engineering">Data Engineering</SelectItem>
+                        <SelectItem value="fabric">Microsoft Fabric Implementation</SelectItem>
+                        <SelectItem value="training">Training & Mentoring</SelectItem>
+                        <SelectItem value="custom">Custom Analytics Solutions</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -624,20 +614,20 @@ ${formData.message}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <MapPin className="h-5 w-5 text-primary" />
-                    <span className="font-medium text-foreground">{sectionContent.location}</span>
+                    <span className="font-medium text-foreground">Dhaka, Bangladesh</span>
                   </div>
                   <Badge 
                     className={cn(
                       "flex items-center gap-1.5 transition-all duration-500",
                       isBusinessHours 
-                        ? "bg-success-soft text-success border-success/20"
+                        ? "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800"
                         : "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800"
                     )}
                   >
                     {isBusinessHours && (
                       <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                       </span>
                     )}
                     {isBusinessHours ? "Available" : "Away"}
@@ -698,7 +688,7 @@ ${formData.message}
             </Card>
 
             {/* Quick Response */}
-            <Card className="shadow-card bg-gradient-hero text-white border-transparent hover:shadow-hover transition-all">
+            <Card className="shadow-card bg-gradient-hero text-white border-primary/20 backdrop-blur-md hover:shadow-hover transition-all">
               <CardContent className="p-6">
                 <div className="flex items-start space-x-4">
                   <Zap className="h-8 w-8 flex-shrink-0 mt-1" />

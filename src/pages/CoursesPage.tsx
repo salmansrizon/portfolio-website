@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { resolveCoursePricing } from "@/lib/pricing";
 import Navbar from "@/components/Navbar";
+import LottieAnimation from "@/components/LottieAnimation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,6 @@ import { Search, Filter, BookOpen, Clock, ChevronRight, GraduationCap, Calendar,
 import { useNavigate } from "react-router-dom";
 import { CourseCountdown } from "@/components/CourseCountdown";
 import ScrollReveal from "@/components/ScrollReveal";
-import LottieAnimation from "@/components/LottieAnimation";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
@@ -32,7 +31,6 @@ interface Course {
   difficulty_level: string;
   discount_percentage: number | null;
   discounted_price: number | null;
-  promo_only?: boolean;
   category_id: string | null;
   start_date?: string;
   course_type?: string;
@@ -259,7 +257,7 @@ export default function CoursesPage() {
                 {/* Webinar cards first */}
                 {filteredWebinars.map((webinar, index) => (
                   <ScrollReveal key={`w-${webinar.id}`} direction="up" delay={index * 0.05}>
-                    <div 
+                    <div
                       className="bg-card rounded-2xl shadow-card hover:shadow-hover transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50 group cursor-pointer"
                       onClick={() => navigate(`/webinar/${webinar.id}`)}
                     >
@@ -293,7 +291,7 @@ export default function CoursesPage() {
                         <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed flex-grow">
                           {webinar.description || "Join this exciting webinar to learn from industry experts."}
                         </p>
-                        
+
                         <div className="flex items-center justify-between text-sm pt-2 border-t border-border/10">
                           <div className="flex items-center gap-1.5 text-muted-foreground">
                             <BookOpen className="w-4 h-4" />
@@ -310,14 +308,14 @@ export default function CoursesPage() {
 
                         <Badge className={cn(
                           "w-fit text-[10px] font-bold uppercase tracking-wider",
-                          webinar.status === 'published' 
-                            ? "bg-success-soft text-success" 
+                          webinar.status === 'published'
+                            ? "bg-success-soft text-success"
                             : "bg-warning-soft text-warning"
                         )}>
                           {webinar.status === 'published' ? 'Live' : 'Upcoming'}
                         </Badge>
-                        
-                        <Button 
+
+                        <Button
                           className="w-full mt-1 h-12 active:scale-[0.98]"
                           onClick={(e) => { e.stopPropagation(); navigate(`/webinar/${webinar.id}`); }}
                         >
@@ -331,22 +329,22 @@ export default function CoursesPage() {
                 {/* Course cards after */}
                 {filteredCourses.map((course, index) => (
                   <ScrollReveal key={course.id} direction="up" delay={(filteredWebinars.length + index) * 0.05}>
-                    <div 
+                    <div
                       className="bg-card rounded-2xl shadow-card hover:shadow-hover transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50 group cursor-pointer"
                       onClick={() => navigate(`/course/${course.id}`)}
                     >
                       <div className="relative bg-primary text-white p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[200px] shrink-0">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full translate-x-12 -translate-y-12"></div>
                         <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full -translate-x-8 translate-y-8"></div>
-                        
+
                         <h3 className="font-bold text-2xl z-10 uppercase tracking-wide leading-tight px-4 flex items-center justify-center gap-2">
                           {course.title}
                         </h3>
-                        
+
                         <div className="mt-4 z-10 bg-black/20 text-white text-[10px] font-bold px-4 py-1.5 rounded-full tracking-wider border border-white/10 shadow-sm">
                           REGISTRATION NOW
                         </div>
-                        
+
                         <div className="mt-2 text-[9px] z-10 text-primary-foreground/70 uppercase tracking-widest font-medium">Limited seat available</div>
                       </div>
 
@@ -371,11 +369,11 @@ export default function CoursesPage() {
                             </div>
                           </div>
                         </div>
-                        
+
                         <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed flex-grow">
                           {course.description}
                         </p>
-                        
+
                         <div className="flex flex-wrap gap-1.5 mt-auto">
                           {course.technologies?.slice(0, 3).map(tech => (
                             <Badge key={tech} variant="secondary" className="text-[10px] font-medium rounded-full py-0.5 px-3 bg-muted text-muted-foreground border border-border/50">
@@ -388,7 +386,7 @@ export default function CoursesPage() {
                             </Badge>
                           )}
                         </div>
-                        
+
                         <div className="flex items-center justify-between text-sm pt-2 border-t border-border/10">
                           <div className="flex items-center gap-1.5 text-muted-foreground">
                             <Clock className="w-4 h-4" />
@@ -403,21 +401,18 @@ export default function CoursesPage() {
                                 </span>
                                 FREE
                               </span>
-                            ) : (() => {
-                              const pricing = resolveCoursePricing(course);
-                              return (
-                                <>
-                                  <span>৳ {pricing.listPrice}</span>
-                                  {pricing.strikethroughPrice != null && (
-                                    <span className="text-xs text-muted-foreground line-through font-normal">৳ {pricing.strikethroughPrice}</span>
-                                  )}
-                                </>
-                              );
-                            })()}
+                            ) : course.discounted_price ? (
+                              <>
+                                <span>৳ {course.discounted_price}</span>
+                                <span className="text-xs text-muted-foreground line-through font-normal">৳ {course.price}</span>
+                              </>
+                            ) : (
+                              <span>৳ {course.price}</span>
+                            )}
                           </div>
                         </div>
-                        
-                        <Button 
+
+                        <Button
                           className="w-full bg-primary hover:bg-primary-hover text-white rounded-xl mt-1 h-12 font-semibold shadow-md transition-all active:scale-[0.98]"
                           onClick={() => navigate(`/course/${course.id}`)}
                         >

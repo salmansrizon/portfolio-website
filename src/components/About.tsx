@@ -1,12 +1,71 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import profileImage from "@/assets/formal.jpg";
 import ScrollReveal from "./ScrollReveal";
 import BrandLogos from "./BrandLogos";
-import { useSectionContent } from "@/hooks/useSectionContent";
+import { supabase } from "@/integrations/supabase/client";
+
+interface AboutContent {
+  title: string;
+  subtitle: string;
+  professionalJourney: {
+    title: string;
+    description: string;
+  };
+  stats: Array<{
+    number: string;
+    label: string;
+  }>;
+  skills: Array<{
+    name: string;
+    percentage: number;
+  }>;
+  expertise: string[];
+}
 
 const About = () => {
-  const { content: aboutContent, loading } = useSectionContent("about");
-  const { content: teachingContent } = useSectionContent("teaching");
+  const [aboutContent, setAboutContent] = useState<AboutContent | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAboutContent = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("portfolio_sections")
+          .select("content")
+          .eq("section_name", "about")
+          .eq("status", "published")
+          .single();
+
+        if (error) throw error;
+        if (data?.content) {
+          setAboutContent(data.content as unknown as AboutContent);
+        }
+      } catch (error) {
+        console.error("Failed to fetch about content:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAboutContent();
+  }, []);
+
+  const stats = aboutContent?.stats || [
+    { number: "7+", label: "Years Experience" },
+    { number: "30+", label: "Successful Projects" },
+    { number: "10+", label: "Satisfied Clients" },
+    { number: "4+", label: "Industry Catered" },
+  ];
+
+  const skills = aboutContent?.skills || [
+    { name: "Power BI", percentage: 95 },
+    { name: "Tableau", percentage: 80 },
+    { name: "Metabase", percentage: 90 },
+    { name: "SQL", percentage: 90 },
+    { name: "Python", percentage: 85 },
+    { name: "Data Visualization", percentage: 95 },
+  ];
 
   if (loading) {
     return (
@@ -18,9 +77,10 @@ const About = () => {
     );
   }
 
-  const { title, subtitle, stats, skills } = aboutContent;
-  const journeyTitle = aboutContent.professionalJourney.title;
-  const journeyDescription = aboutContent.professionalJourney.description;
+  const title = aboutContent?.title || "About Me";
+  const subtitle = aboutContent?.subtitle || "Turning complex data into clear, actionable insights";
+  const journeyTitle = aboutContent?.professionalJourney?.title || "Professional Journey";
+  const journeyDescription = aboutContent?.professionalJourney?.description || "Currently serving as Head of Business Intelligence at Cartup Limited, I specialize in transforming complex financial and business data into actionable insights. With over 7 years of experience across Fintech, consulting, and education sectors, I've helped organizations optimize their data strategies and make informed decisions.";
 
   return (
     <section id="about" className="py-20 bg-background">
@@ -69,6 +129,7 @@ const About = () => {
                 loading="lazy"
                 decoding="async"
               />
+              <div className="absolute inset-0 rounded-2xl bg-gradient-hero opacity-10 mt-8"></div>
             </div>
           </div>
           </ScrollReveal>
@@ -86,15 +147,17 @@ const About = () => {
         <ScrollReveal direction="up">
           <Card className="mb-16 shadow-card hover:shadow-hover transition-all hover:border-primary/20">
           <CardContent className="p-8">
-            <h3 className="text-2xl font-bold text-foreground mb-4">{teachingContent.title}</h3>
+            <h3 className="text-2xl font-bold text-foreground mb-4">Teaching & Mentoring</h3>
             <p className="text-muted-foreground mb-6 leading-relaxed">
-              {teachingContent.description}
+              As an instructor at DScentral, I'm passionate about sharing knowledge 
+              and helping the next generation of data professionals. I provide corporate 
+              training, one-on-one mentoring, and workshop facilitation.
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {["Consultation","Corporate Training", "Data Analysis", "Growth Strategy"].map((item, index) => (
                 <div
                   key={index}
-                  className="bg-secondary border border-border text-foreground px-4 py-2 rounded-full text-center font-semibold transition-all"
+                  className="bg-gradient-to-br from-primary/10 to-accent/20 border border-primary/20 text-foreground px-4 py-2 rounded-lg text-center font-medium shadow-sm hover:shadow-md transition-all"
                 >
                   {item}
                 </div>
@@ -117,7 +180,7 @@ const About = () => {
                 </div>
                 <div className="w-full bg-muted rounded-full h-3">
                   <div
-                    className="bg-accent h-3 rounded-full transition-all duration-1000 ease-out"
+                    className="bg-gradient-hero h-3 rounded-full transition-all duration-1000 ease-out"
                     style={{ width: `${skill.percentage}%` }}
                   ></div>
                 </div>

@@ -70,15 +70,8 @@ const RoadmapsPage = () => {
             <p className="text-center text-muted-foreground py-16">No roadmaps available yet. Check back soon!</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {roadmaps.map((r, i) => (
-                <motion.div
-                  key={r.id}
-                  initial={{ opacity: 0, y: 24 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-40px' }}
-                  transition={{ duration: 0.45, delay: (i % 3) * 0.08, ease: 'easeOut' }}
-                >
-                <Link to={`/roadmaps/${r.slug}`}>
+              {roadmaps.map((r) => (
+                <Link key={r.id} to={`/roadmaps/${r.slug}`}>
                   <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 h-full border-primary/10 hover:border-primary/30">
                     {r.banner_image && (
                       <div className="h-28 sm:h-32 overflow-hidden rounded-t-xl">
@@ -107,7 +100,6 @@ const RoadmapsPage = () => {
                     </CardContent>
                   </Card>
                 </Link>
-                </motion.div>
               ))}
             </div>
           )}

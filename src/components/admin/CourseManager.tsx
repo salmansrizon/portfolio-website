@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,11 +10,14 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, X } from "lucide-react";
-import { PostgrestError } from '@supabase/supabase-js';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CourseEnrollmentManager from "./CourseEnrollmentManager";
 import CourseCategoryManager from "./CourseCategoryManager";
-import { saveCourse } from "@/lib/coursePersistence";
+import { createRepository } from "@/integrations/supabase/repository";
+import { courseConfig } from "@/adapters/entityConfigs";
+import { ImageUploadField } from "./ImageUploadField";
+
+const courseRepository = createRepository(courseConfig);
 
 // Using the exact variant types that the toast component expects
 type ToastVariant = 'default' | 'destructive';
@@ -151,7 +154,6 @@ interface FormData {
   discounted_price: number | null;
   discount_percentage: number | null;
   is_free: boolean;
-  promo_only: boolean;
   status: string // Changed to string to handle form input more flexibly;
   difficulty_level: string // Changed to string to handle form input more flexibly;
   duration_hours: number | null;
@@ -181,7 +183,6 @@ const initialFormData: FormData = {
   discounted_price: null,
   discount_percentage: null,
   is_free: false,
-  promo_only: false,
   status: 'draft',
   difficulty_level: 'beginner',
   duration_hours: null,
@@ -205,7 +206,6 @@ const initialFormData: FormData = {
 
 export default function CourseManager() {
   const { toast, error: showError, success: showSuccess } = useTypedToast();
-  const [courses, setCourses] = useState<Course[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [showDialog, setShowDialog] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
@@ -216,43 +216,96 @@ export default function CourseManager() {
   const [isLoadingSections, setIsLoadingSections] = useState(false);
   const [instructorsList, setInstructorsList] = useState<any[]>([]);
 
-  useEffect(() => {
-    fetchCourses();
-    fetchInstructorsList();
-  }, []);
+  const { data: courses = [], isLoading } = courseRepository.useFindAll();
+  const { mutateAsync: deleteCourseMutation } = courseRepository.useDelete();
+  const courseCreateMutation = courseRepository.useCreate();
+  const courseUpdateMutation = courseRepository.useUpdate();
 
-  const fetchInstructorsList = async () => {
+  const handleDeleteCourse = async (id: string) => {
     try {
-      const { data } = await (supabase.from("instructors" as any).select("id, name").eq("is_active", true).order("name") as any);
-      setInstructorsList(data || []);
-    } catch (e) { console.error(e); }
-  };
-
-  const fetchCourses = async () => {
-    try {
-      const { data: cats } = await supabase.from("course_categories" as any).select("*").order("name");
-      setCategories(cats || []);
-
-      const { data, error } = await supabase
-        .from("courses")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      setCourses((data || []).map((c: any) => ({ 
-        ...c, 
-        faqs: Array.isArray(c.faqs) ? c.faqs : [],
-        what_you_will_learn: Array.isArray(c.what_you_will_learn) ? c.what_you_will_learn : []
-      })) as Course[]);
+      await deleteCourseMutation(id);
+      showSuccess("Course deleted successfully");
     } catch (error: any) {
-      console.error("Error fetching courses:", error);
-      showError(error?.message || "Failed to load courses");
+      showError(error?.message || "Failed to delete course");
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const courseId = await saveCourse(formData, editingCourse?.id || null);
+      let courseId: string | null = editingCourse?.id || null;
+
+      if (editingCourse && courseId) {
+        // Update existing course
+        const { error: courseError } = await supabase
+          .from('courses')
+          .update({
+            title: formData.title,
+            description: formData.description,
+            short_description: formData.short_description,
+            price: formData.price,
+            discounted_price: formData.discounted_price,
+            discount_percentage: formData.discount_percentage,
+            is_free: formData.is_free,
+            status: formData.status,
+            difficulty_level: formData.difficulty_level,
+            duration_hours: formData.duration_hours,
+            banner_image: formData.banner_image,
+            category_id: formData.category_id || null,
+            technologies: formData.technologies,
+            learning_outcomes: formData.learning_outcomes,
+            requirements: formData.requirements,
+            target_audience: formData.target_audience,
+            rating: formData.rating,
+            student_count: formData.student_count,
+            start_date: formData.start_date ? new Date(formData.start_date).toISOString() : null,
+            course_includes: formData.course_includes,
+            instructor_id: formData.instructor_id || null,
+            faqs: formData.faqs || [],
+            what_you_will_learn: formData.what_you_will_learn || [],
+            course_type: formData.course_type || 'regular',
+            video_url: formData.video_url || null,
+          })
+          .eq('id', courseId);
+        if (courseError) throw courseError;
+      } else {
+        // Create new course and capture its id
+        const { data: created, error: courseError } = await supabase
+          .from('courses')
+          .insert({
+            title: formData.title,
+            description: formData.description,
+            short_description: formData.short_description,
+            price: formData.price,
+            discounted_price: formData.discounted_price,
+            discount_percentage: formData.discount_percentage,
+            is_free: formData.is_free,
+            status: formData.status,
+            difficulty_level: formData.difficulty_level,
+            duration_hours: formData.duration_hours,
+            banner_image: formData.banner_image,
+            category_id: formData.category_id || null,
+            technologies: formData.technologies,
+            learning_outcomes: formData.learning_outcomes,
+            requirements: formData.requirements,
+            target_audience: formData.target_audience,
+            rating: formData.rating,
+            student_count: formData.student_count,
+            start_date: formData.start_date ? new Date(formData.start_date).toISOString() : null,
+            course_includes: formData.course_includes,
+            instructor_id: formData.instructor_id || null,
+            faqs: formData.faqs || [],
+            what_you_will_learn: formData.what_you_will_learn || [],
+            course_type: formData.course_type || 'regular',
+            video_url: formData.video_url || null,
+          })
+          .select('id')
+          .single();
+        if (courseError) throw courseError;
+        courseId = created?.id || null;
+      }
+
+      if (!courseId) throw new Error('Missing course id');
 
       // Sync sections and contents for this course
       await syncSectionsAndContents(courseId);
@@ -264,21 +317,6 @@ export default function CourseManager() {
     } catch (error: any) {
       console.error("Error saving course:", error);
       showError(error?.message || "Failed to save course");
-    }
-  };
-
-  const deleteCourse = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from("courses")
-        .delete()
-        .eq("id", id);
-      if (error) throw error;
-      showSuccess("Course deleted successfully");
-      fetchCourses();
-    } catch (error) {
-      console.error("Error deleting course:", error);
-      showError("Failed to delete course");
     }
   };
 
@@ -607,7 +645,6 @@ export default function CourseManager() {
         discounted_price: courseData.discounted_price || null,
         discount_percentage: courseData.discount_percentage || null,
         is_free: Boolean(courseData.is_free),
-        promo_only: Boolean(courseData.promo_only),
         status: courseData.status || 'draft',
         difficulty_level: courseData.difficulty_level || 'beginner',
         duration_hours: courseData.duration_hours || null,
@@ -878,11 +915,12 @@ export default function CourseManager() {
                     </div>
                     <div className="md:col-span-2">
                       <Label htmlFor="banner_image">Banner Image URL</Label>
-                      <Input
-                        id="banner_image"
+                      <ImageUploadField
                         value={formData.banner_image}
-                        onChange={(e) => setFormData({ ...formData, banner_image: e.target.value })}
-                        placeholder="Image URL"
+                        onChange={(url) => setFormData({ ...formData, banner_image: url })}
+                        bucket="admin-uploads"
+                        pathPrefix="courses"
+                        label="Banner Image"
                       />
                     </div>
                     <div className="md:col-span-2">
@@ -965,21 +1003,6 @@ export default function CourseManager() {
                         onCheckedChange={(checked) => setFormData({ ...formData, is_free: checked })}
                       />
                       <Label htmlFor="is_free">Free Course</Label>
-                    </div>
-                    <div className="md:col-span-2 flex items-start gap-3 rounded-lg border p-4">
-                      <Switch
-                        id="promo_only"
-                        checked={formData.promo_only}
-                        onCheckedChange={(checked) => setFormData({ ...formData, promo_only: checked })}
-                      />
-                      <div>
-                        <Label htmlFor="promo_only">Promo-Only Pricing</Label>
-                        <p className="text-sm text-muted-foreground">
-                          ON: course lists at full price and only promo codes can discount it.
-                          OFF: the discounted price above is charged and promo codes are not accepted.
-                          Discounts never stack.
-                        </p>
-                      </div>
                     </div>
                     <div>
                       <Label htmlFor="category_id">Category</Label>
@@ -1267,14 +1290,14 @@ export default function CourseManager() {
                                             {content.description.split('\n').map((line, idx) => {
                                               if (line.trim().startsWith('✅')) {
                                                 return (
-                                                  <div key={idx} className="flex items-center gap-2 text-success">
+                                                  <div key={idx} className="flex items-center gap-2 text-green-700 dark:text-green-400">
                                                     <span>✅</span>
                                                     <span>{line.replace('✅', '').trim()}</span>
                                                   </div>
                                                 );
                                               } else if (line.trim().startsWith('📌')) {
                                                 return (
-                                                  <div key={idx} className="flex items-center gap-2 font-medium text-primary mt-3 first:mt-0">
+                                                  <div key={idx} className="flex items-center gap-2 font-medium text-blue-700 dark:text-blue-400 mt-3 first:mt-0">
                                                     <span>📌</span>
                                                     <span>{line.replace('📌', '').trim()}</span>
                                                   </div>
@@ -1409,7 +1432,7 @@ export default function CourseManager() {
                                             {content.content_type}
                                           </Badge>
                                           {content.is_free && (
-                                            <Badge variant="outline" className="text-xs text-success">
+                                            <Badge variant="outline" className="text-xs text-green-600">
                                               Free
                                             </Badge>
                                           )}
@@ -1528,7 +1551,7 @@ export default function CourseManager() {
                       size="sm"
                       onClick={() => {
                         if (window.confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
-                          deleteCourse(course.id);
+                          handleDeleteCourse(course.id);
                         }
                       }}
                     >

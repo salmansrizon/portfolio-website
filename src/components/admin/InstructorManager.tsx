@@ -1,136 +1,17 @@
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useAdminResource } from "@/hooks/useAdminResource";
-import { Plus, Edit, Trash2, X, UserPlus, Mail, Phone, Globe, GraduationCap, Linkedin } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Edit, Trash2, UserPlus, Mail, Phone, Globe, GraduationCap, Linkedin } from "lucide-react";
+import { createRepository } from "@/integrations/supabase/repository";
+import { instructorConfig, courseConfig } from "@/adapters/entityConfigs";
+import { EntityFormDialog } from "./EntityFormDialog";
+import { useEntityManager } from "@/hooks/useEntityManager";
 
-interface Instructor {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  bio?: string;
-  specialization?: string;
-  avatar_url?: string;
-  website?: string;
-  linkedin_url?: string;
-  is_active: boolean;
-  assigned_courses?: string[];
-  created_at?: string;
-}
-
-interface Course {
-  id: string;
-  title: string;
-}
-
-const initialFormData = {
-  name: "",
-  email: "",
-  phone: "",
-  bio: "",
-  specialization: "",
-  avatar_url: "",
-  website: "",
-  linkedin_url: "",
-  is_active: true,
-  assigned_courses: [] as string[],
-};
+const courseRepository = createRepository(courseConfig);
 
 export default function InstructorManager() {
-  const { toast } = useToast();
-  const {
-    items: instructors,
-    loading: isLoading,
-    editingItem: editingInstructor,
-    isDialogOpen: showDialog,
-    setIsDialogOpen: setShowDialog,
-    startEdit,
-    clearEditing,
-    save,
-    remove,
-  } = useAdminResource<Instructor>({ table: "instructors", orderBy: { column: "created_at", ascending: false } });
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [formData, setFormData] = useState(initialFormData);
-
-  useEffect(() => {
-    fetchCourses();
-  }, []);
-
-  const fetchCourses = async () => {
-    try {
-      const { data } = await supabase.from("courses").select("id, title").order("title");
-      setCourses((data || []) as Course[]);
-    } catch (error) {
-      console.error("Error fetching courses:", error);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!formData.name || !formData.email) {
-      toast({ title: "Error", description: "Name and email are required.", variant: "destructive" });
-      return;
-    }
-
-    const payload: Record<string, unknown> = {
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone || null,
-      bio: formData.bio || null,
-      specialization: formData.specialization || null,
-      avatar_url: formData.avatar_url || null,
-      website: formData.website || null,
-      linkedin_url: formData.linkedin_url || null,
-      is_active: formData.is_active,
-      assigned_courses: formData.assigned_courses,
-    };
-
-    const ok = await save(payload);
-    if (ok) setFormData(initialFormData);
-  };
-
-  const handleEdit = (instructor: Instructor) => {
-    startEdit(instructor);
-    setFormData({
-      name: instructor.name,
-      email: instructor.email,
-      phone: instructor.phone || "",
-      bio: instructor.bio || "",
-      specialization: instructor.specialization || "",
-      avatar_url: instructor.avatar_url || "",
-      website: instructor.website || "",
-      linkedin_url: instructor.linkedin_url || "",
-      is_active: instructor.is_active,
-      assigned_courses: instructor.assigned_courses || [],
-    });
-  };
-
-  const handleDelete = (id: string) => {
-    if (!confirm("Are you sure you want to delete this instructor?")) return;
-    remove(id);
-  };
-
-  const resetForm = () => {
-    clearEditing();
-    setFormData(initialFormData);
-  };
-
-  const toggleCourseAssignment = (courseId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      assigned_courses: prev.assigned_courses.includes(courseId)
-        ? prev.assigned_courses.filter(id => id !== courseId)
-        : [...prev.assigned_courses, courseId]
-    }));
-  };
+  const { data: courses = [] } = courseRepository.useFindAll();
+  const { items: instructors, isLoading, openCreate, openEdit, remove, dialog } = useEntityManager(instructorConfig);
 
   return (
     <div className="space-y-6">
@@ -139,88 +20,19 @@ export default function InstructorManager() {
           <h2 className="text-2xl font-bold">Instructor Management</h2>
           <p className="text-muted-foreground">Create and manage instructor profiles, assign courses</p>
         </div>
-        <Dialog open={showDialog} onOpenChange={(open) => { setShowDialog(open); if (!open) resetForm(); }}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <UserPlus className="w-4 h-4" />
-              Add Instructor
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{editingInstructor ? `Edit: ${editingInstructor.name}` : "Add New Instructor"}</DialogTitle>
-              <DialogDescription>Fill in the instructor's profile details and assign courses.</DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-6 py-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <Label>Full Name *</Label>
-                  <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., Dr. Jane Smith" />
-                </div>
-                <div>
-                  <Label>Email *</Label>
-                  <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="instructor@example.com" />
-                </div>
-                <div>
-                  <Label>Phone</Label>
-                  <Input type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+8801XXXXXXXXX" />
-                </div>
-                <div>
-                  <Label>Specialization</Label>
-                  <Input value={formData.specialization} onChange={(e) => setFormData({ ...formData, specialization: e.target.value })} placeholder="e.g., Data Science, Web Development" />
-                </div>
-                <div>
-                  <Label>Website</Label>
-                  <Input value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })} placeholder="https://example.com" />
-                </div>
-                <div className="md:col-span-2">
-                  <Label>Avatar URL</Label>
-                  <Input value={formData.avatar_url} onChange={(e) => setFormData({ ...formData, avatar_url: e.target.value })} placeholder="https://example.com/avatar.jpg" />
-                </div>
-                <div className="md:col-span-2">
-                  <Label>LinkedIn Profile URL</Label>
-                  <Input value={formData.linkedin_url} onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })} placeholder="https://linkedin.com/in/username" />
-                </div>
-                <div className="md:col-span-2">
-                  <Label>Bio</Label>
-                  <Textarea value={formData.bio} onChange={(e) => setFormData({ ...formData, bio: e.target.value })} placeholder="Brief introduction about the instructor..." rows={3} />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch checked={formData.is_active} onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })} />
-                  <Label>Active Instructor</Label>
-                </div>
-              </div>
-
-              {/* Course Assignment */}
-              <div className="border rounded-lg p-4 space-y-3">
-                <h4 className="font-semibold flex items-center gap-2">
-                  <GraduationCap className="w-4 h-4" />
-                  Assign Courses
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                  {courses.map(course => (
-                    <label key={course.id} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${formData.assigned_courses.includes(course.id) ? 'bg-primary/10 border-primary/30' : 'hover:bg-muted'}`}>
-                      <input
-                        type="checkbox"
-                        checked={formData.assigned_courses.includes(course.id)}
-                        onChange={() => toggleCourseAssignment(course.id)}
-                        className="rounded"
-                      />
-                      <span className="text-sm font-medium truncate">{course.title}</span>
-                    </label>
-                  ))}
-                  {courses.length === 0 && <p className="text-sm text-muted-foreground col-span-2">No courses available. Create courses first.</p>}
-                </div>
-              </div>
-
-              <Button onClick={handleSubmit} className="w-full">
-                {editingInstructor ? "Update Instructor" : "Create Instructor"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button className="gap-2" onClick={openCreate}>
+          <UserPlus className="w-4 h-4" />
+          Add Instructor
+        </Button>
       </div>
+
+      <EntityFormDialog
+        config={instructorConfig}
+        {...dialog}
+        dynamicOptions={{
+          assigned_courses: courses.map(c => ({ label: c.title, value: c.id })),
+        }}
+      />
 
       {/* Instructor Cards */}
       {isLoading ? (
@@ -272,10 +84,10 @@ export default function InstructorManager() {
                   <span className="text-xs font-medium">{instructor.assigned_courses?.length || 0} courses assigned</span>
                 </div>
                 <div className="flex gap-2 pt-2 border-t">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEdit(instructor)}>
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => openEdit(instructor)}>
                     <Edit className="w-3.5 h-3.5 mr-1" /> Edit
                   </Button>
-                  <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDelete(instructor.id)}>
+                  <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => remove(instructor)}>
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
                 </div>

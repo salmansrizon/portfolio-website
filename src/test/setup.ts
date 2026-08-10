@@ -1,23 +1,41 @@
-import "@testing-library/jest-dom";
-import { afterEach } from "vitest";
-import { cleanup } from "@testing-library/react";
+// Test setup file for Vitest
+// Configures jsdom environment for React component tests
 
-// jsdom lacks matchMedia; components using next-themes / media queries need it.
-// (Guarded: node-environment suites, e.g. the PGLite seed harness, have no window.)
-if (typeof window !== "undefined" && !window.matchMedia) {
-  window.matchMedia = ((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    addListener: () => {},
-    removeListener: () => {},
-    dispatchEvent: () => false,
-  })) as unknown as typeof window.matchMedia;
-}
+import { expect, afterEach, vi } from 'vitest';
+import { cleanup } from '@testing-library/react';
+import * as matchers from '@testing-library/jest-dom/matchers';
 
-// Unmount React trees between tests so queries don't leak across cases.
+// Extend Vitest's expect with jest-dom matchers
+expect.extend(matchers);
+
+// Clean up after each test
 afterEach(() => {
   cleanup();
+});
+
+// Mock window.location
+Object.defineProperty(window, 'location', {
+  value: {
+    pathname: '/',
+    href: 'http://localhost:3000/',
+  },
+  writable: true,
+});
+
+// Mock localStorage
+const localStorageMock = {
+  getItem: vi.fn(),
+  setItem: vi.fn(),
+  removeItem: vi.fn(),
+  clear: vi.fn(),
+};
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock,
+});
+
+// Mock crypto.randomUUID
+Object.defineProperty(window, 'crypto', {
+  value: {
+    randomUUID: vi.fn(() => 'test-uuid-123'),
+  },
 });

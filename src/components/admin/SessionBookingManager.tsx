@@ -3,8 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,8 +14,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { ImageUploadField } from "./ImageUploadField";
 import {
   Plus, Trash2, Edit, CheckCircle, XCircle, Clock, Save,
   CalendarIcon, CalendarX
@@ -91,15 +94,16 @@ const SessionBookingManager = () => {
   const [activeTab, setActiveTab] = useState('bookings');
 
   // ── Data state ─────────────────────────────────────────────
-  const [sessionTypes, setSessionTypes] = useState<SessionType[]>([]);
-  const [bookings, setBookings] = useState<SessionBooking[]>([]);
-  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null);
-  const [unavailableSlots, setUnavailableSlots] = useState<UnavailableSlot[]>([]);
-  const [availabilitySettings, setAvailabilitySettings] = useState<AvailabilitySettings | null>(null);
+  const [sessionTypes, setSessionTypes] = useState<any[]>([]);
+  const [paymentSettings, setPaymentSettings] = useState<any>(null);
+  const [unavailableSlots, setUnavailableSlots] = useState<any[]>([]);
+  const [availabilitySettings, setAvailabilitySettings] = useState<any>(null);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // ── Edit state ─────────────────────────────────────────────
-  const [editingBooking, setEditingBooking] = useState<SessionBooking | null>(null);
-  const [editingType, setEditingType] = useState<SessionType | null>(null);
+  const [editingBooking, setEditingBooking] = useState<any>(null);
+  const [editingType, setEditingType] = useState<any>(null);
   const [newType, setNewType] = useState({ title: '', description: '', duration_minutes: 60, fee: 0, is_paid: true });
   const [showNewTypeForm, setShowNewTypeForm] = useState(false);
 
@@ -111,23 +115,27 @@ const SessionBookingManager = () => {
     isFullDay: false
   });
 
-  // ── Fetch everything ───────────────────────────────────────
+  // ── Fetch all data ─────────────────────────────────────────
   const fetchAll = async () => {
-    const [stRes, bkRes, psRes, usRes, asRes] = await Promise.all([
+    setLoading(true);
+    const [{ data: types }, { data: payments }, { data: bookingsData }, { data: slots }, { data: avail }] = await Promise.all([
       supabase.from('session_types').select('*'),
+      supabase.from('payment_settings').select('*').single(),
       supabase.from('session_bookings').select('*').order('created_at', { ascending: false }),
-      supabase.from('payment_settings').select('*').limit(1).single(),
-      supabase.from('unavailable_slots').select('*').order('date', { ascending: true }),
-      supabase.from('availability_settings').select('*').limit(1).single(),
+      supabase.from('unavailable_slots').select('*'),
+      supabase.from('availability_settings').select('*').single(),
     ]);
-    if (stRes.data) setSessionTypes(stRes.data as SessionType[]);
-    if (bkRes.data) setBookings(bkRes.data as SessionBooking[]);
-    if (psRes.data) setPaymentSettings(psRes.data as PaymentSettings);
-    if (usRes.data) setUnavailableSlots(usRes.data as UnavailableSlot[]);
-    if (asRes.data) setAvailabilitySettings(asRes.data as AvailabilitySettings);
+    setSessionTypes(types || []);
+    setPaymentSettings(payments || null);
+    setBookings(bookingsData || []);
+    setUnavailableSlots(slots || []);
+    setAvailabilitySettings(avail || null);
+    setLoading(false);
   };
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => {
+    fetchAll();
+  }, []);
 
   // ═══════════════════════════════════════════════════════════
   // Session Types CRUD
@@ -259,12 +267,12 @@ const SessionBookingManager = () => {
   // ── Helpers ────────────────────────────────────────────────
   const statusBadge = (status: string) => {
     const colors: Record<string, string> = {
-      pending: 'bg-warning-soft text-warning dark:bg-warning dark:text-warning-soft',
-      submitted: 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary',
-      verified: 'bg-success-soft text-success dark:bg-success dark:text-success-soft',
-      confirmed: 'bg-success-soft text-success dark:bg-success dark:text-success-soft',
-      rejected: 'bg-danger-soft text-danger dark:bg-danger dark:text-danger-soft',
-      cancelled: 'bg-danger-soft text-danger dark:bg-danger dark:text-danger-soft',
+      pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+      submitted: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+      verified: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+      confirmed: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+      rejected: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+      cancelled: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
       completed: 'bg-primary/10 text-primary',
     };
     return <Badge className={colors[status] || 'bg-muted text-muted-foreground'}>{status}</Badge>;
@@ -278,7 +286,7 @@ const SessionBookingManager = () => {
   return (
     <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-6 relative z-10">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full h-auto grid-cols-2 sm:grid-cols-5">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="bookings">Bookings</TabsTrigger>
           <TabsTrigger value="session-types">Session Types</TabsTrigger>
           <TabsTrigger value="availability">Availability</TabsTrigger>
@@ -322,10 +330,10 @@ const SessionBookingManager = () => {
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button size="sm" variant="ghost" title="Confirm" onClick={() => handleQuickStatusUpdate(b.id, 'confirmed', 'verified')}>
-                          <CheckCircle className="h-4 w-4 text-success" />
+                          <CheckCircle className="h-4 w-4 text-green-600" />
                         </Button>
                         <Button size="sm" variant="ghost" title="Reject" onClick={() => handleQuickStatusUpdate(b.id, 'cancelled', 'rejected')}>
-                          <XCircle className="h-4 w-4 text-danger" />
+                          <XCircle className="h-4 w-4 text-red-600" />
                         </Button>
                       </div>
                     </TableCell>
@@ -381,7 +389,7 @@ const SessionBookingManager = () => {
                       {newType.is_paid ? (
                         <span className="text-primary font-medium">Paid Session</span>
                       ) : (
-                        <span className="text-success dark:text-success font-medium">Free Session</span>
+                        <span className="text-green-600 dark:text-green-400 font-medium">Free Session</span>
                       )}
                     </Label>
                   </div>
@@ -403,7 +411,7 @@ const SessionBookingManager = () => {
                     {st.is_paid ? (
                       <Badge className="bg-primary/10 text-primary text-xs">Paid — ৳{st.fee}</Badge>
                     ) : (
-                      <Badge className="bg-success-soft text-success dark:bg-success dark:text-success text-xs">Free</Badge>
+                      <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-xs">Free</Badge>
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">{st.description}</p>
@@ -671,12 +679,26 @@ const SessionBookingManager = () => {
                     <Input value={paymentSettings.nagad_number || ''} onChange={e => setPaymentSettings(p => p ? { ...p, nagad_number: e.target.value } : p)} />
                   </div>
                   <div className="space-y-2">
-                    <Label>bKash QR Code (Image URL)</Label>
-                    <Input placeholder="https://..." value={paymentSettings.bkash_qr_code || ''} onChange={e => setPaymentSettings(p => p ? { ...p, bkash_qr_code: e.target.value } : p)} />
+                    <Label>bKash QR Code</Label>
+                    <ImageUploadField
+                      value={paymentSettings.bkash_qr_code}
+                      onChange={url => setPaymentSettings(p => p ? { ...p, bkash_qr_code: url } : p)}
+                      bucket="admin-uploads"
+                      pathPrefix="payment-qr"
+                      maxWidthOrHeight={800}
+                      label="bKash QR Code"
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label>Nagad QR Code (Image URL)</Label>
-                    <Input placeholder="https://..." value={paymentSettings.nagad_qr_code || ''} onChange={e => setPaymentSettings(p => p ? { ...p, nagad_qr_code: e.target.value } : p)} />
+                    <Label>Nagad QR Code</Label>
+                    <ImageUploadField
+                      value={paymentSettings.nagad_qr_code}
+                      onChange={url => setPaymentSettings(p => p ? { ...p, nagad_qr_code: url } : p)}
+                      bucket="admin-uploads"
+                      pathPrefix="payment-qr"
+                      maxWidthOrHeight={800}
+                      label="Nagad QR Code"
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -836,7 +858,7 @@ const SessionBookingManager = () => {
                     {editingType.is_paid ? (
                       <span className="text-primary">Paid Session</span>
                     ) : (
-                      <span className="text-success dark:text-success">Free Session</span>
+                      <span className="text-green-600 dark:text-green-400">Free Session</span>
                     )}
                   </Label>
                   <p className="text-xs text-muted-foreground mt-0.5">

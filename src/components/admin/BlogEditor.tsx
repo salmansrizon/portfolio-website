@@ -19,8 +19,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Check, ChevronsUpDown, Image as ImageIcon, Code, Link as LinkIcon, Type, Plus, Trash2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { supabase } from '@/integrations/supabase/client';
+import { uploadCompressedImage } from '@/integrations/supabase/imageUpload';
 import { useToast } from "@/components/ui/use-toast";
 import { BlogContent, BlogPost } from '@/types/blog';
+import { parseBlogContent, BlogContentRenderer } from '@/components/BlogContentRenderer';
 import CodeEditor from '@/components/ui/code-editor';
 
 const BLOG_CATEGORIES = [
@@ -45,16 +47,8 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
   const [published, setPublished] = useState(initialData?.published || false);
   const [sourceType, setSourceType] = useState<BlogPost['source_type']>(initialData?.source_type || 'local');
   const [sourceUrl, setSourceUrl] = useState(initialData?.source_url || '');
-  // Supabase may return the `content` field as a JSON string; ensure we always store an array
-  const initialContent = (() => {
-    if (!initialData?.content) return [] as BlogContent[];
-    return Array.isArray(initialData.content)
-      ? (initialData.content as BlogContent[])
-      : // try to parse if it's a JSON string
-        (typeof initialData.content === 'string'
-          ? (JSON.parse(initialData.content) as BlogContent[])
-          : [] as BlogContent[]);
-  })();
+  // Normalize content from Supabase (may be string or array)
+  const initialContent = parseBlogContent(initialData?.content);
   const [content, setContent] = useState<BlogContent[]>(initialContent);
   const [categories, setCategories] = useState<string[]>(initialData?.categories || []);
   const [openCategoryDropdown, setOpenCategoryDropdown] = useState(false);
@@ -68,15 +62,8 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
       setPublished(initialData.published || false);
       setSourceType(initialData.source_type || 'local');
       setSourceUrl(initialData.source_url || '');
-      // Ensure content is an array regardless of how Supabase returns it
-      const parsedContent = (() => {
-        if (!initialData.content) return [] as BlogContent[];
-        return Array.isArray(initialData.content)
-          ? (initialData.content as BlogContent[])
-          : typeof initialData.content === 'string'
-          ? (JSON.parse(initialData.content) as BlogContent[])
-          : [] as BlogContent[];
-      })();
+      // Normalize content from Supabase
+      const parsedContent = parseBlogContent(initialData.content);
       setContent(parsedContent);
       setCategories(initialData.categories || []);
     } else {
@@ -123,50 +110,7 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
   };
 
   const handleImageUpload = async (file: File): Promise<string> => {
-    try {
-      // Check if bucket exists, if not create it
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const blogImagesBucket = buckets?.find(b => b.name === 'blog-images');
-      
-      if (!blogImagesBucket) {
-        console.log('Creating blog-images bucket...');
-        const { error: bucketError } = await supabase.storage.createBucket('blog-images', {
-          public: true,
-          allowedMimeTypes: ['image/*'],
-          fileSizeLimit: 5242880, // 5MB
-        });
-        
-        if (bucketError) {
-          console.error('Error creating bucket:', bucketError);
-          throw new Error('Failed to create storage bucket');
-        }
-      }
-
-      const fileName = `${Date.now()}-${file.name}`;
-      console.log('Uploading image:', fileName);
-      
-      const { data, error } = await supabase.storage
-        .from('blog-images')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false,
-        });
-
-      if (error) {
-        console.error('Upload error:', error);
-        throw error;
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('blog-images')
-        .getPublicUrl(data.path);
-
-      console.log('Image uploaded successfully:', publicUrl);
-      return publicUrl;
-    } catch (error: any) {
-      console.error('Error in handleImageUpload:', error);
-      throw new Error(error.message || 'Failed to upload image');
-    }
+    return uploadCompressedImage(file, 'blog-images');
   };
 
   const handleSave = async () => {
@@ -303,6 +247,7 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
         <Tabs defaultValue="content">
           <TabsList>
             <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="preview">Preview</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
@@ -529,6 +474,16 @@ const BlogEditor = ({ onSave, initialData }: BlogEditorProps) => {
                 </Button>
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="preview" className="space-y-4">
+            <Card>
+              <CardContent className="pt-6">
+                <h2 className="text-2xl font-bold mb-4">{title || 'Untitled Post'}</h2>
+                {excerpt && <p className="text-muted-foreground mb-6">{excerpt}</p>}
+                <BlogContentRenderer content={content} />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="settings">

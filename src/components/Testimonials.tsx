@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import useEmblaCarousel from 'embla-carousel-react';
 import ScrollReveal from "./ScrollReveal";
-import { useSectionContent } from "@/hooks/useSectionContent";
 
 interface Testimonial {
   id: string;
@@ -21,7 +20,6 @@ interface ExpandedTestimonials {
 }
 
 const Testimonials = () => {
-  const { content: sectionContent } = useSectionContent("testimonials");
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expanded, setExpanded] = useState<ExpandedTestimonials>({});
@@ -83,9 +81,9 @@ const Testimonials = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal direction="up">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-foreground mb-4">{sectionContent.title}</h2>
+            <h2 className="text-4xl font-bold text-foreground mb-4">Client Testimonials</h2>
             <p className="text-xl text-muted-foreground text-primary font-semibold">
-              {sectionContent.subtitle}
+              What clients say about working with me
             </p>
           </div>
         </ScrollReveal>

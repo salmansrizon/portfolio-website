@@ -12,39 +12,46 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { createRepository } from '@/integrations/supabase/repository';
+import { careerPrepQuestionConfig } from '@/adapters/entityConfigs';
 import {
   Loader2, Plus, Edit, Trash2, Database, Users, Download,
   GraduationCap, CircleUser, Code2, ListChecks, BookOpen,
   FolderTree, Clock, Tags, X, ChevronRight, ChevronDown, Sparkles
 } from 'lucide-react';
-import type { CareerPrepQuestion, QuestionType, MCQOption } from '@/hooks/useCareerPrep';
+import type { CareerPrepQuestion, QuestionType } from '@/hooks/useCareerPrep';
+
+const careerPrepRepository = createRepository(careerPrepQuestionConfig);
 
 // ─── helper maps ──────────────────────────────────────────────────────────────
 const Q_TYPE_META: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
   root:       { label: 'Root Case Study',    icon: <FolderTree className="w-3.5 h-3.5" />, color: 'bg-purple-500/10 text-purple-500' },
-  code:       { label: 'Code Challenge',     icon: <Code2 className="w-3.5 h-3.5" />,      color: 'bg-primary/10 text-primary'   },
-  mcq:        { label: 'Multiple Choice',    icon: <ListChecks className="w-3.5 h-3.5" />, color: 'bg-success/10 text-success' },
-  case_study: { label: 'Case Study Essay',   icon: <BookOpen className="w-3.5 h-3.5" />,   color: 'bg-warning/10 text-warning' },
+  code:       { label: 'Code Challenge',     icon: <Code2 className="w-3.5 h-3.5" />,      color: 'bg-blue-500/10 text-blue-500'   },
+  mcq:        { label: 'Multiple Choice',    icon: <ListChecks className="w-3.5 h-3.5" />, color: 'bg-green-500/10 text-green-500' },
+  case_study: { label: 'Case Study Essay',   icon: <BookOpen className="w-3.5 h-3.5" />,   color: 'bg-amber-500/10 text-amber-500' },
   default:    { label: 'Standard Mission',   icon: <Database className="w-3.5 h-3.5" />,   color: 'bg-slate-500/10 text-slate-500' },
 };
 
 const DIFFICULTY_COLORS: Record<string, string> = {
-  Easy:   'bg-success/10 text-success',
-  Medium: 'bg-warning/10 text-warning',
-  Hard:   'bg-danger/10 text-danger',
+  Easy:   'bg-green-500/10 text-green-600',
+  Medium: 'bg-yellow-500/10 text-yellow-600',
+  Hard:   'bg-red-500/10 text-red-600',
   default: 'bg-slate-500/10 text-slate-500',
 };
 
 // ─── component ────────────────────────────────────────────────────────────────
 const CareerPrepManager = () => {
-  const [questions, setQuestions]       = React.useState<CareerPrepQuestion[]>([]);
   const [appUsers, setAppUsers]         = React.useState<any[]>([]);
-  const [loading, setLoading]           = React.useState(true);
   const [saving, setSaving]             = React.useState(false);
   const [editingQ, setEditingQ]         = React.useState<CareerPrepQuestion | null>(null);
   const [dialogOpen, setDialogOpen]     = React.useState(false);
   const [expandedRoots, setExpandedRoots] = React.useState<Set<string>>(new Set());
   const { toast } = useToast();
+
+  const { data: questions = [], isLoading: loading } = careerPrepRepository.useFindAll();
+  const { mutate: deleteQuestion } = careerPrepRepository.useDelete();
+  const { mutate: createQuestion } = careerPrepRepository.useCreate();
+  const { mutate: updateQuestion } = careerPrepRepository.useUpdate();
 
   const { register, handleSubmit, reset, watch, control, setValue } = useForm<any>({
     defaultValues: {
@@ -59,28 +66,15 @@ const CareerPrepManager = () => {
   });
 
   const { fields: optionFields } = useFieldArray({ control, name: 'options' });
-  const questionType: QuestionType = watch('question_type');
+  const questionType: any = watch('question_type');
   const isRoot = questionType === 'root';
   const isMCQ  = questionType === 'mcq';
   const isCode = questionType === 'code';
 
-  // ── fetch ────────────────────────────────────────────────────────────────
-  React.useEffect(() => { fetchData(); }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    await Promise.all([fetchQuestions(), fetchUsers()]);
-    setLoading(false);
-  };
-
-  const fetchQuestions = async () => {
-    const { data, error } = await (supabase as any)
-      .from('careerprep_questions')
-      .select('*')
-      .order('order_index', { ascending: true })
-      .order('created_at',  { ascending: false });
-    if (!error) setQuestions(data || []);
-  };
+  // ── fetch users (for seed data) ──────────────────────────────────────────
+  React.useEffect(() => {
+    (supabase as any).from('students').select('id,full_name,email,created_at').then(({ data }: any) => setAppUsers(data || []));
+  }, []);
 
   const fetchUsers = async () => {
     const [{ data: students }, { data: guests }] = await Promise.all([
@@ -288,29 +282,35 @@ INSERT INTO ecom_orders (customer_id, amount, order_date) VALUES (1, 5000, CURRE
         correct_option:   raw.question_type === 'mcq' ? raw.correct_option : null,
       };
 
-      console.log("Prepared payload for Supabase:", payload);
+      console.log("Prepared payload:", payload);
 
-      const table = (supabase as any).from('careerprep_questions');
-      const { error, data } = editingQ
-        ? await table.update(payload).eq('id', editingQ.id).select()
-        : await table.insert([payload]).select();
-
-      if (error) {
-        console.error("Supabase operation error:", error);
-        throw error;
+      if (editingQ) {
+        updateQuestion(
+          { id: editingQ.id, item: payload },
+          {
+            onSuccess: () => {
+              toast({ title: 'Saved ✓', description: 'Question updated.' });
+              setDialogOpen(false);
+              setEditingQ(null);
+              reset();
+            },
+            onError: (err: any) => {
+              toast({ title: 'Error', description: err.message, variant: 'destructive' });
+            },
+          }
+        );
+      } else {
+        createQuestion(payload, {
+          onSuccess: () => {
+            toast({ title: 'Saved ✓', description: 'Question created.' });
+            setDialogOpen(false);
+            reset();
+          },
+          onError: (err: any) => {
+            toast({ title: 'Error', description: err.message, variant: 'destructive' });
+          },
+        });
       }
-      
-      console.log("Supabase operation success, data:", data);
-      
-      toast({ 
-        title: 'Saved ✓', 
-        description: editingQ ? 'Question updated successfully.' : 'New question created.' 
-      });
-      
-      await fetchQuestions();
-      setDialogOpen(false); 
-      setEditingQ(null); 
-      reset();
     } catch (err: any) {
       console.error("Form submission catch error:", err);
       toast({ 
@@ -422,7 +422,7 @@ INSERT INTO ecom_orders (customer_id, amount, order_date) VALUES (1, 5000, CURRE
                         <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full hover:bg-primary/10 hover:text-primary" onClick={() => openEdit(root)}>
                           <Edit className="h-3.5 w-3.5" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full hover:bg-danger/10 hover:text-danger" onClick={() => handleDelete(root.id)}>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full hover:bg-red-500/10 hover:text-red-500" onClick={() => handleDelete(root.id)}>
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -455,7 +455,7 @@ INSERT INTO ecom_orders (customer_id, amount, order_date) VALUES (1, 5000, CURRE
                                 <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full hover:bg-primary/10 hover:text-primary" onClick={() => openEdit(child)}>
                                   <Edit className="h-3 w-3" />
                                 </Button>
-                                <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full hover:bg-danger/10 hover:text-danger" onClick={() => handleDelete(child.id)}>
+                                <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full hover:bg-red-500/10 hover:text-red-500" onClick={() => handleDelete(child.id)}>
                                   <Trash2 className="h-3 w-3" />
                                 </Button>
                               </div>
@@ -521,7 +521,7 @@ INSERT INTO ecom_orders (customer_id, amount, order_date) VALUES (1, 5000, CURRE
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className={`text-[9px] font-bold border-0 ${u.type==='Student'?'bg-primary/10 text-primary':'bg-slate-500/10 text-slate-500'}`}>
+                            <Badge variant="outline" className={`text-[9px] font-bold border-0 ${u.type==='Student'?'bg-blue-500/10 text-blue-500':'bg-slate-500/10 text-slate-500'}`}>
                               {u.type}
                             </Badge>
                           </TableCell>
@@ -629,7 +629,7 @@ INSERT INTO ecom_orders (customer_id, amount, order_date) VALUES (1, 5000, CURRE
                             <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(child)}>
                                <Edit className="w-3 h-3" />
                             </Button>
-                            <Button type="button" size="icon" variant="ghost" className="h-7 w-7 text-danger hover:bg-danger/10" onClick={() => handleDelete(child.id)}>
+                            <Button type="button" size="icon" variant="ghost" className="h-7 w-7 text-red-500 hover:bg-red-500/10" onClick={() => handleDelete(child.id)}>
                                <Trash2 className="w-3 h-3" />
                             </Button>
                          </div>
@@ -732,7 +732,7 @@ INSERT INTO ecom_orders (customer_id, amount, order_date) VALUES (1, 5000, CURRE
                 </Field>
                 <div>
                   <Field label="Setup & Seed SQL">
-                    <div className="bg-warning/10 text-warning text-[10px] font-bold uppercase px-3 py-1.5 rounded-lg mb-2 border border-warning/20">
+                    <div className="bg-yellow-500/10 text-yellow-600 text-[10px] font-bold uppercase px-3 py-1.5 rounded-lg mb-2 border border-yellow-500/20">
                       ⚠ Include BOTH CREATE TABLE and INSERT INTO statements here
                     </div>
                     <Textarea {...register('initial_sql')} placeholder="CREATE TABLE IF NOT EXISTS orders...&#10;INSERT INTO orders ..." className="font-mono text-[11px] bg-background/50" rows={8} />

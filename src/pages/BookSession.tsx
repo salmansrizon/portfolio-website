@@ -133,7 +133,7 @@ const BookSession = () => {
             />
             <div className="text-center md:text-left">
               <h1 className="text-4xl font-bold text-foreground mb-3">Book a Private Session</h1>
-              <p className="text-lg text-muted-foreground">Schedule your 1-on-1 consultation session — pick a session type, choose a date &amp; time, and confirm your slot</p>
+              <p className="text-lg text-muted-foreground">Schedule your 1-on-1 consultation session</p>
             </div>
           </div>
         </ScrollReveal>
@@ -165,8 +165,8 @@ const BookSession = () => {
                         <div className="flex justify-between items-start gap-2">
                           <div className="flex items-center gap-2">
                              <div className="relative flex h-2.5 w-2.5 flex-shrink-0">
-                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-                               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success shadow-[0_0_5px_rgba(34,197,94,0.5)]"></span>
+                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]"></span>
                              </div>
                              <h4 className="font-semibold text-foreground">{st.title}</h4>
                           </div>
@@ -187,7 +187,7 @@ const BookSession = () => {
                           {st.is_paid ? (
                             <Badge className="bg-primary/10 text-primary hover:bg-primary/20">৳{st.fee}</Badge>
                           ) : (
-                            <Badge className="bg-success-soft text-success dark:bg-success dark:text-success hover:bg-green-200">
+                            <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 hover:bg-green-200">
                               <Tag className="h-3 w-3 mr-1" />Free
                             </Badge>
                           )}
@@ -345,7 +345,7 @@ const BookSession = () => {
                           )}
 
                           <div className="space-y-1.5 pt-4 text-left">
-                            <Label htmlFor="txnId" className="font-semibold text-sm">Enter Transaction ID <span className="text-danger">*</span></Label>
+                            <Label htmlFor="txnId" className="font-semibold text-sm">Enter Transaction ID <span className="text-red-500">*</span></Label>
                             <Input
                               id="txnId"
                               value={formData.transactionId}
@@ -361,11 +361,11 @@ const BookSession = () => {
 
                   {/* Free session info banner */}
                   {selectedSession && isFree && (
-                    <div className="flex items-center gap-3 rounded-lg border border-success bg-success-soft dark:bg-success/30 dark:border-success p-4">
-                      <Tag className="h-5 w-5 text-success dark:text-success flex-shrink-0" />
+                    <div className="flex items-center gap-3 rounded-lg border border-green-300 bg-green-50 dark:bg-green-950/30 dark:border-green-800 p-4">
+                      <Tag className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
                       <div>
-                        <p className="font-semibold text-success dark:text-success text-sm">This is a Free Session</p>
-                        <p className="text-xs text-success/80 dark:text-success/80 mt-0.5">No payment required. Your booking will be confirmed immediately.</p>
+                        <p className="font-semibold text-green-700 dark:text-green-300 text-sm">This is a Free Session</p>
+                        <p className="text-xs text-green-600/80 dark:text-green-400/80 mt-0.5">No payment required. Your booking will be confirmed immediately.</p>
                       </div>
                     </div>
                   )}
@@ -404,9 +404,9 @@ const BookSession = () => {
               <CardContent className="p-10 space-y-6">
                 <div className={cn(
                   "w-20 h-20 rounded-full flex items-center justify-center mx-auto",
-                  isFree ? "bg-success-soft dark:bg-success/40" : "bg-primary/10"
+                  isFree ? "bg-green-100 dark:bg-green-900/40" : "bg-primary/10"
                 )}>
-                  <CheckCircle2 className={cn("h-10 w-10", isFree ? "text-success dark:text-success" : "text-primary")} />
+                  <CheckCircle2 className={cn("h-10 w-10", isFree ? "text-green-600 dark:text-green-400" : "text-primary")} />
                 </div>
                 <h2 className="text-2xl font-bold text-foreground">
                   {isFree ? 'Session Confirmed!' : 'Booking Submitted!'}
@@ -425,7 +425,7 @@ const BookSession = () => {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Status</span>
                     {isFree
-                      ? <Badge className="bg-success-soft text-success dark:bg-success dark:text-success">Confirmed</Badge>
+                      ? <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">Confirmed</Badge>
                       : <Badge className="bg-primary/10 text-primary">Pending Verification</Badge>
                     }
                   </div>

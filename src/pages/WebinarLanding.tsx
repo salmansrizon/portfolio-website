@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
+import { createRepository } from "@/integrations/supabase/repository";
+import { webinarConfig, instructorConfig } from "@/adapters/entityConfigs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,55 +36,31 @@ import { useBookingData } from "@/hooks/useBookingData";
 import { cn } from "@/lib/utils";
 import PaymentModal, { PaymentModalData } from "@/components/PaymentModal";
 
+const webinarRepository = createRepository(webinarConfig);
+const instructorRepository = createRepository(instructorConfig);
+
 const WebinarLanding = () => {
     const { id } = useParams();
-    const [webinar, setWebinar] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
     const [isRegistering, setIsRegistering] = useState(false);
     const { toast } = useToast();
     const navigate = useNavigate();
     // Form loading and error handling
     const [formLoading, setFormLoading] = useState(false);
     const [timeLeft, setTimeLeft] = useState<{ d: number, h: number, m: number, s: number }>({ d: 0, h: 0, m: 0, s: 0 });
-    const [instructors, setInstructors] = useState<any[]>([]);
     const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
     const [expandedFaqIdx, setExpandedFaqIdx] = useState<number | null>(null);
     const [isHeroExpanded, setIsHeroExpanded] = useState(false);
     const { paymentSettings } = useBookingData();
 
+    const { data: webinar, isLoading: loading, error: webinarError } = webinarRepository.useFindById(id || '');
+    const { data: instructors = [] } = instructorRepository.useFindAll();
+
     useEffect(() => {
-        const fetchWebinar = async () => {
-            setLoading(true);
-            try {
-                const { data, error } = await (supabase
-                    .from('webinars' as any)
-                    .select('*')
-                    .eq('id', id)
-                    .single() as any);
-
-                if (error || !data) {
-                    toast({ title: "Webinar not found", variant: "destructive" });
-                    navigate('/');
-                } else {
-                    setWebinar(data);
-                }
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        const fetchInstructors = async () => {
-            const { data } = await supabase.from('instructors').select('*');
-            if (data) setInstructors(data);
-        };
-
-        if (id) {
-            fetchWebinar();
-            fetchInstructors();
+        if (!loading && id && (webinarError || !webinar)) {
+            toast({ title: "Webinar not found", variant: "destructive" });
+            navigate('/');
         }
-    }, [id, navigate, toast]);
+    }, [id, loading, webinar, webinarError, navigate, toast]);
 
     useEffect(() => {
         if (!webinar) return;
@@ -120,19 +98,13 @@ const WebinarLanding = () => {
                 payment_status: webinar.is_free ? 'confirmed' : 'pending',
                 payment_method: webinar.is_free ? 'free' : data.paymentMethod,
                 payment_transaction_id: webinar.is_free ? null : data.transactionId,
-                booking_date: new Date().toISOString(),
-                promo_code: data.promoCode || null,
-                discount_amount: data.discountAmount || null,
+                booking_date: new Date().toISOString()
             };
 
             const { error } = await (supabase.from('webinar_bookings' as any).insert([bookingPayload]) as any);
 
             if (error) {
                 throw error;
-            }
-
-            if (data.promoCode) {
-                await (supabase.rpc('increment_promo_code_usage' as any, { code_input: data.promoCode }) as any);
             }
 
             toast({ title: "Success!", description: webinar.is_free ? "Registration confirmed!" : "Payment submitted for verification." });
@@ -167,6 +139,15 @@ const WebinarLanding = () => {
             <Navbar />
 
             {/* Background Blur Elements (Matching Hero) */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[100px] animate-pulse"></div>
+                <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-400/10 rounded-full blur-[100px] animate-pulse delay-1000"></div>
+                <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-accent/5 rounded-full blur-[80px] animate-pulse delay-2000"></div>
+            </div>
+
+            {/* Gradient overlay for depth */}
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/50 pointer-events-none z-0"></div>
+
             <div className="relative z-10 pt-32 pb-20 max-w-6xl mx-auto px-6">
 
                 {/* HERO SECTION - Aligned with Index Hero */}
@@ -183,7 +164,7 @@ const WebinarLanding = () => {
                                 {webinar.is_free ? 'Free Live Session' : 'Exclusive Masterclass'}
                             </Badge>
                             <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black leading-[1.1] tracking-tight">
-                                <span className="text-foreground">
+                                <span className="bg-gradient-to-r from-primary via-blue-600 to-indigo-500 bg-[length:200%_100%] bg-clip-text text-transparent animate-gradient-move">
                                     {webinar.content_blocks?.find((b: any) => b.type === 'hero')?.title || webinar.title}
                                 </span>
                             </h1>
@@ -281,8 +262,8 @@ const WebinarLanding = () => {
                                     />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center relative overflow-hidden group/fallback">
-                                        <div className="absolute inset-0 bg-secondary" />
-                                        <PlayCircle className="h-20 w-20 text-accent group-hover/fallback:scale-110 transition-transform cursor-pointer z-10" />
+                                        <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-blue-500/10 to-indigo-500/20 group-hover/fallback:rotate-12 transition-transform duration-1000" />
+                                        <PlayCircle className="h-20 w-20 text-primary/40 group-hover/fallback:scale-110 transition-transform cursor-pointer z-10" />
                                     </div>
                                 )}
                             </div>
@@ -291,8 +272,8 @@ const WebinarLanding = () => {
                         {/* Status Floaties */}
                         <Card className="absolute -top-6 -right-6 bg-white/90 dark:bg-slate-900/90 border-primary/10 shadow-2xl p-4 rounded-2xl animate-float backdrop-blur-md z-30">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center ring-4 ring-success/5">
-                                    <Users className="h-5 w-5 text-success" />
+                                <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center ring-4 ring-green-500/5">
+                                    <Users className="h-5 w-5 text-green-500" />
                                 </div>
                                 <div className="pr-4">
                                     <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black leading-none mb-1">Registered</p>
@@ -374,7 +355,7 @@ const WebinarLanding = () => {
                                         const inst = instId ? instructors.find(ins => ins.id === instId) : null;
                                         const hostData = inst ? {
                                             name: inst.name,
-                                            role: inst.specialization || inst.role,
+                                            role: inst.specialization,
                                             avatar: inst.avatar_url,
                                             bio: inst.bio,
                                             linkedin: inst.linkedin_url
@@ -388,10 +369,16 @@ const WebinarLanding = () => {
 
                                         return (
                                             <div key={i} className="relative group/card w-full overflow-hidden">
-                                                <div className="relative bg-secondary border border-border rounded-[20px] p-8 md:p-10 grid grid-cols-1 md:grid-cols-12 gap-10 items-center w-full min-h-[200px]">
+                                                {/* Ambient Background Glow - Blue Theme */}
+                                                <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-blue-400/5 to-primary/10 opacity-30 group-hover/card:opacity-60 transition-opacity duration-700 blur-3xl " />
+                                                
+                                                <div className="relative bg-primary/[0.03] dark:bg-primary/[0.05] backdrop-blur-2xl border border-primary/20 rounded-[40px] p-8 md:p-10 grid grid-cols-1 md:grid-cols-12 gap-10 items-center w-full min-h-[200px] shadow-[0_8px_32px_0_rgba(59,130,246,0.05)]">
                                                     
                                                     <div className="md:col-span-3 flex justify-center md:justify-end">
                                                         <div className="relative group/avatar">
+                                                            {/* Ring effect */}
+                                                            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-primary to-blue-400 scale-105 opacity-0 group-hover/avatar:opacity-20 transition-opacity duration-500 blur-sm" />
+                                                            
                                                             <div className="relative w-36 h-36 md:w-40 md:h-40">
                                                                 <div className="w-full h-full rounded-full overflow-hidden bg-white dark:bg-slate-900 shadow-2xl border-4 border-white dark:border-slate-800 relative z-10">
                                                                     {hostData.avatar ? (
@@ -529,7 +516,7 @@ const WebinarLanding = () => {
                             Don't miss out on this live session. Reserve your spot today before it's too late.
                         </p>
                         <Button
-                            className="bg-white text-primary hover:bg-white/90 h-16 px-12 text-xl font-black rounded-full shadow-2xl transition-all hover:scale-105"
+                            className="bg-white text-primary hover:bg-slate-100 h-16 px-12 text-xl font-black rounded-full shadow-2xl transition-all hover:scale-105"
                             onClick={() => setIsRegistering(true)}
                         >
                             {webinar.is_free ? 'Join for Free' : 'Claim My Seat Now'} <ArrowRight className="ml-3 h-6 w-6" />
@@ -545,9 +532,7 @@ const WebinarLanding = () => {
                 onOpenChange={setIsRegistering}
                 title={webinar.title}
                 isFree={webinar.is_free}
-                priceLabel={webinar.is_free ? undefined : `৳${webinar.price}`}
-                originalAmount={webinar.is_free ? undefined : webinar.price}
-                webinarId={id}
+                priceLabel={webinar.price != null ? String(webinar.price) : undefined}
                 onSubmit={handleRegister}
                 extraFields={[
                     { key: 'role', label: 'Role / Profession', placeholder: 'e.g. Student, UX Designer', required: true }

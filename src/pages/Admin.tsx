@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, Settings, FileText, Award, Briefcase, MessageSquare, User, FolderKanban, GraduationCap, CalendarCheck, LayoutDashboard, Menu, Image, UserCheck, Users, Star, Database, Calendar, Map, Tag } from 'lucide-react';
+import { LogOut, Settings, FileText, Award, Briefcase, MessageSquare, User, FolderKanban, GraduationCap, CalendarCheck, LayoutDashboard, Menu, Image, UserCheck, Users, Star, Database, Calendar, Map, CalendarX, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -26,27 +26,29 @@ import CourseReviewManager from '@/components/admin/CourseReviewManager';
 import CareerPrepManager from '@/components/admin/CareerPrepManager';
 import WebinarManager from '@/components/admin/WebinarManager';
 import RoadmapManager from '@/components/admin/RoadmapManager';
-import PromoCodeManager from '@/components/admin/PromoCodeManager';
+import UnavailableSlotsManager from '@/components/admin/UnavailableSlotsManager';
+import CourseContentManager from '@/components/admin/CourseContentManager';
 
 const navigation = [
-  { id: 'overview', label: 'Overview', icon: LayoutDashboard, group: 'Overview' },
-  { id: 'courses', label: 'Courses', icon: GraduationCap, group: 'Content' },
-  { id: 'sections', label: 'Sections', icon: Settings, group: 'Content' },
-  { id: 'blogs', label: 'Blogs', icon: FileText, group: 'Content' },
-  { id: 'webinars', label: 'Webinars', icon: Calendar, group: 'Content' },
-  { id: 'roadmaps', label: 'Roadmaps', icon: Map, group: 'Content' },
-  { id: 'projects', label: 'Projects', icon: FolderKanban, group: 'Content' },
-  { id: 'certifications', label: 'Certifications', icon: Award, group: 'Content' },
-  { id: 'services', label: 'Services', icon: Briefcase, group: 'Content' },
-  { id: 'testimonials', label: 'Testimonials', icon: MessageSquare, group: 'Content' },
-  { id: 'brand-logos', label: 'Brand Logos', icon: Image, group: 'Content' },
-  { id: 'career-prep', label: 'Career Prep', icon: Database, group: 'Content' },
-  { id: 'promo-codes', label: 'Promo Codes', icon: Tag, group: 'Commerce' },
-  { id: 'sessions', label: 'Sessions', icon: CalendarCheck, group: 'Commerce' },
-  { id: 'reviews', label: 'Reviews', icon: Star, group: 'Commerce' },
-  { id: 'instructors', label: 'Instructors', icon: UserCheck, group: 'People' },
-  { id: 'students', label: 'Students', icon: Users, group: 'People' },
-  { id: 'profile', label: 'Profile', icon: User, group: 'Account' },
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'webinars', label: 'Webinars', icon: Calendar },
+  { id: 'sections', label: 'Sections', icon: Settings },
+  { id: 'blogs', label: 'Blogs', icon: FileText },
+  { id: 'services', label: 'Services', icon: Briefcase },
+  { id: 'certifications', label: 'Certifications', icon: Award },
+  { id: 'projects', label: 'Projects', icon: FolderKanban },
+  { id: 'testimonials', label: 'Testimonials', icon: MessageSquare },
+  { id: 'courses', label: 'Courses', icon: GraduationCap },
+  { id: 'instructors', label: 'Instructors', icon: UserCheck },
+  { id: 'students', label: 'Students', icon: Users },
+  { id: 'sessions', label: 'Sessions', icon: CalendarCheck },
+  { id: 'unavailable-slots', label: 'Unavailable Slots', icon: CalendarX },
+  { id: 'course-content', label: 'Course Content', icon: BookOpen },
+  { id: 'reviews', label: 'Reviews', icon: Star },
+  { id: 'brand-logos', label: 'Brand Logos', icon: Image },
+  { id: 'career-prep', label: 'Career Prep', icon: Database },
+  { id: 'roadmaps', label: 'Roadmaps', icon: Map },
+  { id: 'profile', label: 'Profile', icon: User },
 ];
 
 const Admin = () => {
@@ -65,8 +67,13 @@ const Admin = () => {
     });
   };
 
+  React.useEffect(() => {
+    if (!user) {
+      navigate('/auth');
+    }
+  }, [user, navigate]);
+
   if (!user) {
-    navigate('/auth');
     return null;
   }
 
@@ -96,10 +103,12 @@ const Admin = () => {
         return <StudentManager />;
       case 'sessions':
         return <SessionBookingManager />;
+      case 'unavailable-slots':
+        return <UnavailableSlotsManager />;
+      case 'course-content':
+        return <CourseContentManager />;
       case 'reviews':
         return <CourseReviewManager />;
-      case 'promo-codes':
-        return <PromoCodeManager />;
       case 'brand-logos':
         return <BrandLogosManager />;
       case 'career-prep':
@@ -133,42 +142,49 @@ const Admin = () => {
   };
 
   const NavLinks = ({ onClick }: { onClick?: () => void }) => (
-    <nav className="flex flex-col gap-1 p-4">
-      {navigation.map((item, i) => {
+    <nav className="flex flex-col gap-2 p-4">
+      {navigation.map((item) => {
         const Icon = item.icon;
         const isActive = activeTab === item.id;
-        const showGroup = i === 0 || navigation[i - 1].group !== item.group;
         return (
-          <div key={item.id}>
-            {showGroup && (
-              <p className="px-3 pt-4 pb-1 first:pt-1 font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-                {item.group}
-              </p>
-            )}
-            <button
-              onClick={() => {
-                setActiveTab(item.id);
-                if (onClick) onClick();
-              }}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                isActive
-                  ? 'bg-primary text-primary-foreground font-medium shadow-sm'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              {item.label}
-            </button>
-          </div>
+          <button
+            key={item.id}
+            onClick={() => {
+              setActiveTab(item.id);
+              if (onClick) onClick();
+            }}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
+              isActive 
+                ? 'bg-primary text-primary-foreground font-medium shadow-sm' 
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <Icon className="h-5 w-5" />
+            {item.label}
+          </button>
         );
       })}
     </nav>
   );
 
   return (
-    <div className="min-h-screen relative flex flex-col bg-paper overflow-hidden">
+    <div className="min-h-screen relative flex flex-col bg-gradient-to-br from-background to-accent/30 overflow-hidden">
+      {/* Background Blur Elements (From Hero) */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-400/15 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-accent/10 rounded-full blur-2xl animate-pulse delay-2000"></div>
+        <div className="absolute top-1/3 right-1/4 w-48 h-48 bg-primary/10 rounded-full blur-xl animate-float"></div>
+        <div className="absolute bottom-1/3 left-1/3 w-56 h-56 bg-blue-300/8 rounded-full blur-xl animate-float-delayed"></div>
+        <div className="absolute top-1/5 left-1/2 w-32 h-32 bg-primary/15 rounded-full blur-lg animate-bounce-slow"></div>
+        <div className="absolute bottom-1/5 right-1/2 w-24 h-24 bg-accent/12 rounded-full blur-lg animate-bounce-slow delay-500"></div>
+      </div>
+      
+      {/* Gradient overlay for depth */}
+      <div className="absolute inset-0 bg-gradient-to-t from-background/50 via-transparent to-background/30 pointer-events-none z-0"></div>
+
       {/* Top Header */}
-      <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-4 border-b border-border bg-background px-4 md:px-6">
+      <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-4 border-b/50 bg-background/60 backdrop-blur-xl px-4 md:px-6 shadow-sm">
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="md:hidden">

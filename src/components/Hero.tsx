@@ -1,13 +1,11 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { MapPin, ExternalLink, Mail } from "lucide-react"
+import { MapPin, Mail } from "lucide-react"
 import { Link } from "react-router-dom"
 import LottieAnimation from "@/components/LottieAnimation"
-import { useSectionContent } from "@/hooks/useSectionContent"
 
 const Hero = () => {
-  const { content } = useSectionContent("hero")
   return (
     <section
       id="home"
@@ -20,19 +18,20 @@ const Hero = () => {
             {/* Main Heading — ink with accent highlight */}
             <div className="space-y-4">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.08] tracking-tight">
-                {content.title.main} <span className="text-accent">{content.title.highlight}</span>
+                Transforming Data into <span className="text-accent">Strategic Insights</span>
               </h1>
               <p className="text-xl sm:text-2xl text-accent font-bold animate-fade-in-up delay-300">
-                {content.subtitle}
+                Google Certified Data Analytics Professional
               </p>
               <h2 className="text-2xl sm:text-3xl font-bold text-foreground animate-fade-in-up delay-500">
-                {content.name}
+                Salman Sakib
               </h2>
             </div>
 
             {/* Description */}
             <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto lg:mx-0 leading-relaxed animate-fade-in-up delay-700">
-              {content.description}
+              Google Certified Analytics Engineer with 7+ years of experience transforming complex data into actionable
+              insights. Specializing in data driven business growth with data analysis and data engineering solutions.
             </p>
 
             {/* CTA Buttons */}
@@ -42,8 +41,8 @@ const Hero = () => {
                 size="lg"
                 className="px-8 py-3 text-lg w-full sm:w-auto"
               >
-                <Link to={content.cta.primary.link} className="flex items-center justify-center">
-                  {content.cta.primary.text}
+                <Link to="/book-session" className="flex items-center justify-center">
+                  Book 1-1 Session
                 </Link>
               </Button>
               <Button
@@ -56,7 +55,7 @@ const Hero = () => {
                 }}
               >
                 <Mail className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
-                {content.cta.secondary.text}
+                Get in Touch
               </Button>
             </div>
 

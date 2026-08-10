@@ -5,7 +5,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate, Link } from "react-router-dom";
 import { BookOpen, Clock, Zap, ChevronRight, ArrowRight, Layout, PlayCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { resolveCoursePricing } from "@/lib/pricing";
 import { CourseCountdown } from "@/components/CourseCountdown";
 import { cn } from "@/lib/utils";
 import ScrollReveal from "./ScrollReveal";
@@ -44,9 +43,9 @@ export default function Courses() {
         .select('*')
         .eq('status', 'published')
         .order('created_at', { ascending: false });
-
+        
       if (error) throw error;
-
+      
       const transformedCourses: Course[] = (data || []).map((rawCourse: any) => ({
         ...rawCourse,
         banner_image: rawCourse.banner_image || null,
@@ -55,7 +54,6 @@ export default function Courses() {
         difficulty_level: rawCourse.difficulty_level || 'beginner',
         discount_percentage: rawCourse.discount_percentage ?? null,
         discounted_price: rawCourse.discounted_price ?? null,
-        promo_only: Boolean(rawCourse.promo_only),
         original_price: rawCourse.original_price ?? rawCourse.price,
         status: rawCourse.status || 'published'
       }));
@@ -176,17 +174,14 @@ export default function Courses() {
                           </span>
                           FREE
                         </span>
-                      ) : (() => {
-                        const pricing = resolveCoursePricing(course);
-                        return (
-                          <>
-                            <span>৳ {pricing.listPrice}</span>
-                            {pricing.strikethroughPrice != null && (
-                              <span className="text-xs text-muted-foreground line-through font-normal">৳ {pricing.strikethroughPrice}</span>
-                            )}
-                          </>
-                        );
-                      })()}
+                      ) : course.discounted_price ? (
+                        <>
+                          <span>৳ {course.discounted_price}</span>
+                          <span className="text-xs text-muted-foreground line-through font-normal">৳ {course.price}</span>
+                        </>
+                      ) : (
+                        <span>৳ {course.price}</span>
+                      )}
                     </div>
                   </div>
 

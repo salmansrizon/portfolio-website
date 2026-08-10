@@ -42,9 +42,14 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useTheme } from 'next-themes';
 import { useToast } from '@/hooks/use-toast';
+import { useMissionRunner } from './sql-challenge/modules/MissionRunner';
+import { useQueryExecutor } from './sql-challenge/modules/QueryExecutor';
+import { useTimerController } from './sql-challenge/modules/TimerController';
+import { useResultRenderer } from './sql-challenge/modules/ResultRenderer';
+import { bootPGlite, getPGliteInstance } from './sql-challenge/modules/PGliteEngine';
+import { validateSubmission } from './sql-challenge/modules/SubmissionValidator';
+import { getHintEscalationState } from './sql-challenge/modules/HintEscalation';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { SqlExecutionEngine } from '@/careerprep/sqlEngine';
-import { gradeSubmission } from '@/careerprep/grading';
 
 // ── Performance Memoization ──────────────────────────────────────────────
 const MemoizedMarkdown = React.memo(({ content }: { content: string }) => (
@@ -93,180 +98,109 @@ const SQLChallenge = () => {
   const { question, children, loading: qLoading } = useQuestion(slug || '');
   const { logSubmission, isSubmitting } = useSubmitCode();
 
-  // ── Mission State ────────────────────────────────────────────────────────
-  const [missionQueue, setMissionQueue] = useState<any[]>([]);
-  const [cursorIdx, setCursorIdx]       = useState(0);
-  const [isMissionComplete, setIsMissionComplete] = useState(false);
-  const currentQ = missionQueue[cursorIdx] || null;
+  // ── Mission State (from useMissionRunner hook) ───────────────────────────
+  const { missionQueue, cursorIdx, isMissionComplete, currentQuestion, advanceMission, resetMission } = useMissionRunner(question, children);
+  const currentQ = currentQuestion || question;
 
   // ── Database / Execution State ───────────────────────────────────────────
   const { submissions, loading: sLoading, refresh: refreshSubmissions } = useSubmissions(currentQ?.id || '');
   const [code, setCode] = useState('');
   const [mcqAnswer, setMcqAnswer] = useState<string | null>(null);
-  const engineRef = useRef<SqlExecutionEngine>(new SqlExecutionEngine());
   const [status, setStatus] = useState<'idle' | 'booting' | 'seeding' | 'ready' | 'error'>('idle');
-  const [results, setResults] = useState<any[]>([]);
-  const [columns, setColumns] = useState<string[]>([]);
-  const [execError, setExecError] = useState<string | null>(null);
-  const [executionTime, setExecutionTime] = useState<number | null>(null);
+
+  // Use extracted modules
+  const { execute, isExecuting, results: queryResult } = useQueryExecutor();
+  const { timeLeft, totalMistakes, formatTime, recordMistake, getTimeTaken } = useTimerController(question?.time_limit_secs);
+  const { missionResults, recordMissionResults, shareResults, downloadShareImage, setShowShareDialog } = useResultRenderer();
   const [activeTab, setActiveTab] = useState<'description' | 'schema' | 'submission'>('description');
-  const [missionResults, setMissionResults] = useState<{
-    correctSteps: number;
-    totalSteps: number;
-    timeTaken: number;
-    xpEarned: number;
-    accuracy: number;
-  } | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
   // ── Timer & Metrics ───────────────────────────────────────────────────
-  const [timeLeft, setTimeLeft] = useState<number | null>(null);
-  const [timerActive, setTimerActive] = useState(false);
   const missionStartTime = useRef<number>(Date.now());
-  const [totalMistakes, setTotalMistakes] = useState(0);
 
   const [stepResults, setStepResults] = useState<Record<number, boolean>>({});
   const [showFailedDialog, setShowFailedDialog] = useState(false);
   const [failCount, setFailCount] = useState<Record<number, number>>({});
 
+  // Mission queue building and timer initialization are owned by
+  // useMissionRunner/useTimerController's own effects (watching question/children
+  // and question?.time_limit_secs respectively) — only the per-mission-load
+  // bookkeeping specific to this page lives here.
   useEffect(() => {
     if (!qLoading && question) {
-      if (question.question_type === 'root') {
-        const sortedChildren = [...(children || [])].sort((a,b) => (a.order_index || 0) - (b.order_index || 0));
-        setMissionQueue(sortedChildren.length > 0 ? sortedChildren : [question]);
-        if (question.time_limit_secs) setTimeLeft(question.time_limit_secs);
-      } else {
-        setMissionQueue([question]);
-        if (question.time_limit_secs) setTimeLeft(question.time_limit_secs);
-      }
-      setCursorIdx(0);
-      setIsMissionComplete(false);
-      engineRef.current.forgetSeeds();
       setStepResults({});
       missionStartTime.current = Date.now();
     }
-  }, [qLoading, question, children]);
+  }, [qLoading, question]);
 
+  // Countdown itself is owned by useTimerController; this only reacts once time runs out.
   useEffect(() => {
-    let interval: any;
-    if (status === 'ready' && !isMissionComplete && timeLeft !== null && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft(prev => (prev !== null && prev > 0) ? prev - 1 : 0);
-      }, 1000);
-    } else if (timeLeft === 0 && !isMissionComplete) {
+    if (timeLeft === 0 && !isMissionComplete && status === 'ready') {
       toast({ title: 'Time Up!', description: 'Finalizing current step.', variant: 'destructive' });
-      const currentIdx = cursorIdx;
-      setStepResults(prev => ({ ...prev, [currentIdx]: false }));
-      handleAdvance();
+      setStepResults(prev => ({ ...prev, [cursorIdx]: false }));
+      advanceMission();
     }
-    return () => clearInterval(interval);
-  }, [status, isMissionComplete, timeLeft]);
-
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
-
-  useEffect(() => {
-    const engine = engineRef.current;
-    engine.boot();
-    setStatus('ready');
-    return () => { engine.teardown(); };
-  }, []);
+  }, [timeLeft, isMissionComplete, status]);
 
   useEffect(() => {
     const seed = async () => {
       if (!currentQ || currentQ.question_type === 'mcq') {
-        if (currentQ?.question_type === 'mcq' && status !== 'ready') setStatus('ready');
+        if (currentQ?.question_type === 'mcq') setStatus('ready');
         return;
       }
 
       setStatus('seeding');
-      const { error, seeded } = await engineRef.current.boot({
-        schemaSql: currentQ.schema_sql,
-        initialSql: currentQ.initial_sql,
-      });
-
-      const tableName = extractFirstTable(currentQ.schema_sql || 'your_table');
-      if (seeded || !code) setCode(`-- Write your SQL query here\nSELECT * FROM ${tableName};`);
-      setStatus('ready');
-
-      if (error) {
-        console.warn('Seeding warning:', error);
-        toast({ title: 'Environment Note', description: 'Database state might be inherited from previous step.', variant: 'default' });
+      try {
+        await bootPGlite(currentQ.schema_sql || '', currentQ.initial_sql || '');
+        const tableName = extractFirstTable(currentQ.schema_sql || 'your_table');
+        setCode(`-- Write your SQL query here\nSELECT * FROM ${tableName};`);
+        setStatus('ready');
+      } catch (err: any) {
+        console.warn('Seeding warning:', err);
+        // If it's just a duplicate key/table error, we can still proceed if the tables exist
+        if (err.message?.includes('already exists') || err.message?.includes('duplicate key')) {
+          setStatus('ready');
+        } else {
+          setStatus('ready'); // Still mark as ready so user can try to fix SQL
+          toast({ title: 'Environment Note', description: 'Database state might be inherited from previous step.', variant: 'default' });
+        }
       }
     };
     seed();
-  }, [currentQ?.id, status]);
+  }, [currentQ?.id]);
 
-  const handleRun = useCallback(async () => {
+  const handleRun = useCallback(() => {
     if (!code.trim()) return;
-    setExecError(null);
-    const start = performance.now();
-    const { rows, columns: cols, error } = await engineRef.current.run(code);
-    if (error) {
-      setExecError(error);
-      setResults([]);
-      setColumns([]);
-    } else {
-      setResults(rows);
-      setColumns(cols);
-      setExecutionTime(performance.now() - start);
-    }
+    execute(code);
   }, [code]);
 
   const [attemptsRecord, setAttemptsRecord] = useState<Record<number, number>>({});
 
   const handleAdvance = () => {
     if (cursorIdx < missionQueue.length - 1) {
-      setCursorIdx(prev => prev + 1);
-      setResults([]);
-      setColumns([]);
-      setExecError(null);
-      setExecutionTime(null);
+      advanceMission();
       setActiveTab('description');
       setMcqAnswer(null);
     } else {
       const timeTaken = Math.floor((Date.now() - missionStartTime.current) / 1000);
-      const totalSteps = missionQueue.length;
-      
-      const totalWeight = missionQueue.reduce((acc, q) => acc + (q.weight || 1), 0);
-      const correctWeights = missionQueue.reduce((acc, q, idx) => acc + (stepResults[idx] ? (q.weight || 1) : 0), 0);
-      
-      const xpEarned = correctWeights * 100;
-      const accuracy = totalWeight > 0 ? Math.round((correctWeights / totalWeight) * 100) : 100;
-      
-      setMissionResults({
-        correctSteps: missionQueue.filter((_, idx) => stepResults[idx]).length,
-        totalSteps,
-        timeTaken,
-        xpEarned,
-        accuracy
-      });
-      setIsMissionComplete(true);
+      const correctSteps = missionQueue.filter((_, idx) => stepResults[idx]).length;
+
+      recordMissionResults(correctSteps, missionQueue.length, timeTaken, totalMistakes);
+      advanceMission();
     }
   };
 
   const handleSubmit = async () => {
     if (!currentQ) return;
+    const pg = getPGliteInstance();
     const isMultiStep = missionQueue.length > 1;
-    let isCorrect = false;
-
-    if (currentQ.question_type === 'mcq') {
-      isCorrect = mcqAnswer === currentQ.correct_option;
-    } else if (currentQ.solution_sql) {
-      // Validate by comparing user query results with solution query results
-      const userRes = await engineRef.current.run(code);
-      const solRes = await engineRef.current.run(currentQ.solution_sql);
-      isCorrect = !userRes.error && !solRes.error && gradeSubmission(userRes.rows, solRes.rows).correct;
-    }
+    const isCorrect = await validateSubmission(pg, code, currentQ, mcqAnswer);
 
     const currentIdx = cursorIdx;
 
     if (isCorrect) {
       // Log submission only on correct answer
-      await logSubmission(currentQ.id, currentQ.question_type === 'mcq' ? `Choice: ${mcqAnswer}` : code, true, executionTime || 0);
+      await logSubmission(currentQ.id, currentQ.question_type === 'mcq' ? `Choice: ${mcqAnswer}` : code, true, queryResult?.executionTime || 0);
       refreshSubmissions();
       setStepResults(prev => ({ ...prev, [currentIdx]: true }));
       
@@ -279,6 +213,7 @@ const SQLChallenge = () => {
       }
     } else {
       // Increment fail count and show Mission Failed dialog
+      recordMistake();
       setFailCount(prev => ({ ...prev, [currentIdx]: (prev[currentIdx] || 0) + 1 }));
       setShowFailedDialog(true);
     }
@@ -292,20 +227,20 @@ const SQLChallenge = () => {
     <div className="h-screen flex flex-col items-center justify-center bg-background text-foreground p-8 relative overflow-hidden">
        <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[100px] animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[100px] animate-pulse delay-700"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[100px] animate-pulse delay-700"></div>
        </div>
        <div className="relative z-10 w-full max-w-md text-center">
           <div ref={resultsRef} className="p-8 space-y-6 bg-card/60 backdrop-blur-2xl border border-border/80 rounded-[32px] shadow-2xl">
-              <div className="w-16 h-16 bg-success rounded-2xl flex items-center justify-center mb-4 mx-auto"><CheckCircle2 className="w-8 h-8 text-white" /></div>
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mb-4 mx-auto shadow-lg shadow-green-500/20"><CheckCircle2 className="w-8 h-8 text-white" /></div>
               <div className="space-y-1">
                 <h2 className="text-2xl font-black uppercase tracking-tight italic text-foreground">Mission Complete</h2>
                 <p className="text-[11px] text-muted-foreground font-medium px-4">Finalized <span className="text-primary font-bold uppercase">{question?.title}</span>.</p>
               </div>
               <div className="grid grid-cols-3 gap-2">
                  {[
-                   { label: 'XP', value: `+${missionResults?.xpEarned || 0}`, icon: <Star className="w-3.5 h-3.5 text-warning" /> },
-                   { label: 'Time', value: formatTime(missionResults?.timeTaken || 0), icon: <Timer className="w-3.5 h-3.5 text-primary" /> },
-                   { label: 'Score', value: `${missionResults?.accuracy || 0}%`, icon: <CheckCircle2 className="w-3.5 h-3.5 text-success" /> }
+                   { label: 'XP', value: `+${missionResults?.xpEarned || 0}`, icon: <Star className="w-3.5 h-3.5 text-yellow-500" /> },
+                   { label: 'Time', value: formatTime(missionResults?.timeTaken || 0), icon: <Timer className="w-3.5 h-3.5 text-blue-500" /> },
+                   { label: 'Score', value: `${missionResults?.accuracy || 0}%`, icon: <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> }
                  ].map((stat, i) => (
                    <div key={i} className="bg-background/40 p-3 rounded-xl border border-border/40 flex flex-col items-center">
                       <div className="mb-0.5 opacity-80">{stat.icon}</div>
@@ -323,9 +258,9 @@ const SQLChallenge = () => {
                          <div key={q.id} className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-background/30 group hover:bg-background/50 transition-colors">
                             <div className="flex items-center gap-2 overflow-hidden">
                                {isCorrect ? (
-                                 <CheckCircle2 className="w-2.5 h-2.5 text-success shrink-0" />
+                                 <CheckCircle2 className="w-2.5 h-2.5 text-green-500 shrink-0" />
                                ) : (
-                                 <AlertCircle className="w-2.5 h-2.5 text-danger shrink-0" />
+                                 <AlertCircle className="w-2.5 h-2.5 text-red-500 shrink-0" />
                                )}
                                <span className={`text-[9px] font-bold truncate ${isCorrect ? 'text-foreground/80' : 'text-red-400'}`}>{q.title}</span>
                             </div>
@@ -346,11 +281,9 @@ const SQLChallenge = () => {
                     </Button>
                  </div>
                  {Object.values(stepResults).includes(false) && (
-                   <Button variant="ghost" className="h-11 w-full rounded-xl border border-dashed border-danger/30 text-danger/80 hover:bg-danger/5 text-xs font-black uppercase tracking-widest gap-2" onClick={() => {
-                     setCursorIdx(0);
-                     setIsMissionComplete(false);
+                   <Button variant="ghost" className="h-11 w-full rounded-xl border border-dashed border-red-500/30 text-red-500/80 hover:bg-red-500/5 text-xs font-black uppercase tracking-widest gap-2" onClick={() => {
+                     resetMission();
                      setStepResults({});
-                     engineRef.current.forgetSeeds();
                      missionStartTime.current = Date.now();
                    }}>
                      <RotateCcw className="w-4 h-4" /> Retry Failed Steps
@@ -368,11 +301,11 @@ const SQLChallenge = () => {
   const showsEditor = currentQ?.question_type === 'code' || currentQ?.question_type === 'case_study';
 
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground font-sans overflow-hidden relative">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-background via-background to-accent/30 text-foreground font-sans overflow-hidden relative">
       <MemoizedNavbar />
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-primary/5 rounded-full blur-[100px] animate-pulse delay-700"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[100px] animate-pulse delay-700"></div>
       </div>
       <div className="flex-1 flex flex-col relative z-10 pt-16 overflow-hidden">
         <div className="h-2 shrink-0 flex gap-1.5 px-3 py-1 bg-muted/30 border-b border-border/50">
@@ -383,7 +316,7 @@ const SQLChallenge = () => {
             
             let colorClass = 'bg-muted/50';
             if (isCurrent) colorClass = 'bg-primary shadow-[0_0_15px_rgba(var(--primary),0.6)]';
-            else if (isCompleted) colorClass = wasCorrect ? 'bg-success' : 'bg-danger';
+            else if (isCompleted) colorClass = wasCorrect ? 'bg-green-500' : 'bg-red-500';
 
             return (
               <div 
@@ -403,7 +336,7 @@ const SQLChallenge = () => {
               <div className="flex items-center gap-2 md:gap-4 overflow-hidden">
                 <Badge className="hidden sm:inline-flex bg-primary/10 text-primary border-primary/30 text-[9px] font-black uppercase tracking-[0.2em] h-5 px-2.5 shrink-0">Mission Step {cursorIdx + 1}</Badge>
                 <div className="flex items-center gap-2 min-w-0">
-                  <h1 className="text-sm md:text-xl font-black tracking-tight text-foreground uppercase italic truncate pr-2">
+                  <h1 className="text-sm md:text-xl font-black tracking-tight text-foreground uppercase italic bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent truncate pr-2">
                     {currentQ?.title || question?.title}
                   </h1>
                 </div>
@@ -424,7 +357,7 @@ const SQLChallenge = () => {
             )}
             
             {showsEditor && (
-              <Button size="sm" onClick={handleRun} disabled={!envReady} className="bg-primary/10 hover:bg-primary/20 text-primary h-9 px-3 rounded-xl font-black text-[10px] uppercase gap-2 border border-primary/20 transition-all active:scale-95">
+              <Button size="sm" onClick={handleRun} disabled={!envReady || isExecuting} className="bg-primary/10 hover:bg-primary/20 text-primary h-9 px-3 rounded-xl font-black text-[10px] uppercase gap-2 border border-primary/20 transition-all active:scale-95">
                 {envBooting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" fill="currentColor" />}
                 <span>Run</span>
               </Button>
@@ -485,7 +418,7 @@ activeTab === 'schema' ? <pre className="bg-muted rounded-xl p-5 border border-b
                           {submissions.map(sub => (
                             <div key={sub.id} className="p-4 rounded-xl border border-border bg-muted/30 hover:bg-muted/50 transition-colors">
                               <div className="flex justify-between items-center mb-3">
-                                <Badge className={sub.is_correct ? 'bg-success/10 text-success border-0' : 'bg-danger/10 text-danger border-0'}>{sub.is_correct ? 'ACCEPTED' : 'FAILED'}</Badge>
+                                <Badge className={sub.is_correct ? 'bg-green-500/10 text-green-500 border-0' : 'bg-red-500/10 text-red-500 border-0'}>{sub.is_correct ? 'ACCEPTED' : 'FAILED'}</Badge>
                                 <span className="text-[9px] font-mono text-muted-foreground">{new Date(sub.created_at).toLocaleString()}</span>
                               </div>
                               <pre className="text-[11px] font-mono text-foreground/80 bg-muted/50 p-3 rounded-lg border border-border/50 overflow-x-auto whitespace-pre-wrap">{sub.submitted_code}</pre>
@@ -541,7 +474,7 @@ activeTab === 'schema' ? <pre className="bg-muted rounded-xl p-5 border border-b
                          <div className="h-full flex flex-col relative">
                            <div className="h-8 shrink-0 flex items-center px-4 justify-between bg-muted/50 border-b border-border">
                              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground"><Layout className="w-3.5 h-3.5 text-primary" />Terminal</div>
-                             <Button size="sm" onClick={handleRun} disabled={!envReady} variant="ghost" className="h-6 px-3 text-[10px] font-black uppercase tracking-widest gap-1.5 text-primary hover:bg-primary/10 rounded-lg">
+                             <Button size="sm" onClick={handleRun} disabled={!envReady || isExecuting} variant="ghost" className="h-6 px-3 text-[10px] font-black uppercase tracking-widest gap-1.5 text-primary hover:bg-primary/10 rounded-lg">
                                {envBooting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" fill="currentColor" />}
                                Run
                              </Button>
@@ -552,13 +485,13 @@ activeTab === 'schema' ? <pre className="bg-muted rounded-xl p-5 border border-b
                       <PanelResizeHandle className="h-[1px] bg-border hover:bg-primary/40 transition-colors z-50 cursor-row-resize" />
                       <Panel defaultSize={35} minSize={20}>
                          <div className="h-full flex flex-col bg-card">
-                            <div className="h-9 shrink-0 flex items-center justify-between px-4 bg-muted/50 border-b border-border"><div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-primary"><span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />STDOUT</div>{executionTime !== null && <span className="text-[9px] font-mono text-muted-foreground">{executionTime.toFixed(1)}ms</span>}</div>
+                            <div className="h-9 shrink-0 flex items-center justify-between px-4 bg-muted/50 border-b border-border"><div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-primary"><span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />STDOUT</div>{queryResult?.executionTime !== undefined && <span className="text-[9px] font-mono text-muted-foreground">{queryResult.executionTime.toFixed(1)}ms</span>}</div>
                             <div className="flex-1 overflow-auto p-5 font-mono text-[12px]">
-                               {execError ? <div className="bg-destructive/10 text-destructive p-4 rounded-xl border border-destructive/20">{execError}</div> : results.length > 0 ? (
+                               {queryResult?.error ? <div className="bg-destructive/10 text-destructive p-4 rounded-xl border border-destructive/20">{queryResult.error}</div> : (queryResult?.rows.length || 0) > 0 ? (
                                  <div className="rounded-xl border border-border bg-card overflow-hidden shadow-lg">
                                     <table className="w-full text-left">
-                                      <thead className="bg-muted/50 border-b border-border"><tr>{columns.map(col => <th key={col} className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">{col}</th>)}</tr></thead>
-                                      <tbody>{results.map((row, i) => <tr key={i} className="border-b border-border/50 hover:bg-muted/30">{columns.map(col => <td key={col} className="px-4 py-3 text-foreground/80">{String(row[col])}</td>)}</tr>)}</tbody>
+                                      <thead className="bg-muted/50 border-b border-border"><tr>{queryResult.columns.map(col => <th key={col} className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">{col}</th>)}</tr></thead>
+                                      <tbody>{queryResult.rows.map((row, i) => <tr key={i} className="border-b border-border/50 hover:bg-muted/30">{queryResult.columns.map(col => <td key={col} className="px-4 py-3 text-foreground/80">{String(row[col])}</td>)}</tr>)}</tbody>
                                     </table>
                                  </div>
                                ) : <div className="h-full flex items-center justify-center opacity-20"><span className="font-black uppercase tracking-[0.5em] text-[10px]">Awaiting Instructions</span></div>}
@@ -591,68 +524,68 @@ activeTab === 'schema' ? <pre className="bg-muted rounded-xl p-5 border border-b
           {(() => {
             const fails = failCount[cursorIdx] || 0;
             const hints = currentQ?.hints || [];
-            const revealedCount = Math.min(fails, hints.length);
-            const nextHintAt = revealedCount < hints.length ? revealedCount + 1 : null;
+            const hintState = getHintEscalationState(fails, hints.length, !!currentQ?.solution_sql);
 
-            if (hints.length === 0 && fails >= 3) {
-              // No hints available, reveal solution after 5 fails
-              return fails >= 5 && currentQ?.solution_sql ? (
-                <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-2">
-                  <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary">
-                    <Sparkles className="w-3 h-3" /> Solution Revealed
-                  </div>
-                  <pre className="text-xs font-mono text-foreground/80 whitespace-pre-wrap bg-muted/50 p-3 rounded-lg border border-border/50">
-                    {currentQ.question_type === 'mcq' ? `Correct: ${currentQ.correct_option}` : currentQ.solution_sql}
-                  </pre>
+            const solutionBlock = (
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-2">
+                <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary">
+                  <Sparkles className="w-3 h-3" /> Solution Revealed
                 </div>
-              ) : (
-                <p className="text-center text-[10px] text-muted-foreground font-medium">
-                  {fails >= 3 ? `No hints available. Solution reveals after ${5 - fails} more attempt${5 - fails !== 1 ? 's' : ''}.` : ''}
-                </p>
-              );
-            }
-
-            return revealedCount > 0 ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">
-                  <AlertCircle className="w-3 h-3 text-warning" />
-                  {revealedCount}/{hints.length} Hint{revealedCount !== 1 ? 's' : ''} Unlocked
-                </div>
-                <div className="space-y-2">
-                  {hints.slice(0, revealedCount).map((hint: string, i: number) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.1 }}
-                      className="bg-warning/5 border border-warning/20 rounded-xl p-3 flex items-start gap-3"
-                    >
-                      <span className="shrink-0 w-6 h-6 rounded-lg bg-warning/10 text-warning flex items-center justify-center text-[10px] font-black">{i + 1}</span>
-                      <p className="text-sm text-foreground/80 pt-0.5">{hint}</p>
-                    </motion.div>
-                  ))}
-                </div>
-                {nextHintAt && (
-                  <p className="text-center text-[10px] text-muted-foreground font-medium">
-                    Next hint unlocks after {nextHintAt} more failed attempt{nextHintAt !== 1 ? 's' : ''}
-                  </p>
-                )}
-                {revealedCount >= hints.length && fails >= hints.length + 2 && currentQ?.solution_sql && (
-                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-2 mt-2">
-                    <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-primary">
-                      <Sparkles className="w-3 h-3" /> Solution Revealed
-                    </div>
-                    <pre className="text-xs font-mono text-foreground/80 whitespace-pre-wrap bg-muted/50 p-3 rounded-lg border border-border/50">
-                      {currentQ.question_type === 'mcq' ? `Correct: ${currentQ.correct_option}` : currentQ.solution_sql}
-                    </pre>
-                  </div>
-                )}
+                <pre className="text-xs font-mono text-foreground/80 whitespace-pre-wrap bg-muted/50 p-3 rounded-lg border border-border/50">
+                  {currentQ?.question_type === 'mcq' ? `Correct: ${currentQ.correct_option}` : currentQ?.solution_sql}
+                </pre>
               </div>
-            ) : (
-              <p className="text-center text-[10px] text-muted-foreground font-medium">
-                💡 Hint unlocks after 1 more failed attempt
-              </p>
             );
+
+            switch (hintState.kind) {
+              case 'no-hints-solution-revealed':
+                return solutionBlock;
+
+              case 'no-hints-waiting':
+                return (
+                  <p className="text-center text-[10px] text-muted-foreground font-medium">
+                    {`No hints available. Solution reveals after ${hintState.attemptsRemaining} more attempt${hintState.attemptsRemaining !== 1 ? 's' : ''}.`}
+                  </p>
+                );
+
+              case 'hints-revealed':
+                return (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">
+                      <AlertCircle className="w-3 h-3 text-yellow-500" />
+                      {hintState.revealedCount}/{hintState.totalHints} Hint{hintState.revealedCount !== 1 ? 's' : ''} Unlocked
+                    </div>
+                    <div className="space-y-2">
+                      {hints.slice(0, hintState.revealedCount).map((hint: string, i: number) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.1 }}
+                          className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3 flex items-start gap-3"
+                        >
+                          <span className="shrink-0 w-6 h-6 rounded-lg bg-yellow-500/10 text-yellow-500 flex items-center justify-center text-[10px] font-black">{i + 1}</span>
+                          <p className="text-sm text-foreground/80 pt-0.5">{hint}</p>
+                        </motion.div>
+                      ))}
+                    </div>
+                    {hintState.nextHintAt && (
+                      <p className="text-center text-[10px] text-muted-foreground font-medium">
+                        Next hint unlocks after {hintState.nextHintAt} more failed attempt{hintState.nextHintAt !== 1 ? 's' : ''}
+                      </p>
+                    )}
+                    {hintState.solutionRevealed && <div className="mt-2">{solutionBlock}</div>}
+                  </div>
+                );
+
+              case 'awaiting-first-hint':
+              default:
+                return (
+                  <p className="text-center text-[10px] text-muted-foreground font-medium">
+                    💡 Hint unlocks after 1 more failed attempt
+                  </p>
+                );
+            }
           })()}
 
           <div className="flex flex-col gap-3 pt-2">

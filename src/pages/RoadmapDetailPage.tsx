@@ -15,7 +15,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useAuth } from '@/contexts/AuthContext';
-import * as guestIdentity from '@/careerprep/guestIdentity';
 
 interface Roadmap {
   id: string;
@@ -34,7 +33,7 @@ const RoadmapDetailPage = () => {
   const [viewMode, setViewMode] = useState<'tree' | 'accordion'>('tree');
   usePageView(`/roadmaps/${slug}`);
 
-  // Guest gate (reuses careerprep_guests + the shared guest identity module)
+  // Guest gate (reuses careerprep_guests + same localStorage keys)
   const [showGate, setShowGate] = useState(false);
   const [guestEmail, setGuestEmail] = useState('');
   const [guestWhatsapp, setGuestWhatsapp] = useState('');
@@ -42,8 +41,11 @@ const RoadmapDetailPage = () => {
 
   useEffect(() => {
     if (session?.user) return;
-    if (!guestIdentity.current().isGuest) setShowGate(true);
-    guestIdentity.sessionId();
+    const isGuest = localStorage.getItem('careerprep_guest') === 'true';
+    if (!isGuest) setShowGate(true);
+    if (!localStorage.getItem('careerprep_session_id')) {
+      localStorage.setItem('careerprep_session_id', Math.random().toString(36).substring(2, 15));
+    }
   }, [session]);
 
   const handleGuestSubmit = async (e: React.FormEvent) => {
@@ -75,7 +77,9 @@ const RoadmapDetailPage = () => {
         setGuestSaving(false);
         return;
       }
-      guestIdentity.identify({ email: payload.email, whatsapp: cleanPhone });
+      localStorage.setItem('careerprep_guest', 'true');
+      localStorage.setItem('careerprep_guest_email', payload.email);
+      localStorage.setItem('careerprep_guest_whatsapp', cleanPhone);
       setShowGate(false);
     } catch (err) {
       alert('Something went wrong. Please try again.');
@@ -184,9 +188,9 @@ const RoadmapDetailPage = () => {
 
           {/* Customize Guideline CTA */}
           {nodes.length > 0 && (
-            <div className="mt-10 sm:mt-14 rounded-[20px] border border-border bg-secondary p-6 sm:p-8 text-center">
-              <div className="mx-auto w-12 h-12 rounded-full bg-accent flex items-center justify-center mb-3">
-                <MessageCircleQuestion className="w-6 h-6 text-white" />
+            <div className="mt-10 sm:mt-14 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-accent/5 to-background p-6 sm:p-8 text-center shadow-sm">
+              <div className="mx-auto w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center mb-3">
+                <MessageCircleQuestion className="w-6 h-6 text-primary" />
               </div>
               <h2 className="text-xl sm:text-2xl font-bold mb-2">Need Customize Guideline?</h2>
               <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto mb-5">
@@ -203,7 +207,7 @@ const RoadmapDetailPage = () => {
       </div>
 
       {/* Guest Gate Modal */}
-      <Dialog open={showGate} onOpenChange={(open) => { if (!open && !guestIdentity.current().isGuest) return; setShowGate(open); }}>
+      <Dialog open={showGate} onOpenChange={(open) => { if (!open && localStorage.getItem('careerprep_guest') !== 'true') return; setShowGate(open); }}>
         <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
