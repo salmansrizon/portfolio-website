@@ -41,6 +41,7 @@ import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useTheme } from 'next-themes';
+import { defineCustomThemes } from '@/design-system/monacoTheme';
 import { useToast } from '@/hooks/use-toast';
 import { useMissionRunner } from './sql-challenge/modules/MissionRunner';
 import { useQueryExecutor } from './sql-challenge/modules/QueryExecutor';
@@ -61,33 +62,6 @@ MemoizedMarkdown.displayName = 'MemoizedMarkdown';
 
 const MemoizedNavbar = React.memo(Navbar);
 MemoizedNavbar.displayName = 'MemoizedNavbar';
-
-// ── Monaco Theme Builder ─────────────────────────────────────────────────
-const defineCustomThemes = (monaco: any) => {
-  monaco.editor.defineTheme('mission-dark', {
-    base: 'vs-dark',
-    inherit: true,
-    rules: [
-      { token: 'keyword', foreground: '6D9EFF', fontStyle: 'bold' },
-      { token: 'string',  foreground: '6BC985' },
-      { token: 'comment', foreground: '6A737D', fontStyle: 'italic' },
-      { token: 'number',  foreground: 'F5A623' },
-      { token: 'type',    foreground: '79C0FF' },
-      { token: 'operator', foreground: 'FF7B72' },
-    ],
-    colors: {
-      'editor.background': '#111118',
-      'editor.foreground': '#E6EDF3',
-      'editor.lineHighlightBackground': '#1A1A24',
-      'editorLineNumber.foreground': '#3F3F46',
-      'editorLineNumber.activeForeground': '#8B949E',
-      'editor.selectionBackground': '#264F7833',
-      'editorCursor.foreground': '#6D9EFF',
-      'editorIndentGuide.background': '#21262D',
-      'editorWidget.background': '#161B22',
-    }
-  });
-};
 
 const SQLChallenge = () => {
   const { slug } = useParams();
@@ -226,21 +200,19 @@ const SQLChallenge = () => {
   if (isMissionComplete) return (
     <div className="h-screen flex flex-col items-center justify-center bg-background text-foreground p-8 relative overflow-hidden">
        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[100px] animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[100px] animate-pulse delay-700"></div>
        </div>
        <div className="relative z-10 w-full max-w-md text-center">
           <div ref={resultsRef} className="p-8 space-y-6 bg-card/60 backdrop-blur-2xl border border-border/80 rounded-[32px] shadow-2xl">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mb-4 mx-auto shadow-lg shadow-green-500/20"><CheckCircle2 className="w-8 h-8 text-white" /></div>
+              <div className="w-16 h-16 bg-success rounded-2xl flex items-center justify-center mb-4 mx-auto"><CheckCircle2 className="w-8 h-8 text-white" /></div>
               <div className="space-y-1">
                 <h2 className="text-2xl font-black uppercase tracking-tight italic text-foreground">Mission Complete</h2>
                 <p className="text-[11px] text-muted-foreground font-medium px-4">Finalized <span className="text-primary font-bold uppercase">{question?.title}</span>.</p>
               </div>
               <div className="grid grid-cols-3 gap-2">
                  {[
-                   { label: 'XP', value: `+${missionResults?.xpEarned || 0}`, icon: <Star className="w-3.5 h-3.5 text-yellow-500" /> },
-                   { label: 'Time', value: formatTime(missionResults?.timeTaken || 0), icon: <Timer className="w-3.5 h-3.5 text-blue-500" /> },
-                   { label: 'Score', value: `${missionResults?.accuracy || 0}%`, icon: <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> }
+                   { label: 'XP', value: `+${missionResults?.xpEarned || 0}`, icon: <Star className="w-3.5 h-3.5 text-warning" /> },
+                   { label: 'Time', value: formatTime(missionResults?.timeTaken || 0), icon: <Timer className="w-3.5 h-3.5 text-accent" /> },
+                   { label: 'Score', value: `${missionResults?.accuracy || 0}%`, icon: <CheckCircle2 className="w-3.5 h-3.5 text-success" /> }
                  ].map((stat, i) => (
                    <div key={i} className="bg-background/40 p-3 rounded-xl border border-border/40 flex flex-col items-center">
                       <div className="mb-0.5 opacity-80">{stat.icon}</div>
@@ -258,11 +230,11 @@ const SQLChallenge = () => {
                          <div key={q.id} className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-background/30 group hover:bg-background/50 transition-colors">
                             <div className="flex items-center gap-2 overflow-hidden">
                                {isCorrect ? (
-                                 <CheckCircle2 className="w-2.5 h-2.5 text-green-500 shrink-0" />
+                                 <CheckCircle2 className="w-2.5 h-2.5 text-success shrink-0" />
                                ) : (
-                                 <AlertCircle className="w-2.5 h-2.5 text-red-500 shrink-0" />
+                                 <AlertCircle className="w-2.5 h-2.5 text-destructive shrink-0" />
                                )}
-                               <span className={`text-[9px] font-bold truncate ${isCorrect ? 'text-foreground/80' : 'text-red-400'}`}>{q.title}</span>
+                               <span className={`text-[9px] font-bold truncate ${isCorrect ? 'text-foreground/80' : 'text-destructive'}`}>{q.title}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                {(q.weight || 1) > 1 && <span className="text-[7px] font-black px-1.5 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 animate-pulse">ELITE</span>}
@@ -276,12 +248,12 @@ const SQLChallenge = () => {
               <div className="flex flex-col gap-3 pt-2">
                  <div className="flex gap-3">
                     <Button onClick={() => navigate('/career-prep')} className="flex-1 h-11 text-xs font-black rounded-xl shadow-lg shadow-primary/20 gap-2 uppercase tracking-widest">Done</Button>
-                    <Button variant="outline" className="h-11 px-6 rounded-xl border-border hover:bg-muted text-foreground/70 text-xs font-black gap-2 transition-all active:scale-95" onClick={() => { if (resultsRef.current) toPng(resultsRef.current, { cacheBust: true, backgroundColor: '#0D0D12' }).then(url => { const l = document.createElement('a'); l.download = `mission-${slug}.png`; l.href = url; l.click(); toast({ title: 'Success', description: 'Snapshot saved!' }); }); }}>
+                    <Button variant="outline" className="h-11 px-6 rounded-xl border-border hover:bg-muted text-foreground/70 text-xs font-black gap-2 transition-all active:scale-95" onClick={() => { if (resultsRef.current) toPng(resultsRef.current, { cacheBust: true, backgroundColor: `hsl(${getComputedStyle(document.documentElement).getPropertyValue('--card')})` }).then(url => { const l = document.createElement('a'); l.download = `mission-${slug}.png`; l.href = url; l.click(); toast({ title: 'Success', description: 'Snapshot saved!' }); }); }}>
                       <Share2 className="w-4 h-4" /> Snapshot
                     </Button>
                  </div>
                  {Object.values(stepResults).includes(false) && (
-                   <Button variant="ghost" className="h-11 w-full rounded-xl border border-dashed border-red-500/30 text-red-500/80 hover:bg-red-500/5 text-xs font-black uppercase tracking-widest gap-2" onClick={() => {
+                   <Button variant="ghost" className="h-11 w-full rounded-xl border border-dashed border-destructive/30 text-destructive/80 hover:bg-destructive/5 text-xs font-black uppercase tracking-widest gap-2" onClick={() => {
                      resetMission();
                      setStepResults({});
                      missionStartTime.current = Date.now();
@@ -304,8 +276,6 @@ const SQLChallenge = () => {
     <div className="flex flex-col h-screen bg-gradient-to-br from-background via-background to-accent/30 text-foreground font-sans overflow-hidden relative">
       <MemoizedNavbar />
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[100px] animate-pulse delay-700"></div>
       </div>
       <div className="flex-1 flex flex-col relative z-10 pt-16 overflow-hidden">
         <div className="h-2 shrink-0 flex gap-1.5 px-3 py-1 bg-muted/30 border-b border-border/50">
@@ -316,7 +286,7 @@ const SQLChallenge = () => {
             
             let colorClass = 'bg-muted/50';
             if (isCurrent) colorClass = 'bg-primary shadow-[0_0_15px_rgba(var(--primary),0.6)]';
-            else if (isCompleted) colorClass = wasCorrect ? 'bg-green-500' : 'bg-red-500';
+            else if (isCompleted) colorClass = wasCorrect ? 'bg-success' : 'bg-destructive';
 
             return (
               <div 
@@ -418,7 +388,7 @@ activeTab === 'schema' ? <pre className="bg-muted rounded-xl p-5 border border-b
                           {submissions.map(sub => (
                             <div key={sub.id} className="p-4 rounded-xl border border-border bg-muted/30 hover:bg-muted/50 transition-colors">
                               <div className="flex justify-between items-center mb-3">
-                                <Badge className={sub.is_correct ? 'bg-green-500/10 text-green-500 border-0' : 'bg-red-500/10 text-red-500 border-0'}>{sub.is_correct ? 'ACCEPTED' : 'FAILED'}</Badge>
+                                <Badge className={sub.is_correct ? 'bg-success/10 text-success border-0' : 'bg-destructive/10 text-destructive border-0'}>{sub.is_correct ? 'ACCEPTED' : 'FAILED'}</Badge>
                                 <span className="text-[9px] font-mono text-muted-foreground">{new Date(sub.created_at).toLocaleString()}</span>
                               </div>
                               <pre className="text-[11px] font-mono text-foreground/80 bg-muted/50 p-3 rounded-lg border border-border/50 overflow-x-auto whitespace-pre-wrap">{sub.submitted_code}</pre>
@@ -552,7 +522,7 @@ activeTab === 'schema' ? <pre className="bg-muted rounded-xl p-5 border border-b
                 return (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground px-1">
-                      <AlertCircle className="w-3 h-3 text-yellow-500" />
+                      <AlertCircle className="w-3 h-3 text-warning" />
                       {hintState.revealedCount}/{hintState.totalHints} Hint{hintState.revealedCount !== 1 ? 's' : ''} Unlocked
                     </div>
                     <div className="space-y-2">
@@ -562,9 +532,9 @@ activeTab === 'schema' ? <pre className="bg-muted rounded-xl p-5 border border-b
                           initial={{ opacity: 0, y: 8 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: i * 0.1 }}
-                          className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3 flex items-start gap-3"
+                          className="bg-warning/5 border border-warning/20 rounded-xl p-3 flex items-start gap-3"
                         >
-                          <span className="shrink-0 w-6 h-6 rounded-lg bg-yellow-500/10 text-yellow-500 flex items-center justify-center text-[10px] font-black">{i + 1}</span>
+                          <span className="shrink-0 w-6 h-6 rounded-lg bg-warning/10 text-warning flex items-center justify-center text-[10px] font-black">{i + 1}</span>
                           <p className="text-sm text-foreground/80 pt-0.5">{hint}</p>
                         </motion.div>
                       ))}

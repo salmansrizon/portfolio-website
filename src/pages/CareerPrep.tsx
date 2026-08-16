@@ -228,9 +228,9 @@ const CareerPrep = () => {
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'Easy': return 'text-green-500 bg-green-500/10 hover:bg-green-500/20';
-      case 'Medium': return 'text-yellow-500 bg-yellow-500/10 hover:bg-yellow-500/20';
-      case 'Hard': return 'text-red-500 bg-red-500/10 hover:bg-red-500/20';
+      case 'Easy': return 'text-success bg-success/10 hover:bg-success/20';
+      case 'Medium': return 'text-warning bg-warning/10 hover:bg-warning/20';
+      case 'Hard': return 'text-danger bg-danger/10 hover:bg-danger/20';
       default: return 'bg-secondary';
     }
   };
@@ -244,10 +244,6 @@ const CareerPrep = () => {
       {/* Hero Section Aligned with Home/Courses */}
       <div className="relative pt-32 pb-12 overflow-hidden">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-400/15 rounded-full blur-3xl animate-pulse delay-1000"></div>
-          <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-accent/10 rounded-full blur-2xl animate-pulse delay-2000"></div>
-          <div className="absolute top-1/3 right-1/4 w-48 h-48 bg-primary/10 rounded-full blur-xl animate-float"></div>
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-background/50 via-transparent to-background/30 pointer-events-none"></div>
 
@@ -257,7 +253,7 @@ const CareerPrep = () => {
               Mission Command
             </Badge>
             <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
-              <span className="bg-gradient-to-r from-primary via-blue-500 to-blue-400 bg-[length:200%_100%] bg-clip-text text-transparent animate-gradient-move">
+              <span className="text-primary">
                 Career Missions
               </span>
               <br />
@@ -298,13 +294,13 @@ const CareerPrep = () => {
                 <span className="font-bold text-muted-foreground mr-2 uppercase tracking-tighter">
                   {stats.solved}/{stats.total} MISSIONS COMPLETED
                 </span>
-                <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-0 font-bold uppercase text-[10px]">
+                <Badge variant="secondary" className="bg-success/10 text-success border-0 font-bold uppercase text-[10px]">
                   Easy {stats.counts.Easy.total}
                 </Badge>
-                <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600 border-0 font-bold uppercase text-[10px]">
+                <Badge variant="secondary" className="bg-warning/10 text-warning border-0 font-bold uppercase text-[10px]">
                   Medium {stats.counts.Medium.total}
                 </Badge>
-                <Badge variant="secondary" className="bg-red-500/10 text-red-600 border-0 font-bold uppercase text-[10px]">
+                <Badge variant="secondary" className="bg-danger/10 text-danger border-0 font-bold uppercase text-[10px]">
                   Hard {stats.counts.Hard.total}
                 </Badge>
               </div>
@@ -356,7 +352,7 @@ const CareerPrep = () => {
                       >
                         <TableCell className="text-center">
                           {completedIds.has(q.id) ? (
-                            <CheckCircle2 className="w-5 h-5 mx-auto text-green-500 animate-in fade-in zoom-in duration-500" />
+                            <CheckCircle2 className="w-5 h-5 mx-auto text-success animate-in fade-in zoom-in duration-500" />
                           ) : (
                             <Circle className="w-5 h-5 mx-auto text-muted-foreground/20 group-hover:text-primary/40 transition-colors" />
                           )}
@@ -455,7 +451,7 @@ const CareerPrep = () => {
                      transition={{ duration: 0.4, ease: "easeInOut" }}
                      className="flex-1 flex flex-col"
                    >
-                     <div className="relative bg-gradient-to-br from-primary via-blue-600 to-blue-500 p-6 text-white text-center pb-8 shrink-0">
+                     <div className="relative bg-primary p-6 text-primary-foreground text-center pb-8 shrink-0">
                        <h3 className="text-xs font-bold mb-1 uppercase tracking-[0.2em] opacity-80 flex items-center justify-center gap-1.5">
                          <Sparkles className="w-3 h-3" /> Featured Course
                        </h3>
@@ -564,21 +560,21 @@ const CareerPrep = () => {
                   <div className="grid grid-cols-1 w-full gap-3">
                     <div className="flex items-center gap-2 text-xs justify-between w-full">
                       <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-sm shadow-green-500/20" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-success" />
                         <span className="text-muted-foreground font-bold uppercase tracking-tighter">Easy</span>
                       </div>
                       <span className="font-black text-foreground">{stats.counts.Easy.solved}/{stats.counts.Easy.total}</span>
                     </div>
                     <div className="flex items-center gap-2 text-xs justify-between w-full">
                       <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-yellow-500 shadow-sm shadow-yellow-500/20" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-warning" />
                         <span className="text-muted-foreground font-bold uppercase tracking-tighter">Medium</span>
                       </div>
                       <span className="font-black text-foreground">{stats.counts.Medium.solved}/{stats.counts.Medium.total}</span>
                     </div>
                     <div className="flex items-center gap-2 text-xs justify-between w-full">
                       <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm shadow-red-500/20" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-danger" />
                         <span className="text-muted-foreground font-bold uppercase tracking-tighter">Hard</span>
                       </div>
                       <span className="font-black text-foreground">{stats.counts.Hard.solved}/{stats.counts.Hard.total}</span>
@@ -599,7 +595,7 @@ const CareerPrep = () => {
                   </div>
                   <div className="text-right">
                     <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Streak</p>
-                    <p className="text-2xl font-bold text-orange-500">🔥 {xpStats.streak}</p>
+                    <p className="text-2xl font-bold text-series-career">🔥 {xpStats.streak}</p>
                   </div>
                 </div>
                 {!session && (
