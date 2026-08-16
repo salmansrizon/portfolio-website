@@ -168,13 +168,12 @@ const Admin = () => {
   );
 
   return (
-    <div className="min-h-screen relative flex flex-col bg-gradient-to-br from-background to-accent/30 overflow-hidden">
+    <div className="min-h-screen relative flex flex-col bg-background overflow-hidden">
       {/* Background Blur Elements (From Hero) */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
       </div>
       
       {/* Gradient overlay for depth */}
-      <div className="absolute inset-0 bg-gradient-to-t from-background/50 via-transparent to-background/30 pointer-events-none z-0"></div>
 
       {/* Top Header */}
       <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-4 border-b/50 bg-background/60 backdrop-blur-xl px-4 md:px-6 shadow-sm">

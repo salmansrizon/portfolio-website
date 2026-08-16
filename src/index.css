@@ -27,11 +27,6 @@
     --input: 0 0% 85%;                  /* #d8d8d8 outlined controls */
     --ring: 198 100% 50%;               /* focus ring — sky #00b2ff */
 
-    /* Flat brand surfaces (Family is single-tone; gradients kept as near-flat fills) */
-    --gradient-hero: linear-gradient(180deg, hsl(0 0% 9%), hsl(0 0% 7%));
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(45 17% 95%));
-    --gradient-brand: linear-gradient(180deg, hsl(0 0% 11%), hsl(0 0% 7%));
-
     /* Skill bar colors */
     --skill-bg: 45 17% 95%;
     --skill-fill: 217 100% 59%;
@@ -161,11 +156,6 @@
     --skill-bg: 0 0% 13%;
     --skill-fill: 217 100% 63%;
 
-    /* Flat brand surfaces */
-    --gradient-hero: linear-gradient(180deg, hsl(0 0% 9%), hsl(0 0% 7%));
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 12%), hsl(0 0% 10%));
-    --gradient-brand: linear-gradient(180deg, hsl(0 0% 13%), hsl(0 0% 9%));
-
     /* Shadows */
     --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.4);
     --shadow-hover: 0 8px 20px rgba(0, 0, 0, 0.5);
@@ -198,23 +188,6 @@
 }
 
 @layer utilities {
-  /* Moving gradient animation */
-  @keyframes gradient-move {
-    0% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-    100% {
-      background-position: 0% 50%;
-    }
-  }
-
-  .animate-gradient-move {
-    animation: gradient-move 4s ease-in-out infinite;
-  }
-
   /* Floating animations */
   @keyframes float {
     0%,
@@ -297,15 +270,6 @@
 
   .delay-2000 {
     animation-delay: 2s;
-  }
-
-  /* Brand surface utilities (flat, per Family DS) */
-  .bg-gradient-hero {
-    background: var(--gradient-hero);
-  }
-
-  .bg-gradient-card {
-    background: var(--gradient-card);
   }
 
   /* Shadow utilities */
