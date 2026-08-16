@@ -172,10 +172,10 @@ export default function CourseEnrollmentManager() {
                       <div className="flex justify-end gap-2">
                         {(!enr.status || enr.status === 'pending' || enr.status === 'active') && (
                           <>
-                            <Button size="icon" variant="outline" className="h-8 w-8 text-green-600 border-green-200 hover:bg-green-50" onClick={() => handleUpdateStatus(enr.id, 'confirmed')} title="Approve">
+                            <Button size="icon" variant="outline" className="h-8 w-8 text-success border-success/30 hover:bg-success-soft" onClick={() => handleUpdateStatus(enr.id, 'confirmed')} title="Approve">
                               <CheckCircle2 className="h-4 w-4" />
                             </Button>
-                            <Button size="icon" variant="outline" className="h-8 w-8 text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleUpdateStatus(enr.id, 'rejected')} title="Reject">
+                            <Button size="icon" variant="outline" className="h-8 w-8 text-destructive border-destructive/30 hover:bg-danger-soft" onClick={() => handleUpdateStatus(enr.id, 'rejected')} title="Reject">
                               <XCircle className="h-4 w-4" />
                             </Button>
                           </>

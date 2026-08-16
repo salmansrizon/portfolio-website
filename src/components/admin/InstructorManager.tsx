@@ -76,7 +76,7 @@ export default function InstructorManager() {
                   <div className="flex items-center gap-2"><Mail className="w-3.5 h-3.5" />{instructor.email}</div>
                   {instructor.phone && <div className="flex items-center gap-2"><Phone className="w-3.5 h-3.5" />{instructor.phone}</div>}
                   {instructor.website && <div className="flex items-center gap-2"><Globe className="w-3.5 h-3.5" /><a href={instructor.website} target="_blank" className="text-primary hover:underline truncate">{instructor.website}</a></div>}
-                  {instructor.linkedin_url && <div className="flex items-center gap-2 text-[#0077b5] font-bold"><Linkedin className="w-3.5 h-3.5" /><a href={instructor.linkedin_url} target="_blank" className="truncate hover:underline">LinkedIn Profile</a></div>}
+                  {instructor.linkedin_url && <div className="flex items-center gap-2 text-brand-linkedin font-bold"><Linkedin className="w-3.5 h-3.5" /><a href={instructor.linkedin_url} target="_blank" className="truncate hover:underline">LinkedIn Profile</a></div>}
                 </div>
                 {instructor.bio && <p className="text-xs text-muted-foreground line-clamp-2">{instructor.bio}</p>}
                 <div className="flex items-center gap-1 flex-wrap">

@@ -47,7 +47,7 @@ export function ContentEditor({
         <button
           type="button"
           onClick={() => formatText('bold')}
-          className="px-2 py-1 hover:bg-gray-100 rounded"
+          className="px-2 py-1 hover:bg-muted rounded"
           title="Bold"
         >
           <strong>B</strong>
@@ -55,7 +55,7 @@ export function ContentEditor({
         <button
           type="button"
           onClick={() => formatText('italic')}
-          className="px-2 py-1 hover:bg-gray-100 rounded"
+          className="px-2 py-1 hover:bg-muted rounded"
           title="Italic"
         >
           <em>I</em>
@@ -63,12 +63,12 @@ export function ContentEditor({
         <button
           type="button"
           onClick={() => formatText('underline')}
-          className="px-2 py-1 hover:bg-gray-100 rounded"
+          className="px-2 py-1 hover:bg-muted rounded"
           title="Underline"
         >
           <u>U</u>
         </button>
-        <div className="border-l border-gray-300 mx-1 h-6 self-center"></div>
+        <div className="border-l border-border mx-1 h-6 self-center"></div>
         <select
           onChange={(e) => formatText('formatBlock', e.target.value)}
           className="px-2 py-1 border rounded text-sm"
@@ -79,11 +79,11 @@ export function ContentEditor({
           <option value="h2">Heading 2</option>
           <option value="h3">Heading 3</option>
         </select>
-        <div className="border-l border-gray-300 mx-1 h-6 self-center"></div>
+        <div className="border-l border-border mx-1 h-6 self-center"></div>
         <button
           type="button"
           onClick={() => formatText('insertUnorderedList')}
-          className="px-2 py-1 hover:bg-gray-100 rounded"
+          className="px-2 py-1 hover:bg-muted rounded"
           title="Bullet List"
         >
           • List
@@ -91,7 +91,7 @@ export function ContentEditor({
         <button
           type="button"
           onClick={() => formatText('insertOrderedList')}
-          className="px-2 py-1 hover:bg-gray-100 rounded"
+          className="px-2 py-1 hover:bg-muted rounded"
           title="Numbered List"
         >
           1. List
