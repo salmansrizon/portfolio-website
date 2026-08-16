@@ -24,7 +24,6 @@ function fakeRepository<T extends Record<string, unknown>>(items: T[]) {
       return { data: items, isLoading: false, error: null };
     },
     useFindById: () => ({ data: null, isLoading: false, error: null }),
-    useFindByFilter: (filter: Partial<T>) => ({ data: items, isLoading: false, error: null }),
     useCreate: () => ({
       mutate: (item: Partial<T>, opts?: { onSuccess?: () => void; onError?: (e: any) => void }) => {
         calls.create(item);
