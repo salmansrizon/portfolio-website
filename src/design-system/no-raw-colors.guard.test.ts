@@ -32,17 +32,19 @@ const HEX_LITERAL = /#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/g;
  * and it should be empty when the theme-token map (#82) closes.
  */
 const NOT_YET_SWEPT: string[] = [
-  // CareerPrep / SQLChallenge — #85
-  'pages/CareerPrep.tsx',
-  'pages/SQLChallenge.tsx',
 ];
 
 /**
- * Permanent exemptions: the hex here is a CSS attribute *selector* matching what
- * Recharts writes into its own markup (`[stroke='#ccc']`), so the color is being
- * targeted for override, not chosen. Not a token decision, never sweepable.
+ * Permanent exemptions, each for a reason no token can solve:
+ *
+ * - `chart.tsx` — the hex is a CSS attribute *selector* matching what Recharts
+ *   writes into its own markup (`[stroke='#ccc']`); the color is being targeted
+ *   for override, not chosen.
+ * - `monacoTheme.ts` — Monaco's `defineTheme` reads a JS object, not CSS, so a
+ *   `hsl(var(--x))` reference cannot reach it. Isolated to that one module so
+ *   the exemption stays narrow.
  */
-const NOT_A_COLOR_CHOICE = ['components/ui/chart.tsx'];
+const NOT_A_COLOR_CHOICE = ['components/ui/chart.tsx', 'design-system/monacoTheme.ts'];
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir, { recursive: true, encoding: 'utf8' })
