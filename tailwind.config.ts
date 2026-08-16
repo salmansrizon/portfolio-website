@@ -54,6 +54,34 @@ export default {
 					foreground: 'hsl(var(--danger-foreground))',
 					soft: 'hsl(var(--danger-soft))'
 				},
+				brand: {
+					bkash: {
+						DEFAULT: 'hsl(var(--brand-bkash))',
+						foreground: 'hsl(var(--brand-bkash-foreground))',
+						soft: 'hsl(var(--brand-bkash-soft))',
+						'soft-foreground': 'hsl(var(--brand-bkash-soft-foreground))'
+					},
+					nagad: {
+						DEFAULT: 'hsl(var(--brand-nagad))',
+						foreground: 'hsl(var(--brand-nagad-foreground))',
+						soft: 'hsl(var(--brand-nagad-soft))',
+						'soft-foreground': 'hsl(var(--brand-nagad-soft-foreground))'
+					},
+					whatsapp: {
+						DEFAULT: 'hsl(var(--brand-whatsapp))',
+						hover: 'hsl(var(--brand-whatsapp-hover))',
+						foreground: 'hsl(var(--brand-whatsapp-foreground))'
+					},
+					telegram: {
+						DEFAULT: 'hsl(var(--brand-telegram))',
+						hover: 'hsl(var(--brand-telegram-hover))',
+						foreground: 'hsl(var(--brand-telegram-foreground))'
+					},
+					linkedin: {
+						DEFAULT: 'hsl(var(--brand-linkedin))',
+						foreground: 'hsl(var(--brand-linkedin-foreground))'
+					}
+				},
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))',

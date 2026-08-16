@@ -1,0 +1,3 @@
+# Promo codes and sale pricing are mutually exclusive per course
+
+A course is in one of two pricing modes, controlled by a per-course toggle in the admin panel. Sale Pricing (default): the admin-set `discounted_price` is displayed and charged, and the promo-code field is hidden at checkout for that course. Promo-Only Pricing (toggle on): the course lists at full `price` and the only possible discount is a promo code applied at checkout. We chose exclusivity over stacking (promo % on top of the sale price) or best-of (charge the lower of the two) so a discount can never compound on another discount and the displayed price math stays explainable to buyers; this is why the promo field is deliberately absent on some courses.

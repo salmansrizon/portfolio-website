@@ -58,6 +58,26 @@
     --danger-foreground: 0 0% 100%;
     --danger-soft: 0 72% 94%;
 
+    /* Third-party brand palette — contractual provider colors, not decorative.
+       Follows the same shape as the status palette: -foreground is the ink that
+       sits on the base color, -soft-foreground the ink that sits on -soft. */
+    --brand-bkash: 334 85% 48%;         /* bKash #e2136e */
+    --brand-bkash-foreground: 0 0% 100%;
+    --brand-bkash-soft: 334 85% 96%;
+    --brand-bkash-soft-foreground: 334 85% 32%;
+    --brand-nagad: 25 86% 54%;          /* Nagad #ee7623 */
+    --brand-nagad-foreground: 25 100% 10%;  /* dark ink: white on orange is ~2.6:1 */
+    --brand-nagad-soft: 25 86% 95%;
+    --brand-nagad-soft-foreground: 25 90% 28%;
+    --brand-whatsapp: 142 70% 49%;      /* WhatsApp #25d366 */
+    --brand-whatsapp-hover: 165 75% 31%;/* #128c7e — dark enough for white ink */
+    --brand-whatsapp-foreground: 150 100% 8%;
+    --brand-telegram: 200 100% 40%;     /* Telegram #0088cc */
+    --brand-telegram-hover: 200 100% 32%;
+    --brand-telegram-foreground: 0 0% 100%;
+    --brand-linkedin: 201 100% 35%;     /* LinkedIn #0077b5 */
+    --brand-linkedin-foreground: 0 0% 100%;
+
     /* Soft shadows (DS: card / modal) */
     --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.08);
     --shadow-hover: 0 8px 20px rgba(0, 0, 0, 0.18);
@@ -117,6 +137,29 @@
     --danger: 0 84% 66%;
     --danger-foreground: 0 40% 12%;
     --danger-soft: 0 40% 14%;
+
+    /* Third-party brand palette — provider hues hold across themes; the surfaces
+       they sit on darken, so -soft inverts and its ink lightens to match. */
+    --brand-bkash: 334 85% 58%;
+    --brand-bkash-foreground: 0 0% 100%;
+    --brand-bkash-soft: 334 45% 14%;
+    --brand-bkash-soft-foreground: 334 80% 80%;
+    --brand-nagad: 25 90% 60%;
+    --brand-nagad-foreground: 25 100% 10%;
+    --brand-nagad-soft: 25 45% 13%;
+    --brand-nagad-soft-foreground: 25 90% 72%;
+    --brand-whatsapp: 142 70% 55%;
+    --brand-whatsapp-hover: 165 65% 40%;
+    --brand-whatsapp-foreground: 150 100% 8%;
+    --brand-telegram: 200 100% 50%;
+    --brand-telegram-hover: 200 100% 40%;
+    --brand-telegram-foreground: 0 0% 100%;
+    --brand-linkedin: 201 100% 45%;
+    --brand-linkedin-foreground: 0 0% 100%;
+
+    /* Skill bar colors */
+    --skill-bg: 0 0% 13%;
+    --skill-fill: 217 100% 63%;
 
     /* Flat brand surfaces */
     --gradient-hero: linear-gradient(180deg, hsl(0 0% 9%), hsl(0 0% 7%));
