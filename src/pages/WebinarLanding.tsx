@@ -140,7 +140,6 @@ const WebinarLanding = () => {
 
 
             {/* Gradient overlay for depth */}
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/50 pointer-events-none z-0"></div>
 
             <div className="relative z-10 pt-32 pb-20 max-w-6xl mx-auto px-6">
 

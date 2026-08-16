@@ -92,3 +92,7 @@ A SQL Question framed in a localized business scenario (`question_type: 'case_st
 **Mission**:
 A container Question (`question_type: 'root'`) whose ordered child Questions (linked via `parent_id`) form one continuous investigation — each step builds on the previous (day 1 → day N), all children are Single-style code questions on the same dataset.
 _Avoid_: mission-based question (a Mission is the container, not one question)
+
+**Question Type Colour**:
+A Question's kind is shown in the Series palette rather than a palette of its own — Mission root reads as `series-webinar`, Single Question as `series-web`, MCQ as `series-data`, Case Study as `series-career`. Difficulty is a *status*, not a kind, so Easy/Medium/Hard read as success/warning/danger.
+_Avoid_: difficulty colour (it names one of the two scales, not both)

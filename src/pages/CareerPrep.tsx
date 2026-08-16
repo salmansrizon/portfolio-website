@@ -238,14 +238,13 @@ const CareerPrep = () => {
   const currentCourse = courses[currentCourseIndex];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-accent/30 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
       
       {/* Hero Section Aligned with Home/Courses */}
       <div className="relative pt-32 pb-12 overflow-hidden">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-background/50 via-transparent to-background/30 pointer-events-none"></div>
 
         <main className="container max-w-7xl mx-auto px-4 relative z-10">
           <div className="flex flex-col gap-4 mb-6">

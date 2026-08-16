@@ -128,9 +128,6 @@ export default {
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			backgroundImage: {
-				'gradient-hero': 'var(--gradient-hero)',
-				'gradient-card': 'var(--gradient-card)',
-				'gradient-brand': 'var(--gradient-brand)'
 			},
 			boxShadow: {
 				'card': 'var(--shadow-card)',

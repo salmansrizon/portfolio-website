@@ -129,7 +129,6 @@ const About = () => {
                 loading="lazy"
                 decoding="async"
               />
-              <div className="absolute inset-0 rounded-2xl bg-gradient-hero opacity-10 mt-8"></div>
             </div>
           </div>
           </ScrollReveal>
@@ -157,7 +156,7 @@ const About = () => {
               {["Consultation","Corporate Training", "Data Analysis", "Growth Strategy"].map((item, index) => (
                 <div
                   key={index}
-                  className="bg-gradient-to-br from-primary/10 to-accent/20 border border-primary/20 text-foreground px-4 py-2 rounded-lg text-center font-medium shadow-sm hover:shadow-md transition-all"
+                  className="bg-accent/10 border border-primary/20 text-foreground px-4 py-2 rounded-lg text-center font-medium shadow-sm hover:shadow-md transition-all"
                 >
                   {item}
                 </div>
@@ -180,7 +179,7 @@ const About = () => {
                 </div>
                 <div className="w-full bg-muted rounded-full h-3">
                   <div
-                    className="bg-gradient-hero h-3 rounded-full transition-all duration-1000 ease-out"
+                    className="skill-fill h-3 rounded-full transition-all duration-1000 ease-out"
                     style={{ width: `${skill.percentage}%` }}
                   ></div>
                 </div>

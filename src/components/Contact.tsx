@@ -688,7 +688,7 @@ ${formData.message}
             </Card>
 
             {/* Quick Response */}
-            <Card className="shadow-card bg-gradient-hero text-white border-primary/20 backdrop-blur-md hover:shadow-hover transition-all">
+            <Card className="shadow-card bg-primary text-primary-foreground border-primary/20 hover:shadow-hover transition-all">
               <CardContent className="p-6">
                 <div className="flex items-start space-x-4">
                   <Zap className="h-8 w-8 flex-shrink-0 mt-1" />

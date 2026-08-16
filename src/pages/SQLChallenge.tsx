@@ -273,7 +273,7 @@ const SQLChallenge = () => {
   const showsEditor = currentQ?.question_type === 'code' || currentQ?.question_type === 'case_study';
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-background via-background to-accent/30 text-foreground font-sans overflow-hidden relative">
+    <div className="flex flex-col h-screen bg-background text-foreground font-sans overflow-hidden relative">
       <MemoizedNavbar />
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
       </div>
@@ -306,7 +306,7 @@ const SQLChallenge = () => {
               <div className="flex items-center gap-2 md:gap-4 overflow-hidden">
                 <Badge className="hidden sm:inline-flex bg-primary/10 text-primary border-primary/30 text-[9px] font-black uppercase tracking-[0.2em] h-5 px-2.5 shrink-0">Mission Step {cursorIdx + 1}</Badge>
                 <div className="flex items-center gap-2 min-w-0">
-                  <h1 className="text-sm md:text-xl font-black tracking-tight text-foreground uppercase italic bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent truncate pr-2">
+                  <h1 className="text-sm md:text-xl font-black tracking-tight text-foreground uppercase italic truncate pr-2">
                     {currentQ?.title || question?.title}
                   </h1>
                 </div>
