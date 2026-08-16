@@ -261,7 +261,7 @@ export default function CoursesPage() {
                       className="bg-card rounded-2xl shadow-card hover:shadow-hover transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50 group cursor-pointer"
                       onClick={() => navigate(`/webinar/${webinar.id}`)}
                     >
-                      <div className="relative bg-series-webinar text-white p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[200px] shrink-0">
+                      <div className="relative bg-series-webinar text-accent-foreground p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[200px] shrink-0">
 
                         {webinar.banner_url && (
                           <img src={webinar.banner_url} alt={webinar.title} className="absolute inset-0 w-full h-full object-cover opacity-30" />
@@ -333,15 +333,15 @@ export default function CoursesPage() {
                       className="bg-card rounded-2xl shadow-card hover:shadow-hover transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50 group cursor-pointer"
                       onClick={() => navigate(`/course/${course.id}`)}
                     >
-                      <div className="relative bg-primary text-white p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[200px] shrink-0">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full translate-x-12 -translate-y-12"></div>
-                        <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full -translate-x-8 translate-y-8"></div>
+                      <div className="relative bg-primary text-accent-foreground p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[200px] shrink-0">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-accent-foreground/10 rounded-full translate-x-12 -translate-y-12"></div>
+                        <div className="absolute bottom-0 left-0 w-24 h-24 bg-scrim/10 rounded-full -translate-x-8 translate-y-8"></div>
 
                         <h3 className="font-bold text-2xl z-10 uppercase tracking-wide leading-tight px-4 flex items-center justify-center gap-2">
                           {course.title}
                         </h3>
 
-                        <div className="mt-4 z-10 bg-black/20 text-white text-[10px] font-bold px-4 py-1.5 rounded-full tracking-wider border border-white/10 shadow-sm">
+                        <div className="mt-4 z-10 bg-scrim/20 text-accent-foreground text-[10px] font-bold px-4 py-1.5 rounded-full tracking-wider border border-accent-foreground/10 shadow-sm">
                           REGISTRATION NOW
                         </div>
 
@@ -396,8 +396,8 @@ export default function CoursesPage() {
                             {(course.is_free || (!course.price && !course.discounted_price)) ? (
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success text-success-foreground text-xs font-bold tracking-wide shadow-sm">
                                 <span className="relative flex h-1.5 w-1.5">
-                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-foreground opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-accent-foreground"></span>
                                 </span>
                                 FREE
                               </span>
@@ -413,7 +413,7 @@ export default function CoursesPage() {
                         </div>
 
                         <Button
-                          className="w-full bg-primary hover:bg-primary-hover text-white rounded-xl mt-1 h-12 font-semibold shadow-md transition-all active:scale-[0.98]"
+                          className="w-full bg-primary hover:bg-primary-hover text-accent-foreground rounded-xl mt-1 h-12 font-semibold shadow-md transition-all active:scale-[0.98]"
                           onClick={() => navigate(`/course/${course.id}`)}
                         >
                           View Course Details

@@ -104,7 +104,7 @@ const WebinarFloatingButton = () => {
                 }}
             >
                 <Link to={`/webinar/${webinar.id}`} className="block">
-                    <div className={`group relative bg-card/70 backdrop-blur-3xl border border-primary/20 p-2 pl-3 md:pl-4 md:pr-2 md:py-2 transition-all duration-500 ring-1 ring-black/5 rounded-[20px] shadow-2xl flex items-center justify-between gap-3 hover:border-primary/40 hover:scale-[1.01] cursor-pointer`}>
+                    <div className={`group relative bg-card/70 backdrop-blur-3xl border border-primary/20 p-2 pl-3 md:pl-4 md:pr-2 md:py-2 transition-all duration-500 ring-1 ring-border rounded-[20px] shadow-2xl flex items-center justify-between gap-3 hover:border-primary/40 hover:scale-[1.01] cursor-pointer`}>
                         
                         <div className="flex items-center gap-2 md:gap-3 min-w-0">
                             <div className="relative flex items-center justify-center shrink-0 w-8 h-8 md:w-9 md:h-9 bg-primary/10 rounded-full">
@@ -129,7 +129,7 @@ const WebinarFloatingButton = () => {
                                 </div>
                             )}
 
-                            <div className="bg-primary h-8 w-8 md:h-9 md:w-9 rounded-xl md:rounded-full flex items-center justify-center text-white shadow-lg shadow-primary/20 group-hover:bg-primary/90 group-hover:translate-x-0.5 transition-all shrink-0">
+                            <div className="bg-primary h-8 w-8 md:h-9 md:w-9 rounded-xl md:rounded-full flex items-center justify-center text-accent-foreground shadow-lg shadow-primary/20 group-hover:bg-primary/90 group-hover:translate-x-0.5 transition-all shrink-0">
                                 <ArrowRight className="h-4 w-4 md:h-4.5 md:w-4.5" />
                             </div>
                         </div>

@@ -70,12 +70,12 @@ const FloatingContact = () => {
                                             whileHover={{ scale: 1.05 }}
                                             whileTap={{ scale: 0.95 }}
                                             className={cn(
-                                                "flex items-center gap-3 px-5 py-3 rounded-2xl text-white shadow-xl min-w-[160px] font-bold text-sm backdrop-blur-md transition-all border border-white/10",
+                                                "flex items-center gap-3 px-5 py-3 rounded-2xl text-accent-foreground shadow-xl min-w-[160px] font-bold text-sm backdrop-blur-md transition-all border border-accent-foreground/10",
                                                 opt.color,
                                                 opt.hoverColor
                                             )}
                                         >
-                                            <div className="bg-white/20 p-1.5 rounded-lg">
+                                            <div className="bg-accent-foreground/20 p-1.5 rounded-lg">
                                                 {opt.icon}
                                             </div>
                                             {opt.name}
@@ -92,7 +92,7 @@ const FloatingContact = () => {
                             whileTap={{ scale: 0.9 }}
                             onClick={() => setIsOpen(!isOpen)}
                             className={cn(
-                                "w-16 h-16 rounded-3xl flex items-center justify-center text-white shadow-2xl relative group overflow-hidden transition-all duration-500",
+                                "w-16 h-16 rounded-3xl flex items-center justify-center text-accent-foreground shadow-2xl relative group overflow-hidden transition-all duration-500",
                                 isOpen ? "bg-destructive rotate-90" : "bg-primary"
                             )}
                         >

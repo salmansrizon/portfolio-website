@@ -323,7 +323,7 @@ const BookSession = () => {
                           </p>
 
                           {(formData.paymentMethod === 'bkash' ? paymentSettings?.bkash_qr_code : paymentSettings?.nagad_qr_code) && (
-                            <div className="mx-auto w-44 h-44 bg-white p-2 rounded-xl shadow-sm my-4">
+                            <div className="mx-auto w-44 h-44 bg-scan p-2 rounded-xl shadow-sm my-4">
                               <img 
                                 src={formData.paymentMethod === 'bkash' ? paymentSettings?.bkash_qr_code! : paymentSettings?.nagad_qr_code!} 
                                 alt={`${formData.paymentMethod} QR Code`} 
@@ -339,7 +339,7 @@ const BookSession = () => {
                           </p>
 
                           {paymentSettings?.additional_instructions && (
-                            <p className="text-sm text-muted-foreground pt-2 border-t border-black/10 dark:border-white/10">
+                            <p className="text-sm text-muted-foreground pt-2 border-t border-border">
                               {paymentSettings.additional_instructions}
                             </p>
                           )}

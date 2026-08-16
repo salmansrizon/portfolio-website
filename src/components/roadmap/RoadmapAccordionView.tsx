@@ -34,7 +34,7 @@ const AccordionNode = ({ node, depth = 0 }: { node: RoadmapNode; depth?: number 
       </AccordionTrigger>
       <AccordionContent className="pl-4 sm:pl-6">
         {contentMd && (
-          <div className="mb-2 px-2 sm:px-3 py-2 rounded-md bg-white dark:bg-card border border-border">
+          <div className="mb-2 px-2 sm:px-3 py-2 rounded-md bg-card border border-border">
             <BlockMarkdown className="text-xs sm:text-sm text-muted-foreground">{contentMd}</BlockMarkdown>
           </div>
         )}

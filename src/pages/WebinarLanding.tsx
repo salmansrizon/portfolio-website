@@ -221,8 +221,8 @@ const WebinarLanding = () => {
                                 onClick={() => setIsRegistering(true)}
                             >
                                 <div className="relative flex h-3 w-3 mr-3">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white/80 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-foreground/80 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-accent-foreground"></span>
                                 </div>
                                 {webinar.is_free ? 'Join for Free' : 'Claim My Seat Now'}
                                 <ArrowRight className="ml-2 h-6 w-6 group-hover:translate-x-1 transition-transform" />
@@ -306,7 +306,7 @@ const WebinarLanding = () => {
                                         >
                                             <div className="flex items-center gap-4">
                                                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary transition-colors">
-                                                    <CheckCircle2 className="h-5 w-5 text-primary group-hover:text-white transition-colors" />
+                                                    <CheckCircle2 className="h-5 w-5 text-primary group-hover:text-accent-foreground transition-colors" />
                                                 </div>
                                                 <div className="flex-1 flex items-center justify-between">
                                                     <h4 className="text-lg font-bold">
@@ -389,13 +389,13 @@ const WebinarLanding = () => {
                                                                                 href={hostData.linkedin}
                                                                                 target="_blank"
                                                                                 rel="noopener noreferrer"
-                                                                                className="relative px-5 py-2 bg-primary text-white rounded-full flex items-center gap-2 shadow-lg border border-white/20 transition-all duration-300 hover:scale-105 active:scale-95"
+                                                                                className="relative px-5 py-2 bg-primary text-accent-foreground rounded-full flex items-center gap-2 shadow-lg border border-accent-foreground/20 transition-all duration-300 hover:scale-105 active:scale-95"
                                                                             >
                                                                                 <Linkedin className="h-3 w-3" />
                                                                                 <span className="text-[10px] font-black uppercase tracking-[0.1em]">VIEW PROFILE</span>
                                                                             </a>
                                                                         ) : (
-                                                                            <div className="relative px-5 py-2 bg-primary text-white rounded-full font-black text-[10px] uppercase tracking-[0.1em] shadow-lg border border-white/20">
+                                                                            <div className="relative px-5 py-2 bg-primary text-accent-foreground rounded-full font-black text-[10px] uppercase tracking-[0.1em] shadow-lg border border-accent-foreground/20">
                                                                                 Lead Instructor
                                                                             </div>
                                                                         )}
@@ -465,7 +465,7 @@ const WebinarLanding = () => {
                                         >
                                             <div className="flex items-center gap-4">
                                                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary transition-colors">
-                                                    <HelpCircle className="h-5 w-5 text-primary group-hover:text-white transition-colors" />
+                                                    <HelpCircle className="h-5 w-5 text-primary group-hover:text-accent-foreground transition-colors" />
                                                 </div>
                                                 <div className="flex-1 flex items-center justify-between">
                                                     <h3 className="text-lg font-bold">{q.q}</h3>
@@ -499,7 +499,7 @@ const WebinarLanding = () => {
                 {/* Final CTA Area */}
                 <section className="relative rounded-[64px] overflow-hidden bg-primary p-12 md:p-24 text-center text-primary-foreground mb-32 group">
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-accent-foreground/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
 
                     <div className="relative z-10 max-w-2xl mx-auto space-y-8">
                         <h2 className="text-4xl md:text-6xl font-black tracking-tight">Ready to transform your career?</h2>

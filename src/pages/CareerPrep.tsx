@@ -456,7 +456,7 @@ const CareerPrep = () => {
                        </h3>
                        <h2 className="text-xl font-bold mb-4 line-clamp-1">{currentCourse.title}</h2>
                        <div 
-                         className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto backdrop-blur-md shadow-lg group-hover:scale-110 transition-transform cursor-pointer"
+                         className="w-12 h-12 bg-accent-foreground/20 rounded-full flex items-center justify-center mx-auto backdrop-blur-md shadow-lg group-hover:scale-110 transition-transform cursor-pointer"
                          onClick={() => navigate(`/course/${currentCourse.id}`)}
                        >
                          <div className="w-0 h-0 border-t-[6px] border-t-transparent border-l-[10px] border-l-white border-b-[6px] border-b-transparent ml-1" />
@@ -467,7 +467,7 @@ const CareerPrep = () => {
                           {courses.map((_, idx) => (
                             <div 
                               key={idx} 
-                              className={`h-1 rounded-full transition-all duration-300 ${idx === currentCourseIndex ? 'w-4 bg-white' : 'w-1 bg-white/30'}`} 
+                              className={`h-1 rounded-full transition-all duration-300 ${idx === currentCourseIndex ? 'w-4 bg-accent-foreground' : 'w-1 bg-accent-foreground/30'}`} 
                             />
                           ))}
                        </div>
@@ -491,7 +491,7 @@ const CareerPrep = () => {
                        
                        <Button 
                          onClick={() => navigate(`/course/${currentCourse.id}`)}
-                         className="w-full bg-primary hover:bg-primary-hover text-white font-bold h-10 shadow-lg shadow-primary/20 rounded-xl"
+                         className="w-full bg-primary hover:bg-primary-hover text-accent-foreground font-bold h-10 shadow-lg shadow-primary/20 rounded-xl"
                        >
                          Enroll Now
                        </Button>

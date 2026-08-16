@@ -357,7 +357,7 @@ const PaymentModal = ({
                       {(paymentMethod === "bkash"
                         ? paymentSettings?.bkash_qr_code
                         : paymentSettings?.nagad_qr_code) && (
-                        <div className="mx-auto w-44 h-44 bg-white rounded-xl shadow-sm my-4 overflow-hidden border border-border/50">
+                        <div className="mx-auto w-44 h-44 bg-scan rounded-xl shadow-sm my-4 overflow-hidden border border-border/50">
                           <img
                             src={
                               paymentMethod === "bkash"
@@ -378,7 +378,7 @@ const PaymentModal = ({
                       </p>
 
                       {paymentSettings?.additional_instructions && (
-                        <p className="text-sm text-muted-foreground pt-2 border-t border-black/10 dark:border-white/10">
+                        <p className="text-sm text-muted-foreground pt-2 border-t border-border">
                           {paymentSettings.additional_instructions}
                         </p>
                       )}

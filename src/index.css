@@ -73,6 +73,12 @@
     --brand-linkedin: 201 100% 35%;     /* LinkedIn #0077b5 */
     --brand-linkedin-foreground: 0 0% 100%;
 
+    /* Theme-independent surfaces: these must NOT flip, or they break.
+       A QR code stops scanning on a dark ground; a video letterbox and its
+       scrim have to stay black behind the footage whatever the theme. */
+    --surface-scan: 0 0% 100%;
+    --scrim: 0 0% 0%;
+
     /* Soft shadows (DS: card / modal) */
     --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.08);
     --shadow-hover: 0 8px 20px rgba(0, 0, 0, 0.18);
@@ -151,6 +157,12 @@
     --brand-telegram-foreground: 0 0% 100%;
     --brand-linkedin: 201 100% 45%;
     --brand-linkedin-foreground: 0 0% 100%;
+
+    /* Theme-independent surfaces: these must NOT flip, or they break.
+       A QR code stops scanning on a dark ground; a video letterbox and its
+       scrim have to stay black behind the footage whatever the theme. */
+    --surface-scan: 0 0% 100%;
+    --scrim: 0 0% 0%;
 
     /* Skill bar colors */
     --skill-bg: 0 0% 13%;

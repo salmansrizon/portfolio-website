@@ -19,10 +19,19 @@ const PALETTE = [
   'purple', 'fuchsia', 'pink', 'rose',
 ].join('|');
 
+const UTILITY = 'bg|text|border|from|to|via|ring|fill|stroke|decoration|outline|shadow|accent|caret|divide|placeholder';
+
 const RAW_PALETTE_CLASS = new RegExp(
-  `\\b(?:bg|text|border|from|to|via|ring|fill|stroke|decoration|outline|shadow|accent|caret|divide|placeholder)-(?:${PALETTE})-\\d{2,3}\\b`,
+  `\\b(?:${UTILITY})-(?:${PALETTE})-\\d{2,3}\\b`,
   'g',
 );
+
+/**
+ * `white` and `black` take no numeric step, so they slip past the palette
+ * pattern — and they are the worst offenders for dark mode, since neither
+ * flips. `bg-white` on a themed surface is a bug, not a shortcut.
+ */
+const RAW_ABSOLUTE_CLASS = new RegExp(`\\b(?:${UTILITY})-(?:white|black)\\b`, 'g');
 
 const HEX_LITERAL = /#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/g;
 
@@ -63,7 +72,7 @@ function violationsIn(file: string): Violation[] {
   const found: Violation[] = [];
 
   readFileSync(file, 'utf8').split('\n').forEach((text, index) => {
-    for (const pattern of [RAW_PALETTE_CLASS, HEX_LITERAL]) {
+    for (const pattern of [RAW_PALETTE_CLASS, RAW_ABSOLUTE_CLASS, HEX_LITERAL]) {
       for (const [match] of text.matchAll(pattern)) {
         found.push({ file: relative, line: index + 1, match });
       }

@@ -54,6 +54,8 @@ export default {
 					foreground: 'hsl(var(--danger-foreground))',
 					soft: 'hsl(var(--danger-soft))'
 				},
+				scan: 'hsl(var(--surface-scan))',
+				scrim: 'hsl(var(--scrim))',
 				brand: {
 					bkash: {
 						DEFAULT: 'hsl(var(--brand-bkash))',

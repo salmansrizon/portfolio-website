@@ -105,7 +105,7 @@ const Services = () => {
                 <CardHeader className="text-center pb-4">
                   <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                     {IconComponent ? (
-                      <IconComponent className="h-8 w-8 text-white" />
+                      <IconComponent className="h-8 w-8 text-accent-foreground" />
                     ) : null}
                   </div>
                   <CardTitle className="text-xl sm:text-2xl font-bold text-foreground break-words">

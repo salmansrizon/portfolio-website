@@ -408,8 +408,8 @@ export default function CourseDetails() {
             {isFree && (
               <Badge className="mb-3 inline-flex items-center gap-2 bg-success hover:bg-success/90 text-success-foreground px-3 py-1 text-xs font-bold border-none shadow-sm w-fit">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-foreground opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-foreground"></span>
                 </span>
                 FREE
               </Badge>
@@ -599,7 +599,7 @@ export default function CourseDetails() {
                                         if (isFree ? freeUnlocked : item.is_free) {
                                           const isPlaying = playingLessons.has(item.id);
                                           return (
-                                             <div className="mt-3 rounded-xl overflow-hidden border border-border shadow-sm bg-black">
+                                             <div className="mt-3 rounded-xl overflow-hidden border border-border shadow-sm bg-scrim">
                                                <div className="relative w-full overflow-hidden" style={{ paddingBottom: '56.25%' }}>
                                                   {isPlaying ? (
                                                     <>
@@ -611,8 +611,8 @@ export default function CourseDetails() {
                                                         title={item.title}
                                                       />
                                                       {/* Mask YouTube chrome (top title bar & bottom watch-on-yt) */}
-                                                      <div className="absolute top-0 left-0 right-0 h-14 bg-black pointer-events-none z-10" />
-                                                      <div className="absolute bottom-0 right-0 h-12 w-40 bg-black pointer-events-none z-10" />
+                                                      <div className="absolute top-0 left-0 right-0 h-14 bg-scrim pointer-events-none z-10" />
+                                                      <div className="absolute bottom-0 right-0 h-12 w-40 bg-scrim pointer-events-none z-10" />
                                                     </>
                                                   ) : (
                                                     <button
@@ -626,10 +626,10 @@ export default function CourseDetails() {
                                                         alt={item.title}
                                                         className="absolute inset-0 w-full h-full object-cover"
                                                       />
-                                                      <div className="absolute inset-0 bg-black/30 group-hover/play:bg-black/40 transition-colors" />
+                                                      <div className="absolute inset-0 bg-scrim/30 group-hover/play:bg-scrim/40 transition-colors" />
                                                       <div className="absolute inset-0 flex items-center justify-center">
-                                                        <div className="w-16 h-16 rounded-full bg-accent/90 backdrop-blur-sm flex items-center justify-center shadow-pop ring-4 ring-white/20 group-hover/play:scale-110 transition-transform">
-                                                          <Play className="w-7 h-7 text-white fill-current ml-1" />
+                                                        <div className="w-16 h-16 rounded-full bg-accent/90 backdrop-blur-sm flex items-center justify-center shadow-pop ring-4 ring-accent-foreground/20 group-hover/play:scale-110 transition-transform">
+                                                          <Play className="w-7 h-7 text-accent-foreground fill-current ml-1" />
                                                         </div>
                                                       </div>
                                                     </button>
@@ -719,9 +719,9 @@ export default function CourseDetails() {
                 ) : course.banner_image ? (
                   <div className="w-full h-full relative cursor-pointer" onClick={() => course.video_url ? setPlayingVideo(true) : setShowEnrollmentModal(true)}>
                     <img src={course.banner_image} alt={course.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all flex items-center justify-center">
-                      <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center border border-white/30 group-hover:scale-110 transition-all">
-                        <Play className="h-8 w-8 text-white fill-current translate-x-0.5" />
+                    <div className="absolute inset-0 bg-scrim/40 group-hover:bg-scrim/20 transition-all flex items-center justify-center">
+                      <div className="w-20 h-20 rounded-full bg-accent-foreground/20 backdrop-blur-xl flex items-center justify-center border border-accent-foreground/30 group-hover:scale-110 transition-all">
+                        <Play className="h-8 w-8 text-accent-foreground fill-current translate-x-0.5" />
                       </div>
                     </div>
                   </div>

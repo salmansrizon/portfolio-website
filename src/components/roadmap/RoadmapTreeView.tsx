@@ -32,7 +32,7 @@ const SubTopicBox = ({ node }: { node: RoadmapNode }) => {
       </button>
 
       {expanded && hasDetails && (
-        <div className="mt-1.5 px-2.5 py-2 sm:px-3 rounded-md bg-white dark:bg-card border border-border space-y-1.5">
+        <div className="mt-1.5 px-2.5 py-2 sm:px-3 rounded-md bg-card border border-border space-y-1.5">
           {contentMd && (
             <BlockMarkdown className="text-[11px] sm:text-sm text-foreground/90">{contentMd}</BlockMarkdown>
           )}
@@ -118,7 +118,7 @@ const MainSection = ({ node, index }: { node: RoadmapNode; index: number }) => {
 
       {/* Direct content under section */}
       {contentMd && (
-        <div className="mt-3 max-w-md mx-auto px-3 py-2 rounded-md bg-white dark:bg-card border border-border">
+        <div className="mt-3 max-w-md mx-auto px-3 py-2 rounded-md bg-card border border-border">
           <BlockMarkdown className="text-[11px] sm:text-sm text-muted-foreground">{contentMd}</BlockMarkdown>
         </div>
       )}

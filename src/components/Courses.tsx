@@ -99,8 +99,8 @@ export default function Courses() {
                 {/* Header Section */}
                 <div className="relative bg-primary text-primary-foreground p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[200px] shrink-0">
                   {/* Decorative shapes */}
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full translate-x-12 -translate-y-12"></div>
-                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full -translate-x-8 translate-y-8"></div>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-accent-foreground/10 rounded-full translate-x-12 -translate-y-12"></div>
+                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-scrim/10 rounded-full -translate-x-8 translate-y-8"></div>
 
                   {/* Title */}
                   <h3 className="font-bold text-2xl z-10 uppercase tracking-wide leading-tight px-4 flex items-center justify-center gap-2">
@@ -108,7 +108,7 @@ export default function Courses() {
                   </h3>
 
                   {/* Registration Pill */}
-                  <div className="mt-4 z-10 bg-black/20 text-white text-[10px] font-bold px-4 py-1.5 rounded-full tracking-wider border border-white/10 shadow-sm">
+                  <div className="mt-4 z-10 bg-scrim/20 text-accent-foreground text-[10px] font-bold px-4 py-1.5 rounded-full tracking-wider border border-accent-foreground/10 shadow-sm">
                     REGISTRATION NOW
                   </div>
 
@@ -124,8 +124,8 @@ export default function Courses() {
                        {course.is_free && (
                          <span className="bg-danger text-danger-foreground text-[9px] h-4 px-1.5 rounded-full flex items-center gap-1 font-black animate-pulse shrink-0">
                            <span className="relative flex h-1 w-1">
-                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                             <span className="relative inline-flex rounded-full h-1 w-1 bg-white"></span>
+                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-foreground opacity-75"></span>
+                             <span className="relative inline-flex rounded-full h-1 w-1 bg-accent-foreground"></span>
                            </span>
                            FREE
                          </span>
@@ -169,8 +169,8 @@ export default function Courses() {
                       {(course.is_free || (!course.price && !course.discounted_price)) ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success text-success-foreground text-xs font-bold tracking-wide shadow-sm">
                           <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-foreground opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-foreground"></span>
                           </span>
                           FREE
                         </span>
@@ -197,8 +197,8 @@ export default function Courses() {
                     {course.is_free ? (
                       <>
                         <div className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-foreground opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-foreground"></span>
                         </div>
                         Join for Free
                       </>
