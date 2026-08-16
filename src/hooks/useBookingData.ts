@@ -77,7 +77,7 @@ export interface QuickBookingPayload {
 // ── Hook ──────────────────────────────────────────────────────
 export function useBookingData() {
     // Use repository hooks for data fetching
-    const { data: sessionTypes = [], isLoading: isSessionTypesLoading } = sessionTypeRepository.useFindByFilter({ is_active: true });
+    const { data: sessionTypes = [], isLoading: isSessionTypesLoading } = sessionTypeRepository.useFindAll({ is_active: true });
     const { data: paymentSettingsData = [], isLoading: isPaymentSettingsLoading } = paymentSettingsRepository.useFindAll();
     const { data: unavailableSlots = [], isLoading: isUnavailableSlotsLoading } = unavailableSlotRepository.useFindAll();
     const { data: availabilitySettingsData = [], isLoading: isAvailabilitySettingsLoading } = availabilitySettingsRepository.useFindAll();

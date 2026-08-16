@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from './client';
 import type { EntityConfig } from '@/adapters/entityConfigs';
+import { asRepositoryError, RepositoryError } from './repositoryError';
 
 // ── Generic Repository Interface ──────────────────────────────────────────────
 // This is the seam between components and data sources.
@@ -13,17 +14,12 @@ export interface Repository<T extends Record<string, unknown>> {
   useFindAll(filter?: Partial<T>): {
     data: T[];
     isLoading: boolean;
-    error: any;
+    error: RepositoryError | null;
   };
   useFindById(id: string): {
     data: T | null;
     isLoading: boolean;
-    error: any;
-  };
-  useFindByFilter(filter: Partial<T>): {
-    data: T[];
-    isLoading: boolean;
-    error: any;
+    error: RepositoryError | null;
   };
 
   // ── Mutation hooks ─────────────────────────────────────────────────────
@@ -31,19 +27,19 @@ export interface Repository<T extends Record<string, unknown>> {
     mutate: (item: Partial<T>) => void;
     mutateAsync: (item: Partial<T>) => Promise<T>;
     isPending: boolean;
-    error: any;
+    error: RepositoryError | null;
   };
   useUpdate(): {
     mutate: (params: { id: string; item: Partial<T> }) => void;
     mutateAsync: (params: { id: string; item: Partial<T> }) => Promise<T>;
     isPending: boolean;
-    error: any;
+    error: RepositoryError | null;
   };
   useDelete(): {
     mutate: (id: string) => void;
     mutateAsync: (id: string) => Promise<void>;
     isPending: boolean;
-    error: any;
+    error: RepositoryError | null;
   };
 }
 
@@ -79,7 +75,7 @@ export function createRepository<T extends Record<string, unknown>>(
         }
 
         const { data, error } = await query;
-        if (error) throw error;
+        if (error) throw asRepositoryError('findAll', table, error);
         return data as T[];
       },
       enabled: !hasEmptyFilterValue,
@@ -95,15 +91,11 @@ export function createRepository<T extends Record<string, unknown>>(
           .select('*')
           .eq(primaryKey, id)
           .single();
-        if (error) throw error;
+        if (error) throw asRepositoryError('findById', table, error);
         return data as T;
       },
       enabled: !!id,
     });
-  }
-
-  function useFindByFilter(filter: Partial<T>) {
-    return useFindAll(filter);
   }
 
   // ── Mutation hooks ─────────────────────────────────────────────────────
@@ -116,7 +108,7 @@ export function createRepository<T extends Record<string, unknown>>(
           .insert(item)
           .select()
           .single();
-        if (error) throw error;
+        if (error) throw asRepositoryError('create', table, error);
         return data as T;
       },
       onSuccess: () => {
@@ -135,7 +127,7 @@ export function createRepository<T extends Record<string, unknown>>(
           .eq(primaryKey, id)
           .select()
           .single();
-        if (error) throw error;
+        if (error) throw asRepositoryError('update', table, error);
         return data as T;
       },
       onSuccess: () => {
@@ -152,7 +144,7 @@ export function createRepository<T extends Record<string, unknown>>(
           .from(table)
           .delete()
           .eq(primaryKey, id);
-        if (error) throw error;
+        if (error) throw asRepositoryError('delete', table, error);
       },
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [table] });
@@ -163,7 +155,6 @@ export function createRepository<T extends Record<string, unknown>>(
   return {
     useFindAll,
     useFindById,
-    useFindByFilter,
     useCreate,
     useUpdate,
     useDelete,
