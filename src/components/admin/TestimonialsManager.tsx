@@ -43,7 +43,7 @@ const TestimonialsManager = () => {
                       <Star
                         key={i}
                         className={`h-4 w-4 ${
-                          i < testimonial.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                          i < testimonial.rating ? 'text-warning fill-current' : 'text-muted-foreground/30'
                         }`}
                       />
                     ))}

@@ -32,19 +32,6 @@ const HEX_LITERAL = /#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/g;
  * and it should be empty when the theme-token map (#82) closes.
  */
 const NOT_YET_SWEPT: string[] = [
-  // Admin panel — #84
-  'components/admin/CareerPrepManager.tsx',
-  'components/admin/ContentEditor.tsx',
-  'components/admin/CourseEnrollmentManager.tsx',
-  'components/admin/CourseManager.tsx',
-  'components/admin/CourseReviewManager.tsx',
-  'components/admin/DashboardOverview.tsx',
-  'components/admin/InstructorManager.tsx',
-  'components/admin/SessionBookingManager.tsx',
-  'components/admin/StudentManager.tsx',
-  'components/admin/TestimonialsManager.tsx',
-  'components/admin/WebinarManager.tsx',
-  'pages/Admin.tsx',
   // CareerPrep / SQLChallenge — #85
   'pages/CareerPrep.tsx',
   'pages/SQLChallenge.tsx',

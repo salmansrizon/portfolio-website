@@ -25,18 +25,18 @@ const careerPrepRepository = createRepository(careerPrepQuestionConfig);
 
 // ─── helper maps ──────────────────────────────────────────────────────────────
 const Q_TYPE_META: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-  root:       { label: 'Root Case Study',    icon: <FolderTree className="w-3.5 h-3.5" />, color: 'bg-purple-500/10 text-purple-500' },
-  code:       { label: 'Code Challenge',     icon: <Code2 className="w-3.5 h-3.5" />,      color: 'bg-blue-500/10 text-blue-500'   },
-  mcq:        { label: 'Multiple Choice',    icon: <ListChecks className="w-3.5 h-3.5" />, color: 'bg-green-500/10 text-green-500' },
-  case_study: { label: 'Case Study Essay',   icon: <BookOpen className="w-3.5 h-3.5" />,   color: 'bg-amber-500/10 text-amber-500' },
-  default:    { label: 'Standard Mission',   icon: <Database className="w-3.5 h-3.5" />,   color: 'bg-slate-500/10 text-slate-500' },
+  root:       { label: 'Root Case Study',    icon: <FolderTree className="w-3.5 h-3.5" />, color: 'bg-series-webinar/10 text-series-webinar' },
+  code:       { label: 'Code Challenge',     icon: <Code2 className="w-3.5 h-3.5" />,      color: 'bg-series-web/10 text-series-web'   },
+  mcq:        { label: 'Multiple Choice',    icon: <ListChecks className="w-3.5 h-3.5" />, color: 'bg-series-data/10 text-series-data' },
+  case_study: { label: 'Case Study Essay',   icon: <BookOpen className="w-3.5 h-3.5" />,   color: 'bg-series-career/10 text-series-career' },
+  default:    { label: 'Standard Mission',   icon: <Database className="w-3.5 h-3.5" />,   color: 'bg-muted text-muted-foreground' },
 };
 
 const DIFFICULTY_COLORS: Record<string, string> = {
-  Easy:   'bg-green-500/10 text-green-600',
-  Medium: 'bg-yellow-500/10 text-yellow-600',
-  Hard:   'bg-red-500/10 text-red-600',
-  default: 'bg-slate-500/10 text-slate-500',
+  Easy:   'bg-success/10 text-success',
+  Medium: 'bg-warning/10 text-warning',
+  Hard:   'bg-danger/10 text-danger',
+  default: 'bg-muted text-muted-foreground',
 };
 
 // ─── component ────────────────────────────────────────────────────────────────
@@ -422,7 +422,7 @@ INSERT INTO ecom_orders (customer_id, amount, order_date) VALUES (1, 5000, CURRE
                         <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full hover:bg-primary/10 hover:text-primary" onClick={() => openEdit(root)}>
                           <Edit className="h-3.5 w-3.5" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full hover:bg-red-500/10 hover:text-red-500" onClick={() => handleDelete(root.id)}>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive" onClick={() => handleDelete(root.id)}>
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -455,7 +455,7 @@ INSERT INTO ecom_orders (customer_id, amount, order_date) VALUES (1, 5000, CURRE
                                 <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full hover:bg-primary/10 hover:text-primary" onClick={() => openEdit(child)}>
                                   <Edit className="h-3 w-3" />
                                 </Button>
-                                <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full hover:bg-red-500/10 hover:text-red-500" onClick={() => handleDelete(child.id)}>
+                                <Button size="icon" variant="ghost" className="h-7 w-7 rounded-full hover:bg-destructive/10 hover:text-destructive" onClick={() => handleDelete(child.id)}>
                                   <Trash2 className="h-3 w-3" />
                                 </Button>
                               </div>
@@ -521,7 +521,7 @@ INSERT INTO ecom_orders (customer_id, amount, order_date) VALUES (1, 5000, CURRE
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className={`text-[9px] font-bold border-0 ${u.type==='Student'?'bg-blue-500/10 text-blue-500':'bg-slate-500/10 text-slate-500'}`}>
+                            <Badge variant="outline" className={`text-[9px] font-bold border-0 ${u.type==='Student'?'bg-series-web/10 text-series-web':'bg-muted text-muted-foreground'}`}>
                               {u.type}
                             </Badge>
                           </TableCell>
@@ -629,7 +629,7 @@ INSERT INTO ecom_orders (customer_id, amount, order_date) VALUES (1, 5000, CURRE
                             <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(child)}>
                                <Edit className="w-3 h-3" />
                             </Button>
-                            <Button type="button" size="icon" variant="ghost" className="h-7 w-7 text-red-500 hover:bg-red-500/10" onClick={() => handleDelete(child.id)}>
+                            <Button type="button" size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(child.id)}>
                                <Trash2 className="w-3 h-3" />
                             </Button>
                          </div>
@@ -732,7 +732,7 @@ INSERT INTO ecom_orders (customer_id, amount, order_date) VALUES (1, 5000, CURRE
                 </Field>
                 <div>
                   <Field label="Setup & Seed SQL">
-                    <div className="bg-yellow-500/10 text-yellow-600 text-[10px] font-bold uppercase px-3 py-1.5 rounded-lg mb-2 border border-yellow-500/20">
+                    <div className="bg-warning/10 text-warning text-[10px] font-bold uppercase px-3 py-1.5 rounded-lg mb-2 border border-warning/20">
                       ⚠ Include BOTH CREATE TABLE and INSERT INTO statements here
                     </div>
                     <Textarea {...register('initial_sql')} placeholder="CREATE TABLE IF NOT EXISTS orders...&#10;INSERT INTO orders ..." className="font-mono text-[11px] bg-background/50" rows={8} />
