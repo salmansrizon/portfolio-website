@@ -155,7 +155,7 @@ const Services = () => {
               asChild
               variant="secondary"
               size="lg"
-              className="bg-white text-primary hover:bg-gray-100 font-semibold"
+              className="bg-card text-primary hover:bg-muted font-semibold"
             >
               <Link to="/book-session">Schedule a Consultation</Link>
             </Button>

@@ -200,9 +200,9 @@ const PaymentModal = ({
           <div className="py-10 text-center space-y-6">
             <div className={cn(
               "w-20 h-20 rounded-full flex items-center justify-center mx-auto",
-              isFree ? "bg-green-100 dark:bg-green-900/40" : "bg-primary/10"
+              isFree ? "bg-success-soft" : "bg-primary/10"
             )}>
-              <CheckCircle2 className={cn("h-10 w-10", isFree ? "text-green-600 dark:text-green-400" : "text-primary")} />
+              <CheckCircle2 className={cn("h-10 w-10", isFree ? "text-success" : "text-primary")} />
             </div>
             <div className="space-y-2">
               <h2 className="text-2xl font-bold text-foreground">
@@ -311,8 +311,8 @@ const PaymentModal = ({
                           "h-14 text-base font-semibold transition-all",
                           paymentMethod === method
                             ? method === "bkash"
-                              ? "border-pink-500 bg-pink-50 text-pink-700 dark:bg-pink-950 dark:text-pink-300"
-                              : "border-orange-500 bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300"
+                              ? "border-brand-bkash bg-brand-bkash-soft text-brand-bkash-soft-foreground"
+                              : "border-brand-nagad bg-brand-nagad-soft text-brand-nagad-soft-foreground"
                             : "hover:border-primary/40"
                         )}
                         onClick={() => handleSelectPaymentMethod(method)}
@@ -329,8 +329,8 @@ const PaymentModal = ({
                       className={cn(
                         "rounded-xl p-5 border-2 text-center space-y-4 mt-4 animate-in fade-in slide-in-from-top-4",
                         paymentMethod === "bkash"
-                          ? "border-pink-400 bg-pink-50 dark:bg-pink-950/20"
-                          : "border-orange-400 bg-orange-50 dark:bg-orange-950/20"
+                          ? "border-brand-bkash/60 bg-brand-bkash-soft"
+                          : "border-brand-nagad/60 bg-brand-nagad-soft"
                       )}
                     >
                       <div className="flex justify-between items-center bg-background/60 p-2 rounded-lg backdrop-blur-sm">
@@ -386,7 +386,7 @@ const PaymentModal = ({
                       <div className="space-y-1.5 pt-4 text-left">
                         <Label htmlFor="pm-txnId" className="font-semibold text-sm">
                           Enter Transaction ID{" "}
-                          <span className="text-red-500">*</span>
+                          <span className="text-destructive">*</span>
                         </Label>
                         <Input
                           id="pm-txnId"
@@ -403,13 +403,13 @@ const PaymentModal = ({
 
               {/* ── Free banner ─────────────────────────────── */}
               {isFree && (
-                <div className="flex items-center gap-3 rounded-lg border border-green-300 bg-green-50 dark:bg-green-950/30 dark:border-green-800 p-4">
-                  <Tag className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                <div className="flex items-center gap-3 rounded-lg border border-success/30 bg-success-soft p-4">
+                  <Tag className="h-5 w-5 text-success flex-shrink-0" />
                   <div>
-                    <p className="font-semibold text-green-700 dark:text-green-300 text-sm">
+                    <p className="font-semibold text-success-foreground text-sm">
                       This is Free
                     </p>
-                    <p className="text-xs text-green-600/80 dark:text-green-400/80 mt-0.5">
+                    <p className="text-xs text-success/80 mt-0.5">
                       No payment required. Your booking will be confirmed
                       immediately.
                     </p>

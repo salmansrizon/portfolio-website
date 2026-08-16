@@ -364,7 +364,7 @@ export default function CoursesPage() {
                                 <CourseCountdown startDate={course.start_date} showIcon={false} />
                               </div>
                             )}
-                            <div className="bg-success-soft text-success text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-emerald-100 dark:border-emerald-800">
+                            <div className="bg-success-soft text-success text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-success/20">
                               {course.difficulty_level || "beginner"}
                             </div>
                           </div>

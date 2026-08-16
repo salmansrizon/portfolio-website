@@ -104,12 +104,12 @@ const WebinarFloatingButton = () => {
                 }}
             >
                 <Link to={`/webinar/${webinar.id}`} className="block">
-                    <div className={`group relative bg-white/70 dark:bg-slate-950/70 backdrop-blur-3xl border border-primary/20 p-2 pl-3 md:pl-4 md:pr-2 md:py-2 transition-all duration-500 ring-1 ring-black/5 rounded-[20px] shadow-2xl flex items-center justify-between gap-3 hover:border-primary/40 hover:scale-[1.01] cursor-pointer`}>
+                    <div className={`group relative bg-card/70 backdrop-blur-3xl border border-primary/20 p-2 pl-3 md:pl-4 md:pr-2 md:py-2 transition-all duration-500 ring-1 ring-black/5 rounded-[20px] shadow-2xl flex items-center justify-between gap-3 hover:border-primary/40 hover:scale-[1.01] cursor-pointer`}>
                         
                         <div className="flex items-center gap-2 md:gap-3 min-w-0">
                             <div className="relative flex items-center justify-center shrink-0 w-8 h-8 md:w-9 md:h-9 bg-primary/10 rounded-full">
-                                <span className="animate-ping absolute inline-flex h-4 w-4 rounded-full bg-green-500 opacity-40"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.8)]"></span>
+                                <span className="animate-ping absolute inline-flex h-4 w-4 rounded-full bg-success opacity-40"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
                             </div>
 
                             <div className="flex flex-col min-w-0">

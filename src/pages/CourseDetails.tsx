@@ -421,7 +421,7 @@ export default function CourseDetails() {
 
             <div className="flex items-center flex-wrap gap-4 text-sm mb-6">
               <div className="flex items-center gap-1.5 text-foreground font-bold bg-secondary px-2 py-0.5 rounded">
-                <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                <Star className="w-4 h-4 text-warning fill-warning" />
                 <span>{course.rating || '4.8'}</span>
               </div>
               <span className="text-muted-foreground underline decoration-dotted underline-offset-4 cursor-help">{Math.floor((course.student_count || 0) * 0.82)} reviews</span>
@@ -450,7 +450,7 @@ export default function CourseDetails() {
                   )}
                 </h3>
                 {instructor?.linkedin_url && (
-                  <a href={instructor.linkedin_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-2 text-sm font-medium text-[#0077b5] hover:bg-[#0077b5] hover:text-white bg-[#0077b5]/10 px-3 py-1 rounded-full border border-[#0077b5]/20 transition-colors">
+                  <a href={instructor.linkedin_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-2 text-sm font-medium text-brand-linkedin hover:bg-brand-linkedin hover:text-brand-linkedin-foreground bg-brand-linkedin/10 px-3 py-1 rounded-full border border-brand-linkedin/20 transition-colors">
                     <Linkedin className="w-4 h-4" />
                     <span>VIEW PROFILE</span>
                   </a>
@@ -696,7 +696,7 @@ export default function CourseDetails() {
 
           <div className="w-full lg:w-[35%] relative">
             <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-card sticky top-28">
-              <div className="relative aspect-video bg-slate-900 group">
+              <div className="relative aspect-video bg-foreground group">
                 {playingVideo && course.video_url ? (
                   <div className="w-full h-full relative">
                     {course.video_url.includes('youtube.com') || course.video_url.includes('youtu.be') ? (
@@ -776,7 +776,7 @@ export default function CourseDetails() {
              {relatedCourses.length > 0 && (
                <div className="mt-10 space-y-5">
                  <h3 className="text-xl md:text-2xl font-black text-foreground/90 px-1 flex items-center gap-2">
-                   <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
+                   <Zap className="w-5 h-5 text-warning fill-warning" />
                    You can also find useful
                  </h3>
                  <div className="flex flex-col gap-4">
