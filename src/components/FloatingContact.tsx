@@ -25,16 +25,16 @@ const FloatingContact = () => {
         {
             name: 'WhatsApp',
             icon: <MessageCircle className="w-5 h-5" />,
-            color: 'bg-[#25D366]',
-            hoverColor: 'hover:bg-[#128C7E]',
+            color: 'bg-brand-whatsapp',
+            hoverColor: 'hover:bg-brand-whatsapp-hover',
             link: "https://wa.me/8801682359817?text=Hello%20Salman,%20I'm%20interested%20in%20your%20services.",
             delay: 0.1
         },
         {
             name: 'Telegram',
             icon: <Send className="w-5 h-5" />,
-            color: 'bg-[#0088cc]',
-            hoverColor: 'hover:bg-[#0077b5]',
+            color: 'bg-brand-telegram',
+            hoverColor: 'hover:bg-brand-telegram-hover',
             link: "https://t.me/+8801682359817",
             delay: 0
         }
@@ -93,7 +93,7 @@ const FloatingContact = () => {
                             onClick={() => setIsOpen(!isOpen)}
                             className={cn(
                                 "w-16 h-16 rounded-3xl flex items-center justify-center text-white shadow-2xl relative group overflow-hidden transition-all duration-500",
-                                isOpen ? "bg-red-500 rotate-90" : "bg-primary"
+                                isOpen ? "bg-destructive rotate-90" : "bg-primary"
                             )}
                         >
                             {/* Animated Background Pulse */}
@@ -123,7 +123,7 @@ const FloatingContact = () => {
                                     >
                                         <MessageSquare className="w-7 h-7" />
                                         {/* Notification badge */}
-                                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border-2 border-primary rounded-full" />
+                                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-destructive border-2 border-primary rounded-full" />
                                     </motion.div>
                                 )}
                             </AnimatePresence>

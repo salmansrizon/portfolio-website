@@ -165,8 +165,8 @@ const BookSession = () => {
                         <div className="flex justify-between items-start gap-2">
                           <div className="flex items-center gap-2">
                              <div className="relative flex h-2.5 w-2.5 flex-shrink-0">
-                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]"></span>
+                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success"></span>
                              </div>
                              <h4 className="font-semibold text-foreground">{st.title}</h4>
                           </div>
@@ -187,7 +187,7 @@ const BookSession = () => {
                           {st.is_paid ? (
                             <Badge className="bg-primary/10 text-primary hover:bg-primary/20">৳{st.fee}</Badge>
                           ) : (
-                            <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 hover:bg-green-200">
+                            <Badge className="bg-success-soft text-success-foreground hover:bg-success-soft/80">
                               <Tag className="h-3 w-3 mr-1" />Free
                             </Badge>
                           )}
@@ -291,7 +291,7 @@ const BookSession = () => {
                             className={cn(
                               "h-14 text-base font-semibold transition-all",
                               formData.paymentMethod === method
-                                ? method === 'bkash' ? "border-pink-500 bg-pink-50 text-pink-700 dark:bg-pink-950 dark:text-pink-300" : "border-orange-500 bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300"
+                                ? method === 'bkash' ? "border-brand-bkash bg-brand-bkash-soft text-brand-bkash-soft-foreground" : "border-brand-nagad bg-brand-nagad-soft text-brand-nagad-soft-foreground"
                                 : "hover:border-primary/40"
                             )}
                             onClick={() => handleSelectPaymentMethod(method)}
@@ -306,7 +306,7 @@ const BookSession = () => {
                       {formData.paymentMethod && timeLeft !== 'Expired' && (
                         <div className={cn(
                           "rounded-xl p-5 border-2 text-center space-y-4 mt-4 animate-in fade-in slide-in-from-top-4",
-                          formData.paymentMethod === 'bkash' ? "border-pink-400 bg-pink-50 dark:bg-pink-950/20" : "border-orange-400 bg-orange-50 dark:bg-orange-950/20"
+                          formData.paymentMethod === 'bkash' ? "border-brand-bkash/60 bg-brand-bkash-soft" : "border-brand-nagad/60 bg-brand-nagad-soft"
                         )}>
                           <div className="flex justify-between items-center bg-background/60 p-2 rounded-lg backdrop-blur-sm">
                              <div className="flex items-center gap-2 text-sm font-semibold text-destructive">
@@ -345,7 +345,7 @@ const BookSession = () => {
                           )}
 
                           <div className="space-y-1.5 pt-4 text-left">
-                            <Label htmlFor="txnId" className="font-semibold text-sm">Enter Transaction ID <span className="text-red-500">*</span></Label>
+                            <Label htmlFor="txnId" className="font-semibold text-sm">Enter Transaction ID <span className="text-destructive">*</span></Label>
                             <Input
                               id="txnId"
                               value={formData.transactionId}
@@ -361,11 +361,11 @@ const BookSession = () => {
 
                   {/* Free session info banner */}
                   {selectedSession && isFree && (
-                    <div className="flex items-center gap-3 rounded-lg border border-green-300 bg-green-50 dark:bg-green-950/30 dark:border-green-800 p-4">
-                      <Tag className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                    <div className="flex items-center gap-3 rounded-lg border border-success/30 bg-success-soft p-4">
+                      <Tag className="h-5 w-5 text-success flex-shrink-0" />
                       <div>
-                        <p className="font-semibold text-green-700 dark:text-green-300 text-sm">This is a Free Session</p>
-                        <p className="text-xs text-green-600/80 dark:text-green-400/80 mt-0.5">No payment required. Your booking will be confirmed immediately.</p>
+                        <p className="font-semibold text-success-foreground text-sm">This is a Free Session</p>
+                        <p className="text-xs text-success/80 mt-0.5">No payment required. Your booking will be confirmed immediately.</p>
                       </div>
                     </div>
                   )}
@@ -404,9 +404,9 @@ const BookSession = () => {
               <CardContent className="p-10 space-y-6">
                 <div className={cn(
                   "w-20 h-20 rounded-full flex items-center justify-center mx-auto",
-                  isFree ? "bg-green-100 dark:bg-green-900/40" : "bg-primary/10"
+                  isFree ? "bg-success-soft" : "bg-primary/10"
                 )}>
-                  <CheckCircle2 className={cn("h-10 w-10", isFree ? "text-green-600 dark:text-green-400" : "text-primary")} />
+                  <CheckCircle2 className={cn("h-10 w-10", isFree ? "text-success" : "text-primary")} />
                 </div>
                 <h2 className="text-2xl font-bold text-foreground">
                   {isFree ? 'Session Confirmed!' : 'Booking Submitted!'}
@@ -425,7 +425,7 @@ const BookSession = () => {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Status</span>
                     {isFree
-                      ? <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">Confirmed</Badge>
+                      ? <Badge className="bg-success-soft text-success-foreground">Confirmed</Badge>
                       : <Badge className="bg-primary/10 text-primary">Pending Verification</Badge>
                     }
                   </div>

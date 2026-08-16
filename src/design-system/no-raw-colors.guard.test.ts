@@ -32,24 +32,6 @@ const HEX_LITERAL = /#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/g;
  * and it should be empty when the theme-token map (#82) closes.
  */
 const NOT_YET_SWEPT: string[] = [
-  // Public site — #70
-  'components/BlogCarousel.tsx',
-  'components/Contact.tsx',
-  'components/CourseCountdown.tsx',
-  'components/FloatingContact.tsx',
-  'components/Navbar.tsx',
-  'components/PaymentModal.tsx',
-  'components/Services.tsx',
-  'components/Testimonials.tsx',
-  'components/WebinarFloatingButton.tsx',
-  'components/roadmap/RoadmapAccordionView.tsx',
-  'components/ui/chart.tsx',
-  'components/ui/toast.tsx',
-  'pages/BookSession.tsx',
-  'pages/CourseDetails.tsx',
-  'pages/CoursesPage.tsx',
-  'pages/NotFound.tsx',
-  'pages/WebinarLanding.tsx',
   // Admin panel — #84
   'components/admin/CareerPrepManager.tsx',
   'components/admin/ContentEditor.tsx',
@@ -67,6 +49,13 @@ const NOT_YET_SWEPT: string[] = [
   'pages/CareerPrep.tsx',
   'pages/SQLChallenge.tsx',
 ];
+
+/**
+ * Permanent exemptions: the hex here is a CSS attribute *selector* matching what
+ * Recharts writes into its own markup (`[stroke='#ccc']`), so the color is being
+ * targeted for override, not chosen. Not a token decision, never sweepable.
+ */
+const NOT_A_COLOR_CHOICE = ['components/ui/chart.tsx'];
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir, { recursive: true, encoding: 'utf8' })
@@ -95,7 +84,9 @@ function violationsIn(file: string): Violation[] {
   return found;
 }
 
-const allViolations = sourceFiles(srcDir).flatMap(violationsIn);
+const allViolations = sourceFiles(srcDir)
+  .flatMap(violationsIn)
+  .filter((v) => !NOT_A_COLOR_CHOICE.includes(v.file));
 
 function report(violations: Violation[]): string {
   const shown = violations.slice(0, 20);

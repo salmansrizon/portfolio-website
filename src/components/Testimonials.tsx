@@ -137,7 +137,7 @@ const Testimonials = () => {
                               {[...Array(5)].map((_, i) => (
                                 <Star 
                                   key={i} 
-                                  className={`h-4 w-4 ${i < testimonial.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/20'}`} 
+                                  className={`h-4 w-4 ${i < testimonial.rating ? 'fill-warning text-warning' : 'text-muted-foreground/20'}`} 
                                 />
                               ))}
                             </div>
@@ -194,7 +194,7 @@ const Testimonials = () => {
                 <div className="text-lg font-semibold text-foreground mb-2">Five-Star Reviews on Fiverr</div>
                 <div className="flex items-center justify-center space-x-1 mb-4">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                    <Star key={i} className="h-4 w-4 fill-warning text-warning" />
                   ))}
                 </div>
                 <p className="text-muted-foreground">
