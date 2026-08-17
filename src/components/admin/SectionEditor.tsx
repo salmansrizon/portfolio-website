@@ -463,7 +463,7 @@ const SectionEditor = () => {
       </div>
 
       <Tabs defaultValue="hero" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
+        <TabsList className="grid w-full h-auto grid-cols-2 sm:grid-cols-4 lg:grid-cols-8">
           {sections.map((section) => (
             <TabsTrigger key={section.id} value={section.section_name}>
               <div className="text-xs">
@@ -501,7 +501,7 @@ const SectionEditor = () => {
                 <div className="space-y-4">
                   <div>
                     <Label>Main Title</Label>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Input
                           {...register('title.main')}
@@ -553,7 +553,7 @@ const SectionEditor = () => {
 
                 <div className="space-y-4">
                   <Label>Call to Action Buttons</Label>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="cta_primary_text">Primary Button Text</Label>
                       <Input
@@ -589,7 +589,7 @@ const SectionEditor = () => {
                 <div className="space-y-4 border-t pt-4">
                   <Label>Additional Custom Fields</Label>
                   {(heroSection.custom_fields as any)?.map((field: any, index: number) => (
-                    <div key={index} className="grid grid-cols-2 gap-2">
+                    <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <Input
                         {...register(`customFields.${index}.key`)}
                         defaultValue={field.key}
@@ -686,7 +686,7 @@ const SectionEditor = () => {
                 <div className="space-y-4">
                   <Label>Stats</Label>
                   {aboutContent?.stats?.map((stat, index) => (
-                    <div key={index} className="grid grid-cols-2 gap-4">
+                    <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Input
                           {...register(`stats.${index}.number`)}
@@ -708,7 +708,7 @@ const SectionEditor = () => {
                 <div className="space-y-4">
                   <Label>Skills</Label>
                   {aboutContent?.skills?.map((skill, index) => (
-                    <div key={index} className="grid grid-cols-2 gap-4">
+                    <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Input
                           {...register(`skills.${index}.name`)}
@@ -746,7 +746,7 @@ const SectionEditor = () => {
                 <div className="space-y-4 border-t pt-4">
                   <Label>Additional Custom Fields</Label>
                   {(aboutSection.custom_fields as any)?.map((field: any, index: number) => (
-                    <div key={index} className="grid grid-cols-2 gap-2">
+                    <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <Input
                         {...register(`customFields.${index}.key`)}
                         defaultValue={field.key}
@@ -812,7 +812,7 @@ const SectionEditor = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="email">Email</Label>
                     <Input
@@ -845,7 +845,7 @@ const SectionEditor = () => {
                 <div className="space-y-4 border-t pt-4">
                   <Label>Additional Custom Fields</Label>
                   {(contactSection.custom_fields as any)?.map((field: any, index: number) => (
-                    <div key={index} className="grid grid-cols-2 gap-2">
+                    <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <Input
                         {...register(`customFields.${index}.key`)}
                         defaultValue={field.key}
@@ -927,7 +927,7 @@ const SectionEditor = () => {
                 <div className="space-y-4 border-t pt-4">
                   <Label>Additional Custom Fields</Label>
                   {(sections.find(s => s.section_name === 'services')?.custom_fields as any)?.map((field: any, index: number) => (
-                    <div key={index} className="grid grid-cols-2 gap-2">
+                    <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <Input
                         {...register(`customFields.${index}.key`)}
                         defaultValue={field.key}
@@ -1009,7 +1009,7 @@ const SectionEditor = () => {
                 <div className="space-y-4 border-t pt-4">
                   <Label>Additional Custom Fields</Label>
                   {(sections.find(s => s.section_name === 'portfolio')?.custom_fields as any)?.map((field: any, index: number) => (
-                    <div key={index} className="grid grid-cols-2 gap-2">
+                    <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <Input
                         {...register(`customFields.${index}.key`)}
                         defaultValue={field.key}
@@ -1091,7 +1091,7 @@ const SectionEditor = () => {
                 <div className="space-y-4 border-t pt-4">
                   <Label>Additional Custom Fields</Label>
                   {(sections.find(s => s.section_name === 'testimonials')?.custom_fields as any)?.map((field: any, index: number) => (
-                    <div key={index} className="grid grid-cols-2 gap-2">
+                    <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <Input
                         {...register(`customFields.${index}.key`)}
                         defaultValue={field.key}
@@ -1173,7 +1173,7 @@ const SectionEditor = () => {
                 <div className="space-y-4 border-t pt-4">
                   <Label>Additional Custom Fields</Label>
                   {(sections.find(s => s.section_name === 'certifications')?.custom_fields as any)?.map((field: any, index: number) => (
-                    <div key={index} className="grid grid-cols-2 gap-2">
+                    <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <Input
                         {...register(`customFields.${index}.key`)}
                         defaultValue={field.key}
@@ -1255,7 +1255,7 @@ const SectionEditor = () => {
                 <div className="space-y-4 border-t pt-4">
                   <Label>Additional Custom Fields</Label>
                   {(sections.find(s => s.section_name === 'teaching')?.custom_fields as any)?.map((field: any, index: number) => (
-                    <div key={index} className="grid grid-cols-2 gap-2">
+                    <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <Input
                         {...register(`customFields.${index}.key`)}
                         defaultValue={field.key}

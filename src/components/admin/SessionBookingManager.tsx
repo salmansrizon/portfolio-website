@@ -286,7 +286,7 @@ const SessionBookingManager = () => {
   return (
     <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-6 relative z-10">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full h-auto grid-cols-2 sm:grid-cols-5">
           <TabsTrigger value="bookings">Bookings</TabsTrigger>
           <TabsTrigger value="session-types">Session Types</TabsTrigger>
           <TabsTrigger value="availability">Availability</TabsTrigger>

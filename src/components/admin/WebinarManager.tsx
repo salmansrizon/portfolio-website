@@ -229,7 +229,7 @@ export default function WebinarManager() {
                     </DialogHeader>
 
                     <div className="flex-1 overflow-y-auto pr-2 space-y-6 py-4">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2 col-span-2">
                                 <Label>Title</Label>
                                 <Input value={currentWebinar?.title || ''} onChange={e => setCurrentWebinar({ ...currentWebinar, title: e.target.value })} placeholder="Webinar Title" />
@@ -314,7 +314,7 @@ export default function WebinarManager() {
                                                             placeholder="Short intro text..."
                                                         />
                                                     </div>
-                                                    <div className="grid grid-cols-2 gap-4">
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                         <div className="space-y-1">
                                                             <Label className="text-[10px] uppercase font-bold text-muted-foreground">Hero Image URL</Label>
                                                             <Input
