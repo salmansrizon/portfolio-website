@@ -60,7 +60,9 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-8">
+            {/* whitespace-nowrap: labels like "Career Prep" / "All Courses" were
+                wrapping to two lines between md and lg, overflowing the h-16 bar. */}
+            <div className="ml-6 lg:ml-10 flex items-baseline gap-4 lg:gap-8 whitespace-nowrap">
               {navItems.map((item: any) => {
                 // Highlight button
                 if (item.highlight) {

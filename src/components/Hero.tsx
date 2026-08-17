@@ -9,10 +9,10 @@ const Hero = () => {
   return (
     <section
       id="home"
-      className="relative min-h-screen flex items-center justify-center bg-background pt-16 overflow-hidden"
+      className="relative min-h-screen flex items-center justify-center bg-background pt-28 pb-16 sm:pt-32 sm:pb-20 lg:py-20 overflow-hidden"
     >
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-10 lg:gap-12 items-center w-full">
           {/* Content Column */}
           <div className="lg:col-span-7 space-y-8 text-center lg:text-left">
             {/* Main Heading — ink with accent highlight */}
@@ -68,9 +68,11 @@ const Hero = () => {
 
           {/* Lottie Animation Column */}
           <div className="lg:col-span-5 flex justify-center items-center animate-fade-in-up delay-500">
+            {/* Capped on small screens: w-full + aspect-square meant a full-width
+                square, eating most of a phone viewport before any copy showed. */}
             <LottieAnimation
               src="/animations/data-insights.json"
-              className="w-full max-w-[800px] sm:max-w-[1000px] lg:max-w-[1200px] aspect-square"
+              className="w-full max-w-[260px] sm:max-w-[360px] md:max-w-[420px] lg:max-w-none aspect-square"
             />
           </div>
         </div>
