@@ -203,7 +203,7 @@ const SQLChallenge = () => {
        </div>
        <div className="relative z-10 w-full max-w-md text-center">
           <div ref={resultsRef} className="p-8 space-y-6 bg-card/60 backdrop-blur-2xl border border-border/80 rounded-[32px] shadow-2xl">
-              <div className="w-16 h-16 bg-success rounded-2xl flex items-center justify-center mb-4 mx-auto"><CheckCircle2 className="w-8 h-8 text-accent-foreground" /></div>
+              <div className="w-16 h-16 bg-success rounded-2xl flex items-center justify-center mb-4 mx-auto"><CheckCircle2 className="w-8 h-8 text-success-foreground" /></div>
               <div className="space-y-1">
                 <h2 className="text-2xl font-black uppercase tracking-tight italic text-foreground">Mission Complete</h2>
                 <p className="text-[11px] text-muted-foreground font-medium px-4">Finalized <span className="text-primary font-bold uppercase">{question?.title}</span>.</p>

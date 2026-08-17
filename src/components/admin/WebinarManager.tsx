@@ -515,7 +515,7 @@ export default function WebinarManager() {
 
                     <DialogFooter className="border-t border-border/50 pt-4 px-6 pb-6 bg-muted/20">
                         <Button variant="outline" onClick={() => dialog.onOpenChange(false)}>Cancel</Button>
-                        <Button onClick={handleSaveWebinar} className="bg-primary text-accent-foreground hover:bg-primary/90 shadow-lg shadow-primary/20">
+                        <Button onClick={handleSaveWebinar} className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20">
                             <CheckCircle2 className="mr-2 h-4 w-4" /> Save Webinar
                         </Button>
                     </DialogFooter>

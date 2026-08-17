@@ -129,7 +129,7 @@ const WebinarFloatingButton = () => {
                                 </div>
                             )}
 
-                            <div className="bg-primary h-8 w-8 md:h-9 md:w-9 rounded-xl md:rounded-full flex items-center justify-center text-accent-foreground shadow-lg shadow-primary/20 group-hover:bg-primary/90 group-hover:translate-x-0.5 transition-all shrink-0">
+                            <div className="bg-primary h-8 w-8 md:h-9 md:w-9 rounded-xl md:rounded-full flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20 group-hover:bg-primary/90 group-hover:translate-x-0.5 transition-all shrink-0">
                                 <ArrowRight className="h-4 w-4 md:h-4.5 md:w-4.5" />
                             </div>
                         </div>

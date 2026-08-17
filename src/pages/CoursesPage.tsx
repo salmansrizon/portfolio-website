@@ -333,7 +333,7 @@ export default function CoursesPage() {
                       className="bg-card rounded-2xl shadow-card hover:shadow-hover transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50 group cursor-pointer"
                       onClick={() => navigate(`/course/${course.id}`)}
                     >
-                      <div className="relative bg-primary text-accent-foreground p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[200px] shrink-0">
+                      <div className="relative bg-primary text-primary-foreground p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[200px] shrink-0">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-accent-foreground/10 rounded-full translate-x-12 -translate-y-12"></div>
                         <div className="absolute bottom-0 left-0 w-24 h-24 bg-scrim/10 rounded-full -translate-x-8 translate-y-8"></div>
 
@@ -413,7 +413,7 @@ export default function CoursesPage() {
                         </div>
 
                         <Button
-                          className="w-full bg-primary hover:bg-primary-hover text-accent-foreground rounded-xl mt-1 h-12 font-semibold shadow-md transition-all active:scale-[0.98]"
+                          className="w-full bg-primary hover:bg-primary-hover text-primary-foreground rounded-xl mt-1 h-12 font-semibold shadow-md transition-all active:scale-[0.98]"
                           onClick={() => navigate(`/course/${course.id}`)}
                         >
                           View Course Details

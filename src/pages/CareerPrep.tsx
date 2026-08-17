@@ -491,7 +491,7 @@ const CareerPrep = () => {
                        
                        <Button 
                          onClick={() => navigate(`/course/${currentCourse.id}`)}
-                         className="w-full bg-primary hover:bg-primary-hover text-accent-foreground font-bold h-10 shadow-lg shadow-primary/20 rounded-xl"
+                         className="w-full bg-primary hover:bg-primary-hover text-primary-foreground font-bold h-10 shadow-lg shadow-primary/20 rounded-xl"
                        >
                          Enroll Now
                        </Button>

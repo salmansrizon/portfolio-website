@@ -487,7 +487,7 @@ INSERT INTO ecom_orders (customer_id, amount, order_date) VALUES (1, 5000, CURRE
                   {appUsers.length} total participants
                 </CardDescription>
               </div>
-              <Button onClick={downloadCSV} variant="outline" className="gap-2 border-primary/20 text-primary hover:bg-primary hover:text-accent-foreground transition-all">
+              <Button onClick={downloadCSV} variant="outline" className="gap-2 border-primary/20 text-primary hover:bg-primary hover:text-primary-foreground transition-all">
                 <Download className="h-4 w-4" /> Export CSV
               </Button>
             </CardHeader>
