@@ -263,7 +263,7 @@ const WebinarLanding = () => {
                         </Card>
 
                         {/* Status Floaties */}
-                        <Card className="absolute -top-6 -right-6 bg-card border-border shadow-card p-4 rounded-2xl animate-float backdrop-blur-md z-30">
+                        <Card className="absolute -top-3 right-1 sm:-top-6 sm:-right-6 bg-card border-border shadow-card p-4 rounded-2xl animate-float backdrop-blur-md z-30">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-success-soft flex items-center justify-center">
                                     <Users className="h-5 w-5 text-success" />

@@ -149,7 +149,7 @@ const Testimonials = () => {
                 ))}
               </div>
               {/* Navigation Buttons - Desktop */}
-              <div className="absolute -left-12 -right-12 top-1/2 -translate-y-1/2 hidden md:flex justify-between">
+              <div className="absolute -left-2 -right-2 lg:-left-12 lg:-right-12 top-1/2 -translate-y-1/2 hidden md:flex justify-between">
                 <Button 
                   variant="outline" 
                   size="icon"
