@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { createRepository } from '@/integrations/supabase/repository';
 import { careerPrepQuestionConfig } from '@/adapters/entityConfigs';
+import { levelFor, streakFrom } from '@/lib/levels';
 
 // Create repository instance for career prep questions
 const questionRepository = createRepository(careerPrepQuestionConfig);
@@ -88,13 +89,18 @@ export function useSubmissions(questionId?: string) {
   const fetchSubmissions = useCallback(async () => {
     if (!questionId || !session?.user) return;
     setLoading(true);
+    // Scoped to the signed-in learner, and to the columns the history panel
+    // renders. Without the student_id filter this returns *everyone's* raw SQL
+    // for the question — harmless while only correct rows existed, a leak of
+    // both solutions and other people's failed attempts now that every
+    // submission is stored.
     const { data, error } = await (supabase as any)
       .from('careerprep_submissions')
-      .select('*')
+      .select('id, submitted_code, is_correct, created_at')
       .eq('question_id', questionId)
-      // .eq('student_id', session.user.id) // Enable this if student_id is correctly mapped
+      .eq('student_id', session.user.id)
       .order('created_at', { ascending: false });
-    
+
     if (!error) {
       setSubmissions(data || []);
     }
@@ -161,22 +167,20 @@ export function useCompletedMissions() {
   const { session } = useAuth();
   
   const fetchCompleted = useCallback(async () => {
-    const guestEmail = localStorage.getItem('careerprep_guest_email');
-    const sessionId = localStorage.getItem('careerprep_session_id');
-    
-    // Create base query
-    let query = (supabase as any).from('careerprep_submissions').select('question_id').eq('is_correct', true);
-    
-    if (session?.user) {
-      query = query.eq('student_id', session.user.id);
-    } else if (guestEmail) {
-      query = query.eq('guest_email', guestEmail);
-    } else if (sessionId) {
-      query = query.eq('session_id', sessionId);
-    } else {
+    // Everyone has an auth.uid() now, guests included — they are signed in
+    // anonymously on first visit. So progress is always keyed on student_id,
+    // and the old guest_email / careerprep_session_id branches are gone: those
+    // could only ever work while the table was world-readable.
+    if (!session?.user) {
       setLoading(false);
       return;
     }
+
+    const query = (supabase as any)
+      .from('careerprep_submissions')
+      .select('question_id')
+      .eq('is_correct', true)
+      .eq('student_id', session.user.id);
 
     setLoading(true);
     const { data, error } = await query;
@@ -194,30 +198,50 @@ export function useCompletedMissions() {
   return { completedIds, loading, refresh: fetchCompleted };
 }
 
+/**
+ * Real XP, level and streak — previously both numbers were invented in the
+ * browser (`completedIds.size * 10`, and a hardcoded `streak = 3`).
+ *
+ * XP is summed from the `xp_events` ledger, which only the database writes (a
+ * trigger on `careerprep_submissions`), so it cannot be inflated from the
+ * client. Streak is derived from the dates of correct submissions in the
+ * learner's timezone. Level is derived from XP; it is never stored.
+ */
 export function useXPStats() {
-  const [stats, setStats] = useState({ xp: 0, streak: 0 });
   const { session } = useAuth();
-  const { completedIds } = useCompletedMissions();
+  const userId = session?.user?.id;
 
-  useEffect(() => {
-     // For now, calculate XP simply based on completed unique missions
-     // Each mission = 10 XP
-     const xp = completedIds.size * 10;
-     
-     // Simple streak mock logic based on last active
-     // (In a real app, this would be computed server-side or from a history table)
-     const guestEmail = localStorage.getItem('careerprep_guest_email');
-     const guestActive = localStorage.getItem('careerprep_guest_last_active');
-     let streak = session ? 3 : 0; // Default/Mock
-     
-     if (!session && guestEmail && guestActive) {
-        const last = new Date(guestActive);
-        const diff = (new Date().getTime() - last.getTime()) / (1000 * 3600 * 24);
-        if (diff < 2) streak = 1; // Basic survival streak
-     }
+  const { data, isLoading } = useQuery({
+    queryKey: ['careerprep', 'progress', userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const [xpRes, subRes] = await Promise.all([
+        (supabase as any).from('xp_events').select('amount').eq('user_id', userId),
+        (supabase as any)
+          .from('careerprep_submissions')
+          .select('created_at')
+          .eq('student_id', userId)
+          .eq('is_correct', true),
+      ]);
 
-     setStats({ xp, streak });
-  }, [completedIds, session]);
+      const xp = (xpRes.data ?? []).reduce((sum: number, r: any) => sum + (r.amount ?? 0), 0);
+      const dates = (subRes.data ?? []).map((r: any) => r.created_at).filter(Boolean);
+      return { xp, dates: dates as string[] };
+    },
+  });
 
-  return stats;
+  const xp = data?.xp ?? 0;
+  const { current, longest } = streakFrom(data?.dates ?? []);
+  const standing = levelFor(xp);
+
+  return {
+    xp,
+    streak: current,
+    longestStreak: longest,
+    level: standing.level,
+    levelName: standing.name,
+    nextLevelXp: standing.next,
+    levelProgress: standing.progress,
+    loading: isLoading,
+  };
 }

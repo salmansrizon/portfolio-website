@@ -19,7 +19,7 @@ vi.mock('./client', () => ({
 // browser-image-compression spins up a real Web Worker in the browser —
 // stub it so tests just assert *whether* it was called, not its internals.
 vi.mock('browser-image-compression', () => ({
-  default: (...args: any[]) => compressMock(...args),
+  default: (...args: Parameters<typeof compressMock>) => compressMock(...args),
 }));
 
 import { uploadCompressedImage } from './imageUpload';
