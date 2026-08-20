@@ -9,11 +9,16 @@
 // dist/career-prep/topic/<slug>.html is enough, with no SSR framework, no edge
 // function and no host coupling.
 //
-// REQUIRES `"cleanUrls": true` in vercel.json. Vercel checks the filesystem
-// before applying rewrites, but only maps /career-prep/topic/rerankers to
-// rerankers.html when cleanUrls is on. Without it every one of these files is
-// deployed and never served, and shared links silently preview as the generic
-// site card — which is exactly what happened on the first production deploy.
+// REQUIRES the topic rewrite in vercel.json, which maps
+// /career-prep/topic/:slug to :slug.html *before* the catch-all SPA rewrite.
+// Without it these files deploy and are never served, and shared links preview
+// as the generic site card.
+//
+// Do NOT reach for `cleanUrls: true` to solve this — it was tried in
+// production and 404'd every SPA route (/career-prep, /courses, /admin),
+// because with cleanUrls an extensionless path resolves against the filesystem
+// and never reaches the catch-all rewrite. An explicit rewrite for this one
+// route family leaves the SPA fallback untouched.
 //
 // Runs after `vite build`. Fetches only published Topics, with the anon key
 // already in the client bundle — the same data any visitor can read.

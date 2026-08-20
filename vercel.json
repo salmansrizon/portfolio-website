@@ -1,6 +1,9 @@
 {
-  "cleanUrls": true,
   "rewrites": [
+    {
+      "source": "/career-prep/topic/:slug",
+      "destination": "/career-prep/topic/:slug.html"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
