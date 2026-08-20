@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EntityFormDialog } from './EntityFormDialog';
 import { z } from 'zod';
-import type { EntityConfig } from '@/adapters/entityConfigs';
+import type { FormConfig } from '@/adapters/entityConfigs';
 
 // Radix Select/Switch need a few DOM APIs jsdom doesn't implement.
 beforeAll(() => {
@@ -26,15 +26,12 @@ beforeAll(() => {
 });
 
 // Tracer bullet: minimal config with one text field
-const testConfig: EntityConfig<any> = {
-  table: 'test_table',
-  primaryKey: 'id',
+const testConfig: FormConfig<any> = {
   entityLabel: 'Widget',
   schema: z.object({ title: z.string().min(1) }),
   fields: [
     { name: 'title', label: 'Title', type: 'text', required: true },
   ],
-  realtime: false,
 };
 
 describe('EntityFormDialog', () => {
@@ -125,12 +122,10 @@ describe('EntityFormDialog', () => {
   it('renders and submits a boolean field as a real boolean', async () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup();
-    const config: EntityConfig<any> = {
-      table: 'test_table',
+    const config: FormConfig<any> = {
       entityLabel: 'Widget',
       schema: z.object({ is_active: z.boolean().default(false) }),
       fields: [{ name: 'is_active', label: 'Active', type: 'boolean' }],
-      realtime: false,
     };
 
     render(
@@ -148,12 +143,10 @@ describe('EntityFormDialog', () => {
   it('round-trips an array field through a newline-separated textarea', async () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup();
-    const config: EntityConfig<any> = {
-      table: 'test_table',
+    const config: FormConfig<any> = {
       entityLabel: 'Widget',
       schema: z.object({ items: z.array(z.string()).default([]) }),
       fields: [{ name: 'items', label: 'Items', type: 'array' }],
-      realtime: false,
     };
 
     render(
@@ -167,12 +160,10 @@ describe('EntityFormDialog', () => {
   });
 
   it('pre-fills an array field as newline-joined text when editing', () => {
-    const config: EntityConfig<any> = {
-      table: 'test_table',
+    const config: FormConfig<any> = {
       entityLabel: 'Widget',
       schema: z.object({ items: z.array(z.string()).default([]) }),
       fields: [{ name: 'items', label: 'Items', type: 'array' }],
-      realtime: false,
     };
 
     render(
@@ -191,8 +182,7 @@ describe('EntityFormDialog', () => {
   it('renders select field with options and submits the selected value', async () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup();
-    const configWithSelect: EntityConfig<any> = {
-      table: 'test_table',
+    const configWithSelect: FormConfig<any> = {
       entityLabel: 'Widget',
       schema: z.object({ status: z.string().default('active') }),
       fields: [
@@ -206,7 +196,6 @@ describe('EntityFormDialog', () => {
           ],
         },
       ],
-      realtime: false,
     };
 
     render(
@@ -232,8 +221,7 @@ describe('EntityFormDialog', () => {
   it('renders a multiselect as checkboxes and submits the selection as string[]', async () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup();
-    const config: EntityConfig<any> = {
-      table: 'test_table',
+    const config: FormConfig<any> = {
       entityLabel: 'Widget',
       schema: z.object({ tags: z.array(z.string()).default([]) }),
       fields: [
@@ -247,7 +235,6 @@ describe('EntityFormDialog', () => {
           ],
         },
       ],
-      realtime: false,
     };
 
     render(
@@ -263,8 +250,7 @@ describe('EntityFormDialog', () => {
   it('unchecking a multiselect option removes it from the submitted array', async () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup();
-    const config: EntityConfig<any> = {
-      table: 'test_table',
+    const config: FormConfig<any> = {
       entityLabel: 'Widget',
       schema: z.object({ tags: z.array(z.string()).default([]) }),
       fields: [
@@ -278,7 +264,6 @@ describe('EntityFormDialog', () => {
           ],
         },
       ],
-      realtime: false,
     };
 
     render(
@@ -299,12 +284,10 @@ describe('EntityFormDialog', () => {
   });
 
   it('dynamicOptions overrides a select/multiselect field\'s static options', () => {
-    const config: EntityConfig<any> = {
-      table: 'test_table',
+    const config: FormConfig<any> = {
       entityLabel: 'Widget',
       schema: z.object({ tags: z.array(z.string()).default([]) }),
       fields: [{ name: 'tags', label: 'Tags', type: 'multiselect', options: [] }],
-      realtime: false,
     };
 
     render(
@@ -321,8 +304,7 @@ describe('EntityFormDialog', () => {
   });
 
   it('a nullable select field shows a None option and displays it by default', () => {
-    const config: EntityConfig<any> = {
-      table: 'test_table',
+    const config: FormConfig<any> = {
       entityLabel: 'Widget',
       schema: z.object({ parent_id: z.string().uuid().nullable().optional() }),
       fields: [
@@ -333,7 +315,6 @@ describe('EntityFormDialog', () => {
           options: [{ label: 'Category A', value: '11111111-1111-1111-1111-111111111111' }],
         },
       ],
-      realtime: false,
     };
 
     render(
@@ -344,8 +325,7 @@ describe('EntityFormDialog', () => {
   });
 
   it('a nullable select field pre-filled with a real value does not show None as selected', () => {
-    const config: EntityConfig<any> = {
-      table: 'test_table',
+    const config: FormConfig<any> = {
       entityLabel: 'Widget',
       schema: z.object({ parent_id: z.string().uuid().nullable().optional() }),
       fields: [
@@ -356,7 +336,6 @@ describe('EntityFormDialog', () => {
           options: [{ label: 'Category A', value: '11111111-1111-1111-1111-111111111111' }],
         },
       ],
-      realtime: false,
     };
 
     render(
@@ -373,8 +352,7 @@ describe('EntityFormDialog', () => {
   });
 
   it('does not add a None option to a non-nullable select (no regression on existing selects)', () => {
-    const config: EntityConfig<any> = {
-      table: 'test_table',
+    const config: FormConfig<any> = {
       entityLabel: 'Widget',
       schema: z.object({ status: z.string().default('draft') }),
       fields: [
@@ -385,7 +363,6 @@ describe('EntityFormDialog', () => {
           options: [{ label: 'Draft', value: 'draft' }, { label: 'Published', value: 'published' }],
         },
       ],
-      realtime: false,
     };
 
     render(
@@ -396,12 +373,10 @@ describe('EntityFormDialog', () => {
   });
 
   it('renders textarea field for long text', () => {
-    const configWithTextarea: EntityConfig<any> = {
-      table: 'test_table',
+    const configWithTextarea: FormConfig<any> = {
       entityLabel: 'Widget',
       schema: z.object({ description: z.string() }),
       fields: [{ name: 'description', label: 'Description', type: 'textarea' }],
-      realtime: false,
     };
 
     render(

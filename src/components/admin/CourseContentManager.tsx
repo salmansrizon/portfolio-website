@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { createRepository } from "@/integrations/supabase/repository";
 import { courseContentConfig, courseConfig } from "@/adapters/entityConfigs";
+import ListPager from './ListPager';
 import { useEntityManager } from "@/hooks/useEntityManager";
 import { Plus, Edit, Trash2, FileText, HelpCircle, Code, Video, BookOpen } from "lucide-react";
 
@@ -31,7 +32,7 @@ const defaultForm = {
   // 'lesson' isn't a real content_category value (the DB enum is
   // video|text|quiz) — this used to be the default and silently failed
   // every write; 'text' is a real, valid default.
-  content_category: "text",
+  content_category: "text" as "video" | "text" | "quiz",
   order_index: 0,
   is_free: false,
   duration_minutes: 0,
@@ -42,7 +43,7 @@ export default function CourseContentManager() {
   const [selectedCourse, setSelectedCourse] = useState<string>("");
   const [contentForm, setContentForm] = useState(defaultForm);
 
-  const { items: contents, openCreate, openEdit, remove, dialog } = useEntityManager(courseContentConfig, {
+  const { items: contents, pageItems, pagination, openCreate, openEdit, remove, dialog } = useEntityManager(courseContentConfig, {
     filter: { course_id: selectedCourse },
     extraFields: { course_id: selectedCourse },
   });
@@ -85,9 +86,9 @@ export default function CourseContentManager() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Course Content Manager</h2>
+        <h2 className="text-xl font-bold">Course Content Manager</h2>
       </div>
 
       <div>
@@ -160,7 +161,7 @@ export default function CourseContentManager() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="duration">Duration (minutes)</Label>
                         <Input
@@ -198,7 +199,7 @@ export default function CourseContentManager() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {contents.map((content) => (
+              {pageItems.map((content) => (
                 <div
                   key={content.id}
                   className="flex items-center justify-between p-3 border rounded-lg"
@@ -246,6 +247,7 @@ export default function CourseContentManager() {
                 </div>
               )}
             </div>
+            <ListPager pagination={pagination} label="items" />
           </CardContent>
         </Card>
       )}

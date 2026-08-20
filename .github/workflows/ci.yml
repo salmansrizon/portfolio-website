@@ -1,0 +1,26 @@
+name: CI
+
+# The type check is load-bearing, not decoration: the Entity Configs are checked
+# against the generated Supabase schema at compile time, which is what replaced
+# the hand-transcribed column lists the conformance test used to carry. If tsc
+# does not run here, that check does not run at all — `vite build` strips types
+# without looking at them.
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test:run
+      - run: npm run build

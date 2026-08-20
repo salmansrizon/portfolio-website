@@ -1,21 +1,12 @@
 import React from 'react';
 import { CodeBlock, dracula } from 'react-code-blocks';
 import { cn } from '@/lib/utils';
+import { blogContentSchema, type BlogContent } from '@/types/blog';
 
-// ── Discriminated union for BlogContent ─────────────────────────────────────
-// Each content block type has its own required fields, enforced at compile time.
-// Unknown types are skipped with a console warning (extensible without type updates).
-
-export type BlogContent =
-  | { type: 'text'; content: string }
-  | { type: 'code'; code: string; language?: string }
-  | { type: 'image'; url: string; alt?: string; caption?: string }
-  | { type: 'heading'; level: 1 | 2 | 3; content: string }
-  | { type: 'list'; items: string[]; ordered?: boolean }
-  | { type: 'quote'; content: string; attribution?: string }
-  | { type: 'divider' }
-  // Unknown types: preserve but don't render
-  | { type: string; [key: string]: unknown };
+// The block union and its schema live in @/types/blog — this module renders
+// them and owns the parse boundary. Re-exported because most consumers import
+// the type from here.
+export type { BlogContent };
 
 // ── Parse raw content from Supabase ────────────────────────────────────────
 // Supabase sometimes returns content as a JSON string, sometimes as an array.
@@ -23,61 +14,45 @@ export type BlogContent =
 
 export function parseBlogContent(raw: string | BlogContent[] | null | undefined): BlogContent[] {
   if (!raw) return [];
-  if (Array.isArray(raw)) return raw as BlogContent[];
+
+  let blocks: unknown = raw;
   if (typeof raw === 'string') {
     try {
-      return JSON.parse(raw) as BlogContent[];
+      blocks = JSON.parse(raw);
     } catch {
       console.warn('Failed to parse blog content as JSON, returning empty array');
       return [];
     }
   }
-  return [];
+  if (!Array.isArray(blocks)) return [];
+
+  // Validate here, once. Anything that is not a known block is dropped with a
+  // warning — which is what the renderer already did, one layer later and
+  // without telling the type system.
+  return blocks.flatMap((block) => {
+    const parsed = blogContentSchema.safeParse(block);
+    if (!parsed.success) {
+      console.warn('Dropping invalid blog content block:', block);
+      return [];
+    }
+    return [parsed.data];
+  });
 }
 
 // ── Validate a single content block ────────────────────────────────────────
-// Returns true if the block has the required fields for its type.
 
-export function validateBlogContentBlock(block: BlogContent): boolean {
-  if (!block || typeof block !== 'object') return false;
-  if (!('type' in block)) return false;
-
-  const type = block.type;
-  if (typeof type !== 'string') return false;
-
-  // Check required fields per type
-  if (type === 'text') return typeof (block as any).content === 'string';
-  if (type === 'code') return typeof (block as any).code === 'string';
-  if (type === 'image') return typeof (block as any).url === 'string';
-  if (type === 'heading') {
-    const b = block as any;
-    return typeof b.content === 'string' && [1, 2, 3].includes(b.level);
-  }
-  if (type === 'list') return Array.isArray((block as any).items);
-  if (type === 'quote') return typeof (block as any).content === 'string';
-  if (type === 'divider') return true;
-
-  // Unknown type: warn but don't fail
-  console.warn(`Unknown blog content block type: ${type}`);
-  return true;
+export function validateBlogContentBlock(block: unknown): boolean {
+  return blogContentSchema.safeParse(block).success;
 }
 
 // ── Render a single content block ──────────────────────────────────────────
 
 function renderBlock(block: BlogContent, index: number): React.ReactNode {
-  if (!validateBlogContentBlock(block)) {
-    console.warn('Invalid blog content block, skipping:', block);
-    return null;
-  }
-
-  const type = block.type;
-  if (typeof type !== 'string') return null;
-
-  switch (type) {
+  switch (block.type) {
     case 'text':
       return (
         <p key={index} className="mb-4 text-base leading-relaxed">
-          {(block as any).content}
+          {block.content}
         </p>
       );
 
@@ -85,11 +60,14 @@ function renderBlock(block: BlogContent, index: number): React.ReactNode {
       return (
         <div key={index} className="mb-4 rounded-lg overflow-hidden">
           <CodeBlock
-            text={(block as any).code}
-            language={(block as any).language || 'javascript'}
+            text={block.code}
+            language={block.language || 'javascript'}
             showLineNumbers={true}
             theme={dracula}
           />
+          {block.caption && (
+            <p className="text-center text-sm text-muted-foreground mt-2">{block.caption}</p>
+          )}
         </div>
       );
 
@@ -97,46 +75,43 @@ function renderBlock(block: BlogContent, index: number): React.ReactNode {
       return (
         <figure key={index} className="mb-4">
           <img
-            src={(block as any).url}
-            alt={(block as any).alt || ''}
+            src={block.url}
+            alt={block.alt || ''}
             className="w-full rounded-lg"
             loading="lazy"
           />
-          {(block as any).caption && (
+          {block.caption && (
             <figcaption className="text-center text-sm text-muted-foreground mt-2">
-              {(block as any).caption}
+              {block.caption}
             </figcaption>
           )}
         </figure>
       );
 
     case 'heading':
-      const b = block as any;
-      const HeadingTag = `h${b.level}` as keyof JSX.IntrinsicElements;
+      const HeadingTag = `h${block.level}` as keyof JSX.IntrinsicElements;
       return (
         <HeadingTag key={index} className="font-bold mt-6 mb-3">
-          {b.content}
+          {block.content}
         </HeadingTag>
       );
 
     case 'list':
-      const listBlock = block as any;
-      const ListTag = listBlock.ordered ? 'ol' : 'ul';
+      const ListTag = block.ordered ? 'ol' : 'ul';
       return (
-        <ListTag key={index} className={cn('mb-4 pl-6', listBlock.ordered ? 'list-decimal' : 'list-disc')}>
-          {listBlock.items.map((item: string, i: number) => (
+        <ListTag key={index} className={cn('mb-4 pl-6', block.ordered ? 'list-decimal' : 'list-disc')}>
+          {block.items.map((item, i) => (
             <li key={i} className="mb-1">{item}</li>
           ))}
         </ListTag>
       );
 
     case 'quote':
-      const quoteBlock = block as any;
       return (
         <blockquote key={index} className="border-l-4 border-primary pl-4 italic my-4 text-muted-foreground">
-          {quoteBlock.content}
-          {quoteBlock.attribution && (
-            <cite className="block text-sm mt-2 not-italic">— {quoteBlock.attribution}</cite>
+          {block.content}
+          {block.attribution && (
+            <cite className="block text-sm mt-2 not-italic">— {block.attribution}</cite>
           )}
         </blockquote>
       );
@@ -145,7 +120,7 @@ function renderBlock(block: BlogContent, index: number): React.ReactNode {
       return <hr key={index} className="my-6 border-t border-border" />;
 
     default:
-      console.warn(`Unknown blog content block type: ${type}, skipping`);
+      // Unreachable: parseBlogContent drops anything not in the union.
       return null;
   }
 }

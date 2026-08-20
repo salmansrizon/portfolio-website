@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Plus, Edit, Trash2 } from 'lucide-react';
 import { serviceConfig } from '@/adapters/entityConfigs';
 import { EntityFormDialog } from './EntityFormDialog';
+import ListPager from './ListPager';
 import { useEntityManager } from '@/hooks/useEntityManager';
 
 const ServicesManager = () => {
-  const { items: services, isLoading: loading, openCreate, openEdit, remove, dialog } = useEntityManager(serviceConfig);
+  const { items: services, pageItems, pagination, isLoading: loading, openCreate, openEdit, remove, dialog } = useEntityManager(serviceConfig);
 
   if (loading) {
     return (
@@ -17,7 +18,7 @@ const ServicesManager = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Services</h3>
         <Button onClick={openCreate}>
@@ -26,10 +27,13 @@ const ServicesManager = () => {
         </Button>
       </div>
 
+      <ListPager pagination={pagination} label="services" />
+
+
       <EntityFormDialog config={serviceConfig} {...dialog} />
 
-      <div className="grid gap-6">
-        {services.map((service) => (
+      <div className="grid gap-3">
+        {pageItems.map((service) => (
           <Card key={service.id}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-base">{service.title}</CardTitle>

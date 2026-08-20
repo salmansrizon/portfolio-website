@@ -92,7 +92,7 @@ const FloatingContact = () => {
                             whileTap={{ scale: 0.9 }}
                             onClick={() => setIsOpen(!isOpen)}
                             className={cn(
-                                "w-16 h-16 rounded-3xl flex items-center justify-center text-accent-foreground shadow-2xl relative group overflow-hidden transition-all duration-500",
+                                "w-16 h-16 rounded-3xl flex items-center justify-center text-primary-foreground shadow-2xl relative group overflow-hidden transition-all duration-500",
                                 isOpen ? "bg-destructive rotate-90" : "bg-primary"
                             )}
                         >

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from './client';
 import type { EntityConfig } from '@/adapters/entityConfigs';
 import { asRepositoryError, RepositoryError } from './repositoryError';
@@ -52,6 +53,13 @@ export function createRepository<T extends Record<string, unknown>>(
 ) {
   const { table, primaryKey = 'id' } = config;
 
+  // The one place the generated Database types cannot flow. `.from()` is keyed
+  // on *literal* table names, and a repository only knows its table at runtime,
+  // so every call site used to carry its own `as T` cast. The unsafety is real
+  // either way; this concentrates it into one line instead of nine, and the
+  // Entity Config seam is what checks `table` and `T` against the real schema.
+  const db = supabase as unknown as SupabaseClient;
+
   // ── Query hooks ──────────────────────────────────────────────────────
   function useFindAll(filter?: Partial<T>) {
     // An empty-string filter value (e.g. a master-detail screen before its
@@ -63,7 +71,7 @@ export function createRepository<T extends Record<string, unknown>>(
     return useQuery({
       queryKey: [table, filter],
       queryFn: async () => {
-        let query = supabase.from(table).select('*');
+        let query = db.from(table).select('*');
 
         // Apply filter if provided
         if (filter) {
@@ -86,7 +94,7 @@ export function createRepository<T extends Record<string, unknown>>(
     return useQuery({
       queryKey: [table, id],
       queryFn: async () => {
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from(table)
           .select('*')
           .eq(primaryKey, id)
@@ -103,7 +111,7 @@ export function createRepository<T extends Record<string, unknown>>(
     const queryClient = useQueryClient();
     return useMutation({
       mutationFn: async (item: Partial<T>) => {
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from(table)
           .insert(item)
           .select()
@@ -121,7 +129,7 @@ export function createRepository<T extends Record<string, unknown>>(
     const queryClient = useQueryClient();
     return useMutation({
       mutationFn: async ({ id, item }: { id: string; item: Partial<T> }) => {
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from(table)
           .update(item)
           .eq(primaryKey, id)
@@ -140,7 +148,7 @@ export function createRepository<T extends Record<string, unknown>>(
     const queryClient = useQueryClient();
     return useMutation({
       mutationFn: async (id: string) => {
-        const { error } = await supabase
+        const { error } = await db
           .from(table)
           .delete()
           .eq(primaryKey, id);

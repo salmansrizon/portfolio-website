@@ -269,10 +269,10 @@ const SessionBookingManager = () => {
     const colors: Record<string, string> = {
       pending: 'bg-warning-soft text-warning-foreground',
       submitted: 'bg-accent/10 text-accent',
-      verified: 'bg-success-soft text-success-foreground',
-      confirmed: 'bg-success-soft text-success-foreground',
-      rejected: 'bg-danger-soft text-danger-foreground',
-      cancelled: 'bg-danger-soft text-danger-foreground',
+      verified: 'bg-success-strong text-success-strong-foreground',
+      confirmed: 'bg-success-strong text-success-strong-foreground',
+      rejected: 'bg-danger-strong text-danger-strong-foreground',
+      cancelled: 'bg-danger-strong text-danger-strong-foreground',
       completed: 'bg-primary/10 text-primary',
     };
     return <Badge className={colors[status] || 'bg-muted text-muted-foreground'}>{status}</Badge>;
@@ -286,7 +286,7 @@ const SessionBookingManager = () => {
   return (
     <div className="bg-card text-card-foreground rounded-xl border shadow-sm p-6 relative z-10">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full h-auto grid-cols-2 sm:grid-cols-5">
           <TabsTrigger value="bookings">Bookings</TabsTrigger>
           <TabsTrigger value="session-types">Session Types</TabsTrigger>
           <TabsTrigger value="availability">Availability</TabsTrigger>
@@ -411,11 +411,11 @@ const SessionBookingManager = () => {
                     {st.is_paid ? (
                       <Badge className="bg-primary/10 text-primary text-xs">Paid — ৳{st.fee}</Badge>
                     ) : (
-                      <Badge className="bg-success-soft text-success-foreground text-xs">Free</Badge>
+                      <Badge className="bg-success-strong text-success-strong-foreground text-xs">Free</Badge>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">{st.description}</p>
-                  <p className="text-sm text-muted-foreground">{st.duration_minutes} min</p>
+                  <p className="line-clamp-2 text-xs text-muted-foreground">{st.description}</p>
+                  <p className="line-clamp-2 text-xs text-muted-foreground">{st.duration_minutes} min</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">
@@ -441,7 +441,7 @@ const SessionBookingManager = () => {
         {/* ═══════════════════════════════════════════════════════
             TAB 3 — Unavailable Slots
             ═══════════════════════════════════════════════════════ */}
-        <TabsContent value="unavailable-slots" className="space-y-6">
+        <TabsContent value="unavailable-slots" className="space-y-4">
           {/* Add new slot form */}
           <Card>
             <CardHeader>
@@ -526,7 +526,7 @@ const SessionBookingManager = () => {
             <CardContent>
               {unavailableSlots.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  <CalendarX className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                  <CalendarX className="mx-auto h-10 w-10 mb-4 opacity-50" />
                   <p>No unavailable slots configured</p>
                 </div>
               ) : (
@@ -595,7 +595,7 @@ const SessionBookingManager = () => {
               <CardHeader>
                 <CardTitle>Global Availability Rules</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-4">
                 <div className="space-y-3">
                   <Label>Available Days of the Week</Label>
                   <div className="flex flex-wrap gap-2">

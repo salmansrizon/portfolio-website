@@ -1,0 +1,38 @@
+# Supabase free-tier projects pause after ~1 week of inactivity, which takes
+# down auth, data and the Edge Functions — not just background work. Real
+# traffic prevents it; a quiet week does not. This keeps the project warm and
+# fails loudly if it ever stops responding.
+#
+# Chosen over a third-party uptime monitor because it needs no account and no
+# spend, which are hard constraints on this project.
+#
+# Phase 0, item 5 of .scratch/careerprep-edtech/spec.md
+
+name: Supabase keepalive
+
+on:
+  schedule:
+    # Twice daily, well inside the ~1 week inactivity window.
+    - cron: '0 3,15 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase auth health endpoint
+        env:
+          # The anon key is public by design — it already ships in the client
+          # bundle. It is required here because /auth/v1/health answers 401
+          # without it, which would make the check indistinguishable from a fault.
+          SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxsbWVlbnRseGphdWlocmtrcmpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxNzg1NTMsImV4cCI6MjA2ODc1NDU1M30.xOrWNt9jkPhI11CFkkFTgFjuH8SNbIjp4oyk3e34vt8
+        run: |
+          set -euo pipefail
+          url="https://llmeentlxjauihrkkrjg.supabase.co/auth/v1/health"
+          code=$(curl -s -o /tmp/body -w '%{http_code}' --max-time 30 -H "apikey: $SUPABASE_ANON_KEY" "$url")
+          echo "HTTP $code"
+          cat /tmp/body
+          if [ "$code" != "200" ]; then
+            echo "::error::Supabase did not return 200 — the project may be paused."
+            exit 1
+          fi

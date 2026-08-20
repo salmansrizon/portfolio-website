@@ -8,8 +8,11 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { useQueryClient } from '@tanstack/react-query';
+import { usePagination } from '@/hooks/usePagination';
+import ListPager from './ListPager';
 import { Loader2, Plus, Edit, Trash2, ExternalLink } from 'lucide-react';
 import { BlogPost } from '@/types/blog';
+import { parseBlogContent } from '@/components/BlogContentRenderer';
 import BlogEditor from './BlogEditor';
 import { createRepository } from '@/integrations/supabase/repository';
 import { blogPostConfig } from '@/adapters/entityConfigs';
@@ -25,6 +28,7 @@ const BlogManager = () => {
 
   // Use repository hook for data fetching
   const { data: blogs = [], isLoading: loading } = blogRepository.useFindAll();
+  const blogPages = usePagination(blogs, 10);
   const { mutate: deleteBlog, isPending: isDeleting } = blogRepository.useDelete();
   const { mutate: updateBlog } = blogRepository.useUpdate();
 
@@ -77,10 +81,11 @@ const BlogManager = () => {
     });
   };
 
-  const handleTogglePublished = async (blog: BlogPost) => {
+  // Takes the stored row, not a parsed post — it only needs these two fields.
+  const handleTogglePublished = async (blog: { id?: string; published?: boolean | null }) => {
     if (!blog.id) return;
 
-    updateBlog({ id: blog.id, item: { published: !blog.published } as any }, {
+    updateBlog({ id: blog.id, item: { published: !blog.published } }, {
       onSuccess: () => {
         toast({
           title: "Success",
@@ -140,7 +145,7 @@ const BlogManager = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {blogs.map((blog) => (
+            {blogPages.pageItems.map((blog) => (
               <TableRow key={blog.id}>
                 <TableCell className="font-medium">{blog.title}</TableCell>
                 <TableCell>
@@ -148,7 +153,7 @@ const BlogManager = () => {
                     'Local'
                   ) : (
                     <div className="flex items-center">
-                      {blog.source_type.charAt(0).toUpperCase() + blog.source_type.slice(1)}
+                      {(blog.source_type ?? 'local').charAt(0).toUpperCase() + (blog.source_type ?? 'local').slice(1)}
                       {blog.source_url && (
                         <a
                           href={blog.source_url}
@@ -176,7 +181,9 @@ const BlogManager = () => {
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      setEditingBlog(blog);
+                      // A stored row carries `content` as a JSON string; the
+                      // editor works in blocks, so parse at the handoff.
+                      setEditingBlog({ ...blog, content: parseBlogContent(blog.content) } as BlogPost);
                       setIsDialogOpen(true);
                     }}
                   >
@@ -194,6 +201,7 @@ const BlogManager = () => {
             ))}
           </TableBody>
         </Table>
+        <ListPager pagination={blogPages} label="blog posts" />
 
         {blogs.length === 0 && (
           <div className="text-center py-6 text-muted-foreground">

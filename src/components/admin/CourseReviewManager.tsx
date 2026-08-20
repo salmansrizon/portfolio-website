@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { createRepository } from "@/integrations/supabase/repository";
 import { courseReviewConfig, courseConfig } from "@/adapters/entityConfigs";
+import ListPager from './ListPager';
 import { useEntityManager } from "@/hooks/useEntityManager";
 
 const reviewRepository = createRepository(courseReviewConfig);
@@ -36,7 +37,7 @@ const CourseReviewManager = () => {
   // status and course are separate, locally-owned filters composed on top,
   // same as before this migration.
   const {
-    items: searchedReviews,
+    items: searchedReviews, pageItems, pagination,
     search: searchQuery,
     setSearch: setSearchQuery,
     remove,
@@ -97,7 +98,7 @@ const CourseReviewManager = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold text-foreground flex items-center gap-3">
@@ -204,7 +205,7 @@ const CourseReviewManager = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-foreground">{review.student_name}</span>
-                        <Badge variant={review.is_approved ? "default" : "secondary"} className={`text-[10px] px-1.5 py-0 ${review.is_approved ? 'bg-success-soft text-success-foreground hover:bg-success-soft/80' : 'bg-warning-soft text-warning-foreground hover:bg-warning-soft/80'}`}>
+                        <Badge variant={review.is_approved ? "default" : "secondary"} className={`text-[10px] px-1.5 py-0 ${review.is_approved ? 'bg-success-strong text-success-strong-foreground hover:bg-success-strong/90' : 'bg-warning-soft text-warning-foreground hover:bg-warning-soft/80'}`}>
                           {review.is_approved ? "Approved" : "Pending"}
                         </Badge>
                       </div>
@@ -277,6 +278,7 @@ const CourseReviewManager = () => {
           ))}
         </div>
       )}
+      <ListPager pagination={pagination} label="reviews" />
     </div>
   );
 };

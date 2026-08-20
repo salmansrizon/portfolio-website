@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Plus, Edit, Trash2 } from 'lucide-react';
 import { projectConfig } from '@/adapters/entityConfigs';
 import { EntityFormDialog } from './EntityFormDialog';
+import ListPager from './ListPager';
 import { useEntityManager } from '@/hooks/useEntityManager';
 
 const ProjectManager = () => {
-  const { items: projects, isLoading: loading, openCreate, openEdit, remove, dialog } = useEntityManager(projectConfig);
+  const { items: projects, pageItems, pagination, isLoading: loading, openCreate, openEdit, remove, dialog } = useEntityManager(projectConfig);
 
   if (loading) {
     return (
@@ -17,7 +18,7 @@ const ProjectManager = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Projects</h3>
         <Button onClick={openCreate}>
@@ -26,10 +27,13 @@ const ProjectManager = () => {
         </Button>
       </div>
 
+      <ListPager pagination={pagination} label="projects" />
+
+
       <EntityFormDialog config={projectConfig} {...dialog} />
 
-      <div className="grid gap-6">
-        {projects.map((project: any) => (
+      <div className="grid gap-3">
+        {pageItems.map((project: any) => (
           <Card key={project.id}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-base">{project.title}</CardTitle>

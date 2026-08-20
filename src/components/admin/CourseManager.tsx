@@ -13,8 +13,11 @@ import { Plus, Edit, Trash2, X } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CourseEnrollmentManager from "./CourseEnrollmentManager";
 import CourseCategoryManager from "./CourseCategoryManager";
+import { useQueryClient } from "@tanstack/react-query";
+import { usePagination } from "@/hooks/usePagination";
+import ListPager from "./ListPager";
 import { createRepository } from "@/integrations/supabase/repository";
-import { courseConfig } from "@/adapters/entityConfigs";
+import { courseConfig, type Course as CourseRow } from "@/adapters/entityConfigs";
 import { ImageUploadField } from "./ImageUploadField";
 
 const courseRepository = createRepository(courseConfig);
@@ -216,7 +219,9 @@ export default function CourseManager() {
   const [isLoadingSections, setIsLoadingSections] = useState(false);
   const [instructorsList, setInstructorsList] = useState<any[]>([]);
 
+  const queryClient = useQueryClient();
   const { data: courses = [], isLoading } = courseRepository.useFindAll();
+  const coursePages = usePagination(courses, 10);
   const { mutateAsync: deleteCourseMutation } = courseRepository.useDelete();
   const courseCreateMutation = courseRepository.useCreate();
   const courseUpdateMutation = courseRepository.useUpdate();
@@ -311,7 +316,9 @@ export default function CourseManager() {
       await syncSectionsAndContents(courseId);
 
       showSuccess(editingCourse ? "Course updated successfully!" : "Course created successfully!");
-      fetchCourses();
+      // The create/update mutations already invalidate ['courses']; sections and
+      // contents are written by syncSectionsAndContents through their own queries.
+      // The fetchCourses() that used to sit here was an undefined identifier.
       setShowDialog(false);
       resetForm();
     } catch (error: any) {
@@ -616,9 +623,11 @@ export default function CourseManager() {
     });
   };
 
-  const handleEdit = async (course: Course) => {
+  // Takes a stored row — the list renders rows, not the editor's aggregate.
+  const handleEdit = async (course: CourseRow) => {
+    if (!course.id) return;
     try {
-      setEditingCourse(course);
+      setEditingCourse(course as Course);
       // Fetch basic course data first
       const { data: courseData, error: courseError } = await supabase
         .from('courses')
@@ -689,14 +698,14 @@ export default function CourseManager() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Course Management</h2>
+        <h2 className="text-xl font-bold">Course Management</h2>
       </div>
 
       <Tabs defaultValue="courses" onValueChange={(val) => {
         if (val === 'courses') {
-          fetchCourses();
+          queryClient.invalidateQueries({ queryKey: ['courses'] });
         }
       }}>
         <TabsList className="grid w-full grid-cols-3 sm:w-[400px] mb-6">
@@ -1479,7 +1488,7 @@ export default function CourseManager() {
         
         <div className="divide-y">
           {courses.length > 0 ? (
-            courses.map((course) => (
+            coursePages.pageItems.map((course) => (
               <div key={course.id} className="p-6 hover:bg-muted/50 transition-colors">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -1528,6 +1537,7 @@ export default function CourseManager() {
                             {tech}
                           </Badge>
                         ))}
+          <ListPager pagination={coursePages} label="courses" />
                         {course.technologies.length > 4 && (
                           <Badge variant="outline" className="text-xs">
                             +{course.technologies.length - 4} more

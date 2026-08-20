@@ -7,7 +7,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "next-themes";
-import { SQLProvider } from "@/contexts/SQLContext";
 import Index from "./pages/Index";
 import FloatingContact from "@/components/FloatingContact";
 import WebinarFloatingButton from "@/components/WebinarFloatingButton";
@@ -26,10 +25,26 @@ const CourseDetails = lazy(() => import("./pages/CourseDetails"));
 const BookSession = lazy(() => import("./pages/BookSession"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const CareerPrep = lazy(() => import("./pages/CareerPrep"));
+const CareerPrepLibrary = lazy(() => import("./pages/CareerPrepLibrary"));
+const TopicPage = lazy(() => import("./pages/TopicPage"));
+const AssessmentPage = lazy(() => import("./pages/AssessmentPage"));
+const VerifyCertificatePage = lazy(() => import("./pages/VerifyCertificatePage"));
+const PublicProfilePage = lazy(() => import("./pages/PublicProfilePage"));
 const SQLChallenge = lazy(() => import("./pages/SQLChallenge"));
 const WebinarLanding = lazy(() => import("./pages/WebinarLanding"));
 const RoadmapsPage = lazy(() => import("./pages/RoadmapsPage"));
 const RoadmapDetailPage = lazy(() => import("./pages/RoadmapDetailPage"));
+// PROTOTYPE — throwaway, delete with src/pages/prototype/ once the redesign ships.
+// Declared inside the DEV check so the production build dead-code-eliminates the
+// dynamic imports entirely: gating only the <Route> still emits the chunks, leaving
+// a mock certificate and unshipped funnel design downloadable from dist/.
+const PrototypeRoutes = import.meta.env.DEV
+  ? [
+      { path: "/prototype/lobby", Component: lazy(() => import("./pages/prototype/LobbyPrototype")) },
+      { path: "/prototype/workspace", Component: lazy(() => import("./pages/prototype/WorkspacePrototype")) },
+      { path: "/prototype/profile", Component: lazy(() => import("./pages/prototype/ProfilePrototype")) },
+    ]
+  : [];
 
 const RouteFallback = () => (
   <div className="h-screen flex items-center justify-center bg-background">
@@ -61,10 +76,18 @@ const App = () => (
                 <Route path="/course/:courseId" element={<CourseDetails />} />
                 <Route path="/book-session" element={<BookSession />} />
                 <Route path="/career-prep" element={<CareerPrep />} />
-                <Route path="/career-prep/solve/:slug" element={<SQLProvider><SQLChallenge /></SQLProvider>} />
+                <Route path="/career-prep/library" element={<CareerPrepLibrary />} />
+                <Route path="/career-prep/topic/:slug" element={<TopicPage />} />
+                <Route path="/career-prep/assessment/:slug" element={<AssessmentPage />} />
+                <Route path="/verify/:id" element={<VerifyCertificatePage />} />
+                <Route path="/u/:username" element={<PublicProfilePage />} />
+                <Route path="/career-prep/solve/:slug" element={<SQLChallenge />} />
                 <Route path="/webinar/:id" element={<WebinarLanding />} />
                 <Route path="/roadmaps" element={<RoadmapsPage />} />
                 <Route path="/roadmaps/:slug" element={<RoadmapDetailPage />} />
+                {PrototypeRoutes.map(({ path, Component }) => (
+                  <Route key={path} path={path} element={<Component />} />
+                ))}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

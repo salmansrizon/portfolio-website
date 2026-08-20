@@ -77,7 +77,10 @@ interface Widget extends Record<string, unknown> {
   owner: string;
 }
 
-const widgetConfig: EntityConfig<Widget> = {
+// A deliberate test double, not a real Entity Config: 'widgets' is not a table,
+// and createRepository is mocked, so nothing here ever reaches Supabase. The
+// cast opts the fixture out of the schema check that guards the real configs.
+const widgetConfig = {
   table: 'widgets',
   entityLabel: 'Widget',
   searchableFields: ['name', 'owner'],
@@ -86,7 +89,7 @@ const widgetConfig: EntityConfig<Widget> = {
     { name: 'name', type: 'text', label: 'Name', required: true },
     { name: 'owner', type: 'text', label: 'Owner' },
   ],
-};
+} as unknown as EntityConfig<Widget>;
 
 const items: Widget[] = [
   { id: '1', name: 'Alpha', owner: 'Sam' },

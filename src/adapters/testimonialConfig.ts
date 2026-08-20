@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { EntityConfig } from './entityConfigs';
+import { defineEntityConfig } from './entityConfigs';
 
 // ── Testimonial Schema ─────────────────────────────────────────────────────
 export const testimonialSchema = z.object({
@@ -14,7 +14,7 @@ export const testimonialSchema = z.object({
 export type Testimonial = z.infer<typeof testimonialSchema>;
 
 // ── Testimonial Config ──────────────────────────────────────────────────────
-export const testimonialConfig: EntityConfig<Testimonial> = {
+export const testimonialConfig = defineEntityConfig<Testimonial>()({
   table: 'testimonials',
   entityLabel: 'Testimonial',
   schema: testimonialSchema,
@@ -26,4 +26,4 @@ export const testimonialConfig: EntityConfig<Testimonial> = {
     { name: 'content', type: 'textarea', label: 'Content', required: true },
     { name: 'rating', type: 'number', label: 'Rating (1-5)' },
   ],
-};
+});

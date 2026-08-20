@@ -1,8 +1,23 @@
 import { z } from 'zod';
+import type { Database } from '@/integrations/supabase/types';
+
+// Every table the generated Supabase types know about. Declaring `table` as
+// one of these — rather than as a bare `string` — is what lets the compiler
+// check a config against the real schema instead of a hand-copied list.
+export type TableName = keyof Database['public']['Tables'];
+type ColumnsOf<TTable extends TableName> = keyof Database['public']['Tables'][TTable]['Row'];
+
+// The shape a config takes when its schema declares a field the table does not
+// have. It is deliberately not an EntityConfig, so assignment fails at the
+// config that is wrong — and the offending field names are in the error text.
+type FieldNotInTable<T, TTable extends TableName> = {
+  __error: `This Entity Config declares a field that does not exist on table '${TTable & string}'`;
+  __offendingFields: Exclude<keyof T, ColumnsOf<TTable>>;
+};
 
 // ── Entity config shape ─────────────────────────────────────────────────────
-export interface EntityConfig<T extends Record<string, unknown>> {
-  table: string;
+export interface EntityConfig<T extends Record<string, unknown>, TTable extends TableName = TableName> {
+  table: TTable;
   primaryKey?: string; // defaults to 'id'
   schema: z.ZodSchema<T>;
   defaultSort?: string;
@@ -16,6 +31,21 @@ export interface EntityConfig<T extends Record<string, unknown>> {
   // doesn't expose search, or pass a custom searchPredicate for anything
   // beyond a plain per-field substring match (joined/computed data).
   searchableFields?: (keyof T)[];
+}
+
+// What the form modules actually need. Rendering fields and validating them is
+// not a persistence concern, so `table` never reaches them — which also means a
+// test fixture can describe a form without naming a real table.
+export type FormConfig<T extends Record<string, unknown>> =
+  Pick<EntityConfig<T>, 'schema' | 'fields' | 'entityLabel'>;
+
+// Curried so the entity type stays explicit while the *table literal* is
+// inferred — an annotation like `: EntityConfig<Course>` would widen `table`
+// back to the full union and lose the check.
+export function defineEntityConfig<T extends Record<string, unknown>>() {
+  return <TTable extends TableName>(
+    config: keyof T extends ColumnsOf<TTable> ? EntityConfig<T, TTable> : FieldNotInTable<T, TTable>,
+  ): EntityConfig<T, TTable> => config as EntityConfig<T, TTable>;
 }
 
 // ── Session Type (for booking system) ─────────────────────────────────────
@@ -32,7 +62,7 @@ export const sessionTypeSchema = z.object({
 
 export type SessionType = z.infer<typeof sessionTypeSchema>;
 
-export const sessionTypeConfig: EntityConfig<SessionType> = {
+export const sessionTypeConfig = defineEntityConfig<SessionType>()({
   table: 'session_types',
   entityLabel: 'Session Type',
   schema: sessionTypeSchema,
@@ -46,7 +76,7 @@ export const sessionTypeConfig: EntityConfig<SessionType> = {
     { name: 'is_active', type: 'boolean', label: 'Active' },
     { name: 'is_paid', type: 'boolean', label: 'Paid Session' },
   ],
-};
+});
 
 // ── Payment Settings ──────────────────────────────────────────────
 export const paymentSettingsSchema = z.object({
@@ -62,7 +92,7 @@ export const paymentSettingsSchema = z.object({
 
 export type PaymentSettings = z.infer<typeof paymentSettingsSchema>;
 
-export const paymentSettingsConfig: EntityConfig<PaymentSettings> = {
+export const paymentSettingsConfig = defineEntityConfig<PaymentSettings>()({
   table: 'payment_settings',
   entityLabel: 'Payment Settings',
   schema: paymentSettingsSchema,
@@ -73,7 +103,7 @@ export const paymentSettingsConfig: EntityConfig<PaymentSettings> = {
     { name: 'nagad_number', type: 'text', label: 'Nagad Number' },
     { name: 'payment_window_minutes', type: 'number', label: 'Payment Window (minutes)' },
   ],
-};
+});
 
 // ── Unavailable Slot ──────────────────────────────────────────────
 export const unavailableSlotSchema = z.object({
@@ -87,7 +117,7 @@ export const unavailableSlotSchema = z.object({
 
 export type UnavailableSlot = z.infer<typeof unavailableSlotSchema>;
 
-export const unavailableSlotConfig: EntityConfig<UnavailableSlot> = {
+export const unavailableSlotConfig = defineEntityConfig<UnavailableSlot>()({
   table: 'unavailable_slots',
   entityLabel: 'Unavailable Slot',
   schema: unavailableSlotSchema,
@@ -98,7 +128,7 @@ export const unavailableSlotConfig: EntityConfig<UnavailableSlot> = {
     { name: 'time_slot', type: 'text', label: 'Time Slot' },
     { name: 'reason', type: 'text', label: 'Reason' },
   ],
-};
+});
 
 // ── Availability Settings ─────────────────────────────────────────
 export const availabilitySettingsSchema = z.object({
@@ -110,7 +140,7 @@ export const availabilitySettingsSchema = z.object({
 
 export type AvailabilitySettings = z.infer<typeof availabilitySettingsSchema>;
 
-export const availabilitySettingsConfig: EntityConfig<AvailabilitySettings> = {
+export const availabilitySettingsConfig = defineEntityConfig<AvailabilitySettings>()({
   table: 'availability_settings',
   entityLabel: 'Availability Settings',
   schema: availabilitySettingsSchema,
@@ -120,7 +150,7 @@ export const availabilitySettingsConfig: EntityConfig<AvailabilitySettings> = {
     { name: 'available_weekdays', type: 'array', label: 'Available Weekdays' },
     { name: 'time_slots', type: 'array', label: 'Time Slots' },
   ],
-};
+});
 
 // ── Career Prep Question ─────────────────────────────────────────────────
 export const careerPrepQuestionSchema = z.object({
@@ -146,12 +176,15 @@ export const careerPrepQuestionSchema = z.object({
     text: z.string(),
   })).optional(),
   correct_option: z.string().optional(),
+  // Set both to attach this Question to a Roadmap Step as its Checkpoint.
+  roadmap_id: z.string().uuid().nullable().optional(),
+  step_slug: z.string().nullable().optional(),
   created_at: z.string().optional(),
 });
 
 export type CareerPrepQuestion = z.infer<typeof careerPrepQuestionSchema>;
 
-export const careerPrepQuestionConfig: EntityConfig<CareerPrepQuestion> = {
+export const careerPrepQuestionConfig = defineEntityConfig<CareerPrepQuestion>()({
   table: 'careerprep_questions',
   entityLabel: 'Question',
   schema: careerPrepQuestionSchema,
@@ -174,8 +207,12 @@ export const careerPrepQuestionConfig: EntityConfig<CareerPrepQuestion> = {
       { label: 'MCQ', value: 'mcq' },
       { label: 'Case Study', value: 'case_study' },
     ]},
+    // Attaching an MCQ to a Roadmap Step is what turns it into a Checkpoint.
+    // `step_slug` is the {#slug} written on the heading in the Roadmap markdown.
+    { name: 'roadmap_id', type: 'text', label: 'Checkpoint: Roadmap ID (optional)' },
+    { name: 'step_slug', type: 'text', label: 'Checkpoint: Step slug (optional)' },
   ],
-};
+});
 
 export interface FormFieldConfig<T extends Record<string, unknown>> {
   name: keyof T;
@@ -203,7 +240,7 @@ export const projectSchema = z.object({
 
 export type Project = z.infer<typeof projectSchema>;
 
-export const projectConfig: EntityConfig<Project> = {
+export const projectConfig = defineEntityConfig<Project>()({
   table: 'projects',
   entityLabel: 'Project',
   schema: projectSchema,
@@ -217,7 +254,7 @@ export const projectConfig: EntityConfig<Project> = {
     { name: 'demo_url', type: 'text', label: 'Demo URL' },
     { name: 'github_url', type: 'text', label: 'GitHub URL' },
   ],
-};
+});
 
 // ── Service ──────────────────────────────────────────────────────────────────
 export const serviceSchema = z.object({
@@ -231,7 +268,7 @@ export const serviceSchema = z.object({
 
 export type Service = z.infer<typeof serviceSchema>;
 
-export const serviceConfig: EntityConfig<Service> = {
+export const serviceConfig = defineEntityConfig<Service>()({
   table: 'services',
   entityLabel: 'Service',
   schema: serviceSchema,
@@ -243,7 +280,7 @@ export const serviceConfig: EntityConfig<Service> = {
     { name: 'features', type: 'array', label: 'Features' },
     { name: 'icon', type: 'text', label: 'Icon' },
   ],
-};
+});
 
 // ── Testimonial ──────────────────────────────────────────────────────────────
 export const testimonialSchema = z.object({
@@ -257,7 +294,7 @@ export const testimonialSchema = z.object({
 
 export type Testimonial = z.infer<typeof testimonialSchema>;
 
-export const testimonialConfig: EntityConfig<Testimonial> = {
+export const testimonialConfig = defineEntityConfig<Testimonial>()({
   table: 'testimonials',
   entityLabel: 'Testimonial',
   schema: testimonialSchema,
@@ -269,7 +306,7 @@ export const testimonialConfig: EntityConfig<Testimonial> = {
     { name: 'content', type: 'textarea', label: 'Content', required: true },
     { name: 'rating', type: 'number', label: 'Rating (1-5)' },
   ],
-};
+});
 
 // ── Certification ────────────────────────────────────────────────────────────
 export const certificationSchema = z.object({
@@ -285,7 +322,7 @@ export const certificationSchema = z.object({
 
 export type Certification = z.infer<typeof certificationSchema>;
 
-export const certificationConfig: EntityConfig<Certification> = {
+export const certificationConfig = defineEntityConfig<Certification>()({
   table: 'certifications',
   entityLabel: 'Certification',
   schema: certificationSchema,
@@ -299,7 +336,7 @@ export const certificationConfig: EntityConfig<Certification> = {
     { name: 'image_url', type: 'image', label: 'Image URL', bucket: 'admin-uploads', pathPrefix: 'certifications' },
     { name: 'earned_date', type: 'text', label: 'Earned Date' },
   ],
-};
+});
 
 // ── Blog Post ──────────────────────────────────────────────────────
 export const blogPostSchema = z.object({
@@ -311,13 +348,20 @@ export const blogPostSchema = z.object({
   featured_image: z.string().url().nullable().optional().or(z.literal('')),
   published: z.boolean().nullable().default(false),
   categories: z.array(z.string()).nullable().default([]),
+  // Read by the admin list; they were columns on `blogs` all along, just never
+  // declared here — so the row type the repository returned did not have them.
+  source_type: z.string().nullable().optional(),
+  source_url: z.string().nullable().optional(),
+  banner_url: z.string().nullable().optional(),
   created_at: z.string().optional(),
   updated_at: z.string().optional(),
 });
 
-export type BlogPost = z.infer<typeof blogPostSchema>;
+// The stored row. The *parsed* post — with `content` as blocks rather than a
+// JSON string — is BlogPost in @/types/blog.
+export type BlogRow = z.infer<typeof blogPostSchema>;
 
-export const blogPostConfig: EntityConfig<BlogPost> = {
+export const blogPostConfig = defineEntityConfig<BlogRow>()({
   table: 'blogs',
   entityLabel: 'Blog Post',
   schema: blogPostSchema,
@@ -332,7 +376,7 @@ export const blogPostConfig: EntityConfig<BlogPost> = {
     { name: 'published', type: 'boolean', label: 'Published' },
     { name: 'categories', type: 'array', label: 'Categories' },
   ],
-};
+});
 
 // ── Brand Logo ──────────────────────────────────────────────────────────────
 export const brandLogoSchema = z.object({
@@ -345,7 +389,7 @@ export const brandLogoSchema = z.object({
 
 export type BrandLogo = z.infer<typeof brandLogoSchema>;
 
-export const brandLogoConfig: EntityConfig<BrandLogo> = {
+export const brandLogoConfig = defineEntityConfig<BrandLogo>()({
   table: 'brand_logos',
   entityLabel: 'Brand Logo',
   schema: brandLogoSchema,
@@ -356,7 +400,7 @@ export const brandLogoConfig: EntityConfig<BrandLogo> = {
     { name: 'logo_url', type: 'image', label: 'Logo URL', bucket: 'admin-uploads', pathPrefix: 'logos', maxWidthOrHeight: 800 },
     { name: 'website_url', type: 'text', label: 'Website URL' },
   ],
-};
+});
 
 // ── Instructor ──────────────────────────────────────────────────────────────
 export const instructorSchema = z.object({
@@ -376,7 +420,7 @@ export const instructorSchema = z.object({
 
 export type Instructor = z.infer<typeof instructorSchema>;
 
-export const instructorConfig: EntityConfig<Instructor> = {
+export const instructorConfig = defineEntityConfig<Instructor>()({
   table: 'instructors',
   entityLabel: 'Instructor',
   schema: instructorSchema,
@@ -394,7 +438,7 @@ export const instructorConfig: EntityConfig<Instructor> = {
     { name: 'is_active', type: 'boolean', label: 'Active' },
     { name: 'assigned_courses', type: 'multiselect', label: 'Assigned Courses', options: [] },
   ],
-};
+});
 
 // ── Student ──────────────────────────────────────────────────────────────
 export const studentSchema = z.object({
@@ -415,7 +459,7 @@ export const studentSchema = z.object({
 
 export type Student = z.infer<typeof studentSchema>;
 
-export const studentConfig: EntityConfig<Student> = {
+export const studentConfig = defineEntityConfig<Student>()({
   table: 'students',
   entityLabel: 'Student',
   searchableFields: ['name', 'email'],
@@ -432,7 +476,7 @@ export const studentConfig: EntityConfig<Student> = {
     { name: 'is_active', type: 'boolean', label: 'Active' },
     { name: 'enrolled_courses', type: 'multiselect', label: 'Enrolled Courses', options: [] },
   ],
-};
+});
 
 // ── Course ──────────────────────────────────────────────────────────────
 export const courseSchema = z.object({
@@ -449,12 +493,17 @@ export const courseSchema = z.object({
   category_id: z.string().uuid().nullable().optional(),
   instructor_id: z.string().uuid().nullable().optional(),
   technologies: z.array(z.string()).default([]),
+  // Read by the course list card; real columns on `courses` that this schema
+  // simply never declared, so the repository's row type lacked them.
+  student_count: z.number().nullable().optional(),
+  difficulty_level: z.string().nullable().optional(),
+  duration_hours: z.number().nullable().optional(),
   created_at: z.string().optional(),
 });
 
 export type Course = z.infer<typeof courseSchema>;
 
-export const courseConfig: EntityConfig<Course> = {
+export const courseConfig = defineEntityConfig<Course>()({
   table: 'courses',
   entityLabel: 'Course',
   schema: courseSchema,
@@ -473,7 +522,7 @@ export const courseConfig: EntityConfig<Course> = {
     ]},
     { name: 'instructor_id', type: 'text', label: 'Instructor ID' },
   ],
-};
+});
 
 // ── Course Review ──────────────────────────────────────────────────────────────
 export const courseReviewSchema = z.object({
@@ -489,7 +538,7 @@ export const courseReviewSchema = z.object({
 
 export type CourseReview = z.infer<typeof courseReviewSchema>;
 
-export const courseReviewConfig: EntityConfig<CourseReview> = {
+export const courseReviewConfig = defineEntityConfig<CourseReview>()({
   table: 'course_reviews',
   entityLabel: 'Review',
   searchableFields: ['student_name', 'student_email', 'review_text'],
@@ -504,7 +553,7 @@ export const courseReviewConfig: EntityConfig<CourseReview> = {
     { name: 'review_text', type: 'textarea', label: 'Review' },
     { name: 'is_approved', type: 'boolean', label: 'Approved' },
   ],
-};
+});
 
 // ── Course Category ──────────────────────────────────────────────────────────────
 export const courseCategorySchema = z.object({
@@ -517,7 +566,7 @@ export const courseCategorySchema = z.object({
 
 export type CourseCategory = z.infer<typeof courseCategorySchema>;
 
-export const courseCategoryConfig: EntityConfig<CourseCategory> = {
+export const courseCategoryConfig = defineEntityConfig<CourseCategory>()({
   table: 'course_categories',
   entityLabel: 'Category',
   schema: courseCategorySchema,
@@ -528,7 +577,7 @@ export const courseCategoryConfig: EntityConfig<CourseCategory> = {
     { name: 'slug', type: 'text', label: 'Slug', required: true },
     { name: 'parent_id', type: 'select', label: 'Parent Category', options: [] },
   ],
-};
+});
 
 // ── Course Enrollment ──────────────────────────────────────────────────────────────
 export const courseEnrollmentSchema = z.object({
@@ -547,7 +596,7 @@ export const courseEnrollmentSchema = z.object({
 
 export type CourseEnrollment = z.infer<typeof courseEnrollmentSchema>;
 
-export const courseEnrollmentConfig: EntityConfig<CourseEnrollment> = {
+export const courseEnrollmentConfig = defineEntityConfig<CourseEnrollment>()({
   table: 'course_enrollments',
   entityLabel: 'Enrollment',
   schema: courseEnrollmentSchema,
@@ -563,7 +612,7 @@ export const courseEnrollmentConfig: EntityConfig<CourseEnrollment> = {
       { label: 'Cancelled', value: 'cancelled' },
     ]},
   ],
-};
+});
 
 // ── Session Booking ──────────────────────────────────────────────────────────────
 export const sessionBookingSchema = z.object({
@@ -587,7 +636,7 @@ export const sessionBookingSchema = z.object({
 
 export type SessionBooking = z.infer<typeof sessionBookingSchema>;
 
-export const sessionBookingConfig: EntityConfig<SessionBooking> = {
+export const sessionBookingConfig = defineEntityConfig<SessionBooking>()({
   table: 'session_bookings',
   entityLabel: 'Booking',
   schema: sessionBookingSchema,
@@ -614,7 +663,7 @@ export const sessionBookingConfig: EntityConfig<SessionBooking> = {
       { label: 'Completed', value: 'completed' },
     ]},
   ],
-};
+});
 
 // ── Webinar ──────────────────────────────────────────────────────────────
 export const webinarSchema = z.object({
@@ -634,7 +683,7 @@ export const webinarSchema = z.object({
 
 export type Webinar = z.infer<typeof webinarSchema>;
 
-export const webinarConfig: EntityConfig<Webinar> = {
+export const webinarConfig = defineEntityConfig<Webinar>()({
   table: 'webinars',
   entityLabel: 'Webinar',
   schema: webinarSchema,
@@ -653,7 +702,7 @@ export const webinarConfig: EntityConfig<Webinar> = {
     ]},
     { name: 'booked_count', type: 'number', label: 'Booked Count' },
   ],
-};
+});
 
 // ── Roadmap ──────────────────────────────────────────────────────────────
 export const roadmapSchema = z.object({
@@ -672,7 +721,43 @@ export const roadmapSchema = z.object({
 
 export type Roadmap = z.infer<typeof roadmapSchema>;
 
-export const roadmapConfig: EntityConfig<Roadmap> = {
+// ── Ebook ────────────────────────────────────────────────────────────────────
+// The lead magnet. `storage_path` is a Storage path, not a public URL: the
+// delivery page resolves it, so opens stay measurable and the storage target can
+// move to R2/S3 later without touching anything else.
+export const ebookSchema = z.object({
+  id: z.string().uuid().optional(),
+  slug: z.string().min(1, 'Slug is required'),
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().optional(),
+  cover_image: z.string().optional(),
+  storage_path: z.string().optional(),
+  status: z.string().default('draft'),
+  created_at: z.string().optional(),
+});
+
+export type Ebook = z.infer<typeof ebookSchema>;
+
+export const ebookConfig = defineEntityConfig<Ebook>()({
+  table: 'ebooks',
+  entityLabel: 'Ebook',
+  schema: ebookSchema,
+  defaultSort: 'created_at',
+  realtime: false,
+  fields: [
+    { name: 'title', type: 'text', label: 'Title', required: true },
+    { name: 'slug', type: 'text', label: 'Slug', required: true },
+    { name: 'description', type: 'textarea', label: 'Description' },
+    { name: 'cover_image', type: 'image', label: 'Cover', bucket: 'admin-uploads', pathPrefix: 'ebook-covers' },
+    { name: 'storage_path', type: 'text', label: 'Storage path (e.g. ebooks/my-book.pdf)' },
+    { name: 'status', type: 'select', label: 'Status', options: [
+      { label: 'Draft', value: 'draft' },
+      { label: 'Published', value: 'published' },
+    ]},
+  ],
+});
+
+export const roadmapConfig = defineEntityConfig<Roadmap>()({
   table: 'roadmaps',
   entityLabel: 'Roadmap',
   schema: roadmapSchema,
@@ -691,7 +776,7 @@ export const roadmapConfig: EntityConfig<Roadmap> = {
     ]},
     { name: 'order_index', type: 'number', label: 'Order Index' },
   ],
-};
+});
 
 // ── Course Content ──────────────────────────────────────────────────────────────
 export const courseContentSchema = z.object({
@@ -713,7 +798,7 @@ export const courseContentSchema = z.object({
 
 export type CourseContent = z.infer<typeof courseContentSchema>;
 
-export const courseContentConfig: EntityConfig<CourseContent> = {
+export const courseContentConfig = defineEntityConfig<CourseContent>()({
   table: 'course_content',
   entityLabel: 'Content',
   searchableFields: ['title'],
@@ -734,4 +819,47 @@ export const courseContentConfig: EntityConfig<CourseContent> = {
     { name: 'is_free', type: 'boolean', label: 'Free Content' },
     { name: 'order_index', type: 'number', label: 'Order Index' },
   ],
-};
+});
+
+// ── Topic ──────────────────────────────────────────────────────────────────
+// One thing a learner learns: the explanation, plus (via topic_questions) its
+// practice Questions and at most one Checkpoint. Deliberately not a Question
+// itself — see docs/adr/0003-a-concept-is-not-a-question.md — and deliberately
+// not a Roadmap Step — see docs/adr/0004.
+export const topicSchema = z.object({
+  id: z.string().uuid().optional(),
+  slug: z.string().min(1, 'Slug is required'),
+  title: z.string().min(1, 'Title is required'),
+  what_it_is: z.string().min(1, 'What it is is required'),
+  why_it_matters: z.string().min(1, 'Why it matters is required'),
+  how_it_works: z.string().min(1, 'How it works is required'),
+  // Required on purpose: the analogy is the part authors skip when it is
+  // optional, and it is the part that does the work.
+  analogy: z.string().min(1, 'An analogy is required'),
+  status: z.string().default('draft'),
+  language: z.string().default('en'),
+  created_at: z.string().optional(),
+});
+
+export type Topic = z.infer<typeof topicSchema>;
+
+export const topicConfig = defineEntityConfig<Topic>()({
+  table: 'topics',
+  entityLabel: 'Topic',
+  schema: topicSchema,
+  defaultSort: 'created_at',
+  realtime: false,
+  searchableFields: ['title', 'slug'],
+  fields: [
+    { name: 'title', type: 'text', label: 'Title', required: true, placeholder: 'Window functions' },
+    { name: 'slug', type: 'text', label: 'Slug', required: true, placeholder: 'window-functions' },
+    { name: 'what_it_is', type: 'textarea', label: 'What it is', required: true },
+    { name: 'why_it_matters', type: 'textarea', label: 'Why it matters', required: true },
+    { name: 'how_it_works', type: 'textarea', label: 'How it works', required: true },
+    { name: 'analogy', type: 'textarea', label: 'In plain terms (analogy)', required: true },
+    { name: 'status', type: 'select', label: 'Status', options: [
+      { label: 'Draft', value: 'draft' },
+      { label: 'Published', value: 'published' },
+    ]},
+  ],
+});

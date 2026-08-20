@@ -1,12 +1,12 @@
 // Test setup file for Vitest
 // Configures jsdom environment for React component tests
 
-import { expect, afterEach, vi } from 'vitest';
+import { afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
-import * as matchers from '@testing-library/jest-dom/matchers';
-
-// Extend Vitest's expect with jest-dom matchers
-expect.extend(matchers);
+// Extends expect *and* declares the matcher types. The old
+// `expect.extend(matchers)` worked at runtime but left every
+// toBeInTheDocument() a type error, since nothing widened Assertion.
+import '@testing-library/jest-dom/vitest';
 
 // Clean up after each test
 afterEach(() => {

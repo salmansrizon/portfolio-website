@@ -1,7 +1,7 @@
-import { useForm, UseFormReturn } from 'react-hook-form';
+import { useForm, type DefaultValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import type { EntityConfig } from '@/adapters/entityConfigs';
+import type { FormConfig } from '@/adapters/entityConfigs';
 
 // ── Generic entity form hook ────────────────────────────────────────────────
 // Wraps react-hook-form with Zod validation and field config for UI generation.
@@ -18,7 +18,7 @@ import type { EntityConfig } from '@/adapters/entityConfigs';
 // just those fields with a preprocess step so the resolver accepts both, without
 // ever mutating config.schema itself (entityConfigs.conformance.test.ts reads
 // config.schema.shape directly off the exported configs, so it must stay untouched).
-export function buildFormSchema<T extends Record<string, unknown>>(config: EntityConfig<T>) {
+export function buildFormSchema<T extends Record<string, unknown>>(config: FormConfig<T>) {
   const arrayFields = config.fields.filter(f => f.type === 'array').map(f => f.name);
   if (arrayFields.length === 0) return config.schema;
 
@@ -42,7 +42,7 @@ export function buildFormSchema<T extends Record<string, unknown>>(config: Entit
 // nullable DB column can arrive as null, and the checkbox grid needs a safe
 // array to call .includes() against, so null/undefined coerces to [].
 export function buildDefaultValues<T extends Record<string, unknown>>(
-  config: EntityConfig<T>,
+  config: FormConfig<T>,
   values?: Partial<T> | null
 ) {
   if (!values) return {} as Partial<T>;
@@ -64,7 +64,7 @@ export function buildDefaultValues<T extends Record<string, unknown>>(
 // have value=""). Unwraps ZodOptional/ZodDefault/ZodEffects wrappers looking
 // for a ZodNullable anywhere in the chain.
 export function isNullableField<T extends Record<string, unknown>>(
-  config: EntityConfig<T>,
+  config: FormConfig<T>,
   fieldName: keyof T
 ): boolean {
   let schema: any = (config.schema as unknown as z.ZodObject<any>).shape?.[fieldName as string];
@@ -79,14 +79,17 @@ export function useEntityForm<T extends Record<string, unknown>>({
   config,
   defaultValues,
 }: {
-  config: EntityConfig<T>;
+  config: FormConfig<T>;
   defaultValues?: Partial<T> | null;
 }) {
   type FormValues = z.infer<typeof config['schema']>;
 
-  const methods: UseFormReturn<FormValues> = useForm<FormValues>({
+  // Deliberately un-annotated: react-hook-form's UseFormReturn carries three
+  // type parameters, and pinning it to one made every field value widen to
+  // PathValueImpl in the dialog.
+  const methods = useForm<FormValues>({
     resolver: zodResolver(buildFormSchema(config)),
-    defaultValues: buildDefaultValues(config, defaultValues) as FormValues,
+    defaultValues: buildDefaultValues(config, defaultValues) as DefaultValues<FormValues>,
   });
 
   return {

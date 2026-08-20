@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { CardGridSkeleton } from '@/components/ui/skeletons';
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import LottieAnimation from "@/components/LottieAnimation";
@@ -247,21 +248,17 @@ export default function CoursesPage() {
             </div>
 
             {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                {[1, 2, 3, 4, 5, 6].map(i => (
-                  <div key={i} className="h-[450px] bg-card border rounded-2xl animate-pulse"></div>
-                ))}
-              </div>
+              <CardGridSkeleton count={6} className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3" />
             ) : (filteredWebinars.length > 0 || filteredCourses.length > 0) ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                 {/* Webinar cards first */}
                 {filteredWebinars.map((webinar, index) => (
                   <ScrollReveal key={`w-${webinar.id}`} direction="up" delay={index * 0.05}>
                     <div
-                      className="bg-card rounded-2xl shadow-card hover:shadow-hover transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50 group cursor-pointer"
+                      className="bg-card rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50 group cursor-pointer"
                       onClick={() => navigate(`/webinar/${webinar.id}`)}
                     >
-                      <div className="relative bg-series-webinar text-accent-foreground p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[200px] shrink-0">
+                      <div className="relative bg-series-webinar text-accent-foreground p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[168px] sm:h-[184px] shrink-0">
 
                         {webinar.banner_url && (
                           <img src={webinar.banner_url} alt={webinar.title} className="absolute inset-0 w-full h-full object-cover opacity-30" />
@@ -272,7 +269,7 @@ export default function CoursesPage() {
                           <span className="text-xs font-bold uppercase tracking-wider opacity-80">Webinar</span>
                         </div>
                         
-                        <h3 className="font-bold text-xl z-10 leading-tight px-4">
+                        <h3 className="z-10 px-2 text-base font-bold leading-tight sm:text-lg lg:text-xl [overflow-wrap:anywhere]">
                           {webinar.title}
                         </h3>
                         
@@ -309,7 +306,7 @@ export default function CoursesPage() {
                         <Badge className={cn(
                           "w-fit text-[10px] font-bold uppercase tracking-wider",
                           webinar.status === 'published'
-                            ? "bg-success-soft text-success"
+                            ? "bg-success-soft text-success-strong"
                             : "bg-warning-soft text-warning"
                         )}>
                           {webinar.status === 'published' ? 'Live' : 'Upcoming'}
@@ -330,14 +327,14 @@ export default function CoursesPage() {
                 {filteredCourses.map((course, index) => (
                   <ScrollReveal key={course.id} direction="up" delay={(filteredWebinars.length + index) * 0.05}>
                     <div
-                      className="bg-card rounded-2xl shadow-card hover:shadow-hover transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50 group cursor-pointer"
+                      className="bg-card rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full border border-border/50 group cursor-pointer"
                       onClick={() => navigate(`/course/${course.id}`)}
                     >
-                      <div className="relative bg-primary text-accent-foreground p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[200px] shrink-0">
+                      <div className="relative bg-primary text-primary-foreground p-8 pb-10 flex flex-col items-center justify-center text-center overflow-hidden h-[168px] sm:h-[184px] shrink-0">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-accent-foreground/10 rounded-full translate-x-12 -translate-y-12"></div>
                         <div className="absolute bottom-0 left-0 w-24 h-24 bg-scrim/10 rounded-full -translate-x-8 translate-y-8"></div>
 
-                        <h3 className="font-bold text-2xl z-10 uppercase tracking-wide leading-tight px-4 flex items-center justify-center gap-2">
+                        <h3 className="z-10 line-clamp-3 px-2 text-base font-bold uppercase leading-tight tracking-wide sm:text-lg lg:text-xl [overflow-wrap:anywhere]">
                           {course.title}
                         </h3>
 
@@ -364,7 +361,7 @@ export default function CoursesPage() {
                                 <CourseCountdown startDate={course.start_date} showIcon={false} />
                               </div>
                             )}
-                            <div className="bg-success-soft text-success text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-success/20">
+                            <div className="bg-success-soft text-success-strong text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-success/20">
                               {course.difficulty_level || "beginner"}
                             </div>
                           </div>
@@ -413,7 +410,7 @@ export default function CoursesPage() {
                         </div>
 
                         <Button
-                          className="w-full bg-primary hover:bg-primary-hover text-accent-foreground rounded-xl mt-1 h-12 font-semibold shadow-md transition-all active:scale-[0.98]"
+                          className="w-full bg-primary hover:bg-primary-hover text-primary-foreground rounded-xl mt-1 h-12 font-semibold shadow-md transition-all active:scale-[0.98]"
                           onClick={() => navigate(`/course/${course.id}`)}
                         >
                           View Course Details

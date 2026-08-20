@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { EntityConfig } from '@/adapters/entityConfigs';
+import { usePagination, type PaginationResult } from './usePagination';
 import { createRepository, type Repository } from '@/integrations/supabase/repository';
 import { useToast } from '@/hooks/use-toast';
 
@@ -33,10 +34,16 @@ export interface UseEntityManagerOptions<T extends Record<string, unknown>> {
   // for search that needs joined/computed data a plain per-field match can't
   // express (e.g. matching against a related record's title).
   searchPredicate?: (item: T, query: string) => boolean;
+  /** Rows per page. Ten unless a list has a good reason to differ. */
+  pageSize?: number;
 }
 
 export interface UseEntityManagerResult<T extends Record<string, unknown>> {
+  /** Every item after search — use for counts and totals. */
   items: T[];
+  /** The current page of items — use for rendering the list. */
+  pageItems: T[];
+  pagination: PaginationResult<T>;
   isLoading: boolean;
   isMutating: boolean;
 
@@ -141,8 +148,14 @@ export function useEntityManager<T extends Record<string, unknown>>(
     );
   }, [items, search, options?.searchPredicate, config.searchableFields]);
 
+  // Paging lives in the shell so every Entity Manager gets it without asking,
+  // and so search and paging cannot disagree about which set they are over.
+  const pagination = usePagination(filteredItems, options?.pageSize ?? 10);
+
   return {
     items: filteredItems,
+    pageItems: pagination.pageItems,
+    pagination,
     isLoading,
     isMutating: createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
     search,

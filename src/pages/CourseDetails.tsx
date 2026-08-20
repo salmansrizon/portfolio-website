@@ -345,7 +345,7 @@ export default function CourseDetails() {
                    <Skeleton className="h-4 w-48" />
                 </div>
               </div>
-              <div className="grid grid-cols-4 gap-4 mb-8">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
                 <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-10 w-full" />
@@ -399,7 +399,7 @@ export default function CourseDetails() {
               <ChevronRight className="w-4 h-4 shrink-0" />
               <span className="text-foreground font-semibold">{course.title}</span>
               <div className="ml-auto w-full sm:w-auto mt-2 sm:mt-0 flex gap-2">
-                <Badge variant="secondary" className="bg-success-soft text-success border border-success/20 pointer-events-none capitalize">
+                <Badge variant="secondary" className="bg-success-soft text-success-strong border border-success/20 pointer-events-none capitalize">
                   {course.difficulty_level || 'beginner'}
                 </Badge>
               </div>

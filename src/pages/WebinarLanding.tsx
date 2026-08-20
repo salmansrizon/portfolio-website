@@ -263,7 +263,7 @@ const WebinarLanding = () => {
                         </Card>
 
                         {/* Status Floaties */}
-                        <Card className="absolute -top-6 -right-6 bg-card border-border shadow-card p-4 rounded-2xl animate-float backdrop-blur-md z-30">
+                        <Card className="absolute -top-3 right-1 sm:-top-6 sm:-right-6 bg-card border-border shadow-card p-4 rounded-2xl animate-float backdrop-blur-md z-30">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-success-soft flex items-center justify-center">
                                     <Users className="h-5 w-5 text-success" />
@@ -306,7 +306,7 @@ const WebinarLanding = () => {
                                         >
                                             <div className="flex items-center gap-4">
                                                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary transition-colors">
-                                                    <CheckCircle2 className="h-5 w-5 text-primary group-hover:text-accent-foreground transition-colors" />
+                                                    <CheckCircle2 className="h-5 w-5 text-primary group-hover:text-primary-foreground transition-colors" />
                                                 </div>
                                                 <div className="flex-1 flex items-center justify-between">
                                                     <h4 className="text-lg font-bold">
@@ -389,13 +389,13 @@ const WebinarLanding = () => {
                                                                                 href={hostData.linkedin}
                                                                                 target="_blank"
                                                                                 rel="noopener noreferrer"
-                                                                                className="relative px-5 py-2 bg-primary text-accent-foreground rounded-full flex items-center gap-2 shadow-lg border border-accent-foreground/20 transition-all duration-300 hover:scale-105 active:scale-95"
+                                                                                className="relative px-5 py-2 bg-primary text-primary-foreground rounded-full flex items-center gap-2 shadow-lg border border-accent-foreground/20 transition-all duration-300 hover:scale-105 active:scale-95"
                                                                             >
                                                                                 <Linkedin className="h-3 w-3" />
                                                                                 <span className="text-[10px] font-black uppercase tracking-[0.1em]">VIEW PROFILE</span>
                                                                             </a>
                                                                         ) : (
-                                                                            <div className="relative px-5 py-2 bg-primary text-accent-foreground rounded-full font-black text-[10px] uppercase tracking-[0.1em] shadow-lg border border-accent-foreground/20">
+                                                                            <div className="relative px-5 py-2 bg-primary text-primary-foreground rounded-full font-black text-[10px] uppercase tracking-[0.1em] shadow-lg border border-accent-foreground/20">
                                                                                 Lead Instructor
                                                                             </div>
                                                                         )}
@@ -465,7 +465,7 @@ const WebinarLanding = () => {
                                         >
                                             <div className="flex items-center gap-4">
                                                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary transition-colors">
-                                                    <HelpCircle className="h-5 w-5 text-primary group-hover:text-accent-foreground transition-colors" />
+                                                    <HelpCircle className="h-5 w-5 text-primary group-hover:text-primary-foreground transition-colors" />
                                                 </div>
                                                 <div className="flex-1 flex items-center justify-between">
                                                     <h3 className="text-lg font-bold">{q.q}</h3>

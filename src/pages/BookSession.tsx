@@ -187,7 +187,7 @@ const BookSession = () => {
                           {st.is_paid ? (
                             <Badge className="bg-primary/10 text-primary hover:bg-primary/20">৳{st.fee}</Badge>
                           ) : (
-                            <Badge className="bg-success-soft text-success-foreground hover:bg-success-soft/80">
+                            <Badge className="bg-success-strong text-success-strong-foreground hover:bg-success-strong/90">
                               <Tag className="h-3 w-3 mr-1" />Free
                             </Badge>
                           )}
@@ -425,7 +425,7 @@ const BookSession = () => {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Status</span>
                     {isFree
-                      ? <Badge className="bg-success-soft text-success-foreground">Confirmed</Badge>
+                      ? <Badge className="bg-success-strong text-success-strong-foreground">Confirmed</Badge>
                       : <Badge className="bg-primary/10 text-primary">Pending Verification</Badge>
                     }
                   </div>
