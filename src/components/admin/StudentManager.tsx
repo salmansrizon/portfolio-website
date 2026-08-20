@@ -6,6 +6,7 @@ import { Edit, Trash2, UserPlus, Mail, Phone, GraduationCap, BookOpen, Search, U
 import { createRepository } from "@/integrations/supabase/repository";
 import { studentConfig, courseConfig } from "@/adapters/entityConfigs";
 import { EntityFormDialog } from "./EntityFormDialog";
+import ListPager from './ListPager';
 import { useEntityManager } from "@/hooks/useEntityManager";
 
 const studentRepository = createRepository(studentConfig);
@@ -18,7 +19,7 @@ export default function StudentManager() {
   // isn't a second network request.
   const { data: allStudents = [] } = studentRepository.useFindAll();
   const {
-    items: filteredStudents,
+    items: filteredStudents, pageItems, pagination,
     isLoading,
     search: searchQuery,
     setSearch: setSearchQuery,
@@ -31,17 +32,20 @@ export default function StudentManager() {
   const getCourseName = (courseId: string) => courses.find(c => c.id === courseId)?.title || "Unknown Course";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Student Management</h2>
-          <p className="text-muted-foreground">Manage student profiles, enrollments, and access</p>
+          <h2 className="text-xl font-bold">Student Management</h2>
+          <p className="text-xs text-muted-foreground">Manage student profiles, enrollments, and access</p>
         </div>
         <Button className="gap-2" onClick={openCreate}>
           <UserPlus className="w-4 h-4" />
           Add Student
         </Button>
       </div>
+
+      <ListPager pagination={pagination} label="students" />
+
 
       <EntityFormDialog
         config={studentConfig}
@@ -65,25 +69,25 @@ export default function StudentManager() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="pt-4 pb-4 flex items-center gap-3">
+          <CardContent className="py-3 flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><Users className="w-5 h-5 text-primary" /></div>
             <div><p className="text-2xl font-bold">{allStudents.length}</p><p className="text-xs text-muted-foreground">Total</p></div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4 pb-4 flex items-center gap-3">
+          <CardContent className="py-3 flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-success-soft flex items-center justify-center"><Users className="w-5 h-5 text-success" /></div>
             <div><p className="text-2xl font-bold">{allStudents.filter(s => s.is_active).length}</p><p className="text-xs text-muted-foreground">Active</p></div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4 pb-4 flex items-center gap-3">
+          <CardContent className="py-3 flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-warning-soft flex items-center justify-center"><BookOpen className="w-5 h-5 text-warning" /></div>
             <div><p className="text-2xl font-bold">{allStudents.reduce((acc, s) => acc + (s.enrolled_courses?.length || 0), 0)}</p><p className="text-xs text-muted-foreground">Enrollments</p></div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4 pb-4 flex items-center gap-3">
+          <CardContent className="py-3 flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center"><GraduationCap className="w-5 h-5 text-accent" /></div>
             <div><p className="text-2xl font-bold">{courses.length}</p><p className="text-xs text-muted-foreground">Courses</p></div>
           </CardContent>
@@ -92,7 +96,7 @@ export default function StudentManager() {
 
       {/* Student List */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {[1, 2, 3].map(i => <div key={i} className="h-56 bg-muted animate-pulse rounded-2xl" />)}
         </div>
       ) : filteredStudents.length === 0 ? (
@@ -104,8 +108,8 @@ export default function StudentManager() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredStudents.map(student => (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          {pageItems.map(student => (
             <Card key={student.id} className="overflow-hidden hover:shadow-lg transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">

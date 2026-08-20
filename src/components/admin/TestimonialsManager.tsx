@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Plus, Edit, Trash2, Star } from 'lucide-react';
 import { testimonialConfig } from '@/adapters/testimonialConfig';
 import { EntityFormDialog } from './EntityFormDialog';
+import ListPager from './ListPager';
 import { useEntityManager } from '@/hooks/useEntityManager';
 
 const TestimonialsManager = () => {
-  const { items: testimonials, isLoading: loading, openCreate, openEdit, remove, dialog } = useEntityManager(testimonialConfig);
+  const { items: testimonials, pageItems, pagination, isLoading: loading, openCreate, openEdit, remove, dialog } = useEntityManager(testimonialConfig);
 
   if (loading) {
     return (
@@ -17,7 +18,7 @@ const TestimonialsManager = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Testimonials</h3>
         <Button onClick={openCreate}>
@@ -26,16 +27,19 @@ const TestimonialsManager = () => {
         </Button>
       </div>
 
+      <ListPager pagination={pagination} label="testimonials" />
+
+
       <EntityFormDialog config={testimonialConfig} {...dialog} />
 
-      <div className="grid gap-6">
-        {testimonials.map((testimonial: any) => (
+      <div className="grid gap-3">
+        {pageItems.map((testimonial: any) => (
           <Card key={testimonial.id}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div>
                 <CardTitle className="text-base">{testimonial.client_name}</CardTitle>
                 {testimonial.company && (
-                  <p className="text-sm text-muted-foreground">{testimonial.company}</p>
+                  <p className="line-clamp-2 text-xs text-muted-foreground">{testimonial.company}</p>
                 )}
                 {testimonial.rating && (
                   <div className="flex items-center mt-1">

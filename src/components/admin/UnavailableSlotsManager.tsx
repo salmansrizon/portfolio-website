@@ -37,6 +37,7 @@ import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { createRepository } from "@/integrations/supabase/repository";
 import { unavailableSlotConfig } from "@/adapters/entityConfigs";
+import ListPager from './ListPager';
 import { useEntityManager } from "@/hooks/useEntityManager";
 
 const slotRepository = createRepository(unavailableSlotConfig);
@@ -50,7 +51,7 @@ const UnavailableSlotsManager = () => {
   });
   const { toast } = useToast();
 
-  const { items: unavailableSlots, isLoading: loading, dialog } = useEntityManager(unavailableSlotConfig);
+  const { items: unavailableSlots, pageItems, pagination, isLoading: loading, dialog } = useEntityManager(unavailableSlotConfig);
   // Delete already has a purpose-built AlertDialog confirmation below —
   // going through useEntityManager's remove() would additionally trigger its
   // own window.confirm(), so this uses the repository directly instead.
@@ -101,7 +102,7 @@ const UnavailableSlotsManager = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Add New Unavailable Slot */}
       <Card>
         <CardHeader>
@@ -206,7 +207,7 @@ const UnavailableSlotsManager = () => {
         <CardContent>
           {unavailableSlots.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              <CalendarX className="mx-auto h-12 w-12 mb-4 opacity-50" />
+              <CalendarX className="mx-auto h-10 w-10 mb-4 opacity-50" />
               <p>No unavailable slots configured</p>
             </div>
           ) : (
@@ -221,7 +222,7 @@ const UnavailableSlotsManager = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {unavailableSlots.map((slot) => (
+                  {pageItems.map((slot) => (
                     <TableRow key={slot.id}>
                       <TableCell className="font-medium">
                         {format(new Date(slot.date), "MMM dd, yyyy")}
@@ -270,6 +271,7 @@ const UnavailableSlotsManager = () => {
             </div>
           )}
         </CardContent>
+        <ListPager pagination={pagination} label="slots" />
       </Card>
     </div>
   );

@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Plus, Edit, Trash2 } from 'lucide-react';
 import { certificationConfig } from '@/adapters/entityConfigs';
 import { EntityFormDialog } from './EntityFormDialog';
+import ListPager from './ListPager';
 import { useEntityManager } from '@/hooks/useEntityManager';
 
 const CertificationsManager = () => {
-  const { items: certifications, isLoading: loading, openCreate, openEdit, remove, dialog } = useEntityManager(certificationConfig);
+  const { items: certifications, pageItems, pagination, isLoading: loading, openCreate, openEdit, remove, dialog } = useEntityManager(certificationConfig);
 
   if (loading) {
     return (
@@ -17,7 +18,7 @@ const CertificationsManager = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Certifications</h3>
         <Button onClick={openCreate}>
@@ -26,10 +27,13 @@ const CertificationsManager = () => {
         </Button>
       </div>
 
+      <ListPager pagination={pagination} label="certifications" />
+
+
       <EntityFormDialog config={certificationConfig} {...dialog} />
 
-      <div className="grid gap-6">
-        {certifications.map((cert: any) => (
+      <div className="grid gap-3">
+        {pageItems.map((cert: any) => (
           <Card key={cert.id}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-base">{cert.title}</CardTitle>
@@ -55,12 +59,12 @@ const CertificationsManager = () => {
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Issuer: {cert.issuer}</p>
                   {cert.credential_id && (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="line-clamp-2 text-xs text-muted-foreground">
                       Credential ID: {cert.credential_id}
                     </p>
                   )}
                   {cert.earned_date && (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="line-clamp-2 text-xs text-muted-foreground">
                       Earned: {new Date(cert.earned_date).toLocaleDateString()}
                     </p>
                   )}

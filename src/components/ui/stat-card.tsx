@@ -44,7 +44,7 @@ export function StatCard({
           data-testid="stat-delta"
           className={cn(
             "inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[10px] font-bold",
-            deltaDirection === "up" ? "bg-success-soft text-success" : "bg-danger-soft text-danger"
+            deltaDirection === "up" ? "bg-success-soft text-success-strong" : "bg-danger-soft text-danger"
           )}
         >
           {deltaDirection === "up" ? "▲" : "▼"} {delta}

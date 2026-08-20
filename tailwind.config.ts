@@ -42,7 +42,9 @@ export default {
 				success: {
 					DEFAULT: 'hsl(var(--success))',
 					foreground: 'hsl(var(--success-foreground))',
-					soft: 'hsl(var(--success-soft))'
+					soft: 'hsl(var(--success-soft))',
+					strong: 'hsl(var(--success-strong))',
+					'strong-foreground': 'hsl(var(--success-strong-foreground))'
 				},
 				warning: {
 					DEFAULT: 'hsl(var(--warning))',
@@ -52,7 +54,9 @@ export default {
 				danger: {
 					DEFAULT: 'hsl(var(--danger))',
 					foreground: 'hsl(var(--danger-foreground))',
-					soft: 'hsl(var(--danger-soft))'
+					soft: 'hsl(var(--danger-soft))',
+					strong: 'hsl(var(--danger-strong))',
+					'strong-foreground': 'hsl(var(--danger-strong-foreground))'
 				},
 				scan: 'hsl(var(--surface-scan))',
 				scrim: 'hsl(var(--scrim))',

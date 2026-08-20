@@ -81,10 +81,10 @@ export default function CourseEnrollmentManager() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Course Enrollments</h2>
+          <h2 className="text-xl font-bold">Course Enrollments</h2>
           <p className="text-muted-foreground text-sm">Review, approve, or reject student enrollments.</p>
         </div>
         <div className="relative w-full sm:w-64">
@@ -172,7 +172,7 @@ export default function CourseEnrollmentManager() {
                       <div className="flex justify-end gap-2">
                         {(!enr.status || enr.status === 'pending' || enr.status === 'active') && (
                           <>
-                            <Button size="icon" variant="outline" className="h-8 w-8 text-success border-success/30 hover:bg-success-soft" onClick={() => handleUpdateStatus(enr.id, 'confirmed')} title="Approve">
+                            <Button size="icon" variant="outline" className="h-8 w-8 text-success-strong border-success/40 hover:bg-success-soft" onClick={() => handleUpdateStatus(enr.id, 'confirmed')} title="Approve">
                               <CheckCircle2 className="h-4 w-4" />
                             </Button>
                             <Button size="icon" variant="outline" className="h-8 w-8 text-destructive border-destructive/30 hover:bg-danger-soft" onClick={() => handleUpdateStatus(enr.id, 'rejected')} title="Reject">

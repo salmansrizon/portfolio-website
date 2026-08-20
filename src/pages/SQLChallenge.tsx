@@ -51,6 +51,9 @@ import { bootPGlite, getPGliteInstance } from './sql-challenge/modules/PGliteEng
 import { validateSubmission } from './sql-challenge/modules/SubmissionValidator';
 import { getHintEscalationState } from './sql-challenge/modules/HintEscalation';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useQuestionTopics } from '@/hooks/useTopics';
+import TopicCard from '@/components/careerprep/TopicCard';
+import { track, trackOnce } from '@/services/funnel';
 
 // ── Performance Memoization ──────────────────────────────────────────────
 const MemoizedMarkdown = React.memo(({ content }: { content: string }) => (
@@ -75,6 +78,7 @@ const SQLChallenge = () => {
   // ── Mission State (from useMissionRunner hook) ───────────────────────────
   const { missionQueue, cursorIdx, isMissionComplete, currentQuestion, advanceMission, resetMission } = useMissionRunner(question, children);
   const currentQ = currentQuestion || question;
+  const { topics } = useQuestionTopics(currentQ?.id);
 
   // ── Database / Execution State ───────────────────────────────────────────
   const { submissions, loading: sLoading, refresh: refreshSubmissions } = useSubmissions(currentQ?.id || '');
@@ -86,7 +90,8 @@ const SQLChallenge = () => {
   const { execute, isExecuting, results: queryResult } = useQueryExecutor();
   const { timeLeft, totalMistakes, formatTime, recordMistake, getTimeTaken } = useTimerController(question?.time_limit_secs);
   const { missionResults, recordMissionResults, shareResults, downloadShareImage, setShowShareDialog } = useResultRenderer();
-  const [activeTab, setActiveTab] = useState<'description' | 'schema' | 'submission'>('description');
+  const [activeTab, setActiveTab] = useState<'description' | 'schema' | 'topic' | 'submission'>('description');
+  const [mobilePane, setMobilePane] = useState<'problem' | 'code' | 'output'>('problem');
   const resultsRef = useRef<HTMLDivElement>(null);
 
   // ── Timer & Metrics ───────────────────────────────────────────────────
@@ -146,6 +151,8 @@ const SQLChallenge = () => {
   const handleRun = useCallback(() => {
     if (!code.trim()) return;
     execute(code);
+    // On a phone the result lands in a pane that is not on screen.
+    setMobilePane('output');
   }, [code]);
 
   const [attemptsRecord, setAttemptsRecord] = useState<Record<number, number>>({});
@@ -172,10 +179,31 @@ const SQLChallenge = () => {
 
     const currentIdx = cursorIdx;
 
+    // Log every submission, pass or fail. Streak, XP, success rate and the
+    // struggle trigger all derive from this table, so a failure that never
+    // lands is a failure that never happened.
+    await logSubmission(
+      currentQ.id,
+      currentQ.question_type === 'mcq' ? `Choice: ${mcqAnswer}` : code,
+      isCorrect,
+      queryResult?.executionTime || 0,
+    );
+
+    refreshSubmissions();
+
+    void track({
+      event: isCorrect ? 'solved' : 'struggled',
+      surface: 'workspace',
+      subjectType: 'question',
+      subjectId: currentQ.id,
+      metadata: { difficulty: currentQ.difficulty, industry: currentQ.industry },
+    });
     if (isCorrect) {
-      // Log submission only on correct answer
-      await logSubmission(currentQ.id, currentQ.question_type === 'mcq' ? `Choice: ${mcqAnswer}` : code, true, queryResult?.executionTime || 0);
-      refreshSubmissions();
+      // First success is the funnel's conversion moment — count it once.
+      void trackOnce('solved', { event: 'solved', surface: 'workspace', subjectType: 'question', subjectId: currentQ.id });
+    }
+
+    if (isCorrect) {
       setStepResults(prev => ({ ...prev, [currentIdx]: true }));
       
       if (isMultiStep) {
@@ -271,6 +299,139 @@ const SQLChallenge = () => {
   const envBooting = status === 'booting' || status === 'seeding';
   const isSingleQuestion = missionQueue.length === 1;
   const showsEditor = currentQ?.question_type === 'code' || currentQ?.question_type === 'case_study';
+  const problemPane = (
+              <div className="h-full flex flex-col bg-card md:border-r border-border">
+                <div className="h-12 shrink-0 border-b flex items-center px-4 md:px-6 gap-6 md:gap-8 bg-muted/20 backdrop-blur-md">
+                  {(['description', 'schema', ...(topics.length > 0 ? ['topic' as const] : []), 'submission'] as const).map(tab => (
+                    <button 
+                      key={tab} 
+                      onClick={() => setActiveTab(tab as any)} 
+                      className={`h-full text-[10px] font-black uppercase tracking-[0.25em] transition-all relative ${activeTab === tab ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                      {tab}
+                      {activeTab === tab && (
+                        <motion.div 
+                          layoutId="panel-tab-underline"
+                          className="absolute bottom-[-1px] left-0 w-full h-0.5 bg-primary rounded-t-full shadow-[0_0_10px_rgba(var(--primary),0.3)]" 
+                        />
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex-1 overflow-auto p-4 md:p-6">
+                  {activeTab === 'description' ? <MemoizedMarkdown content={currentQ?.content_md || question?.content_md || ''} /> : 
+activeTab === 'schema' ? <pre className="bg-muted rounded-xl p-5 border border-border font-mono text-[11px] text-muted-foreground overflow-x-auto">{currentQ?.schema_sql || 'Standard environment.'}</pre> :
+                    activeTab === 'topic' ? (
+                      // The theory behind this question, in the pane that already
+                      // holds the problem. No XP, no gate — reading is free.
+                      <div className="space-y-3">
+                        {topics.map(c => <TopicCard key={c.id} topic={c} surface="workspace" defaultOpen />)}
+                      </div>
+                    ) :
+                    <div className="space-y-6 p-4">
+                      <div className="bg-muted/40 rounded-2xl border border-border/60 p-6 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Info className="w-4 h-4 text-primary" />
+                          <span className="text-[10px] font-black uppercase tracking-[0.25em] text-foreground">Submission Policy</span>
+                        </div>
+                        <div className="text-[12px] text-muted-foreground leading-relaxed space-y-2">
+                          <p>Your query will be validated by executing it against our test database and comparing the result set with the expected solution. Both result sets are sorted and stringified before comparison — <strong className="text-foreground">row order does not matter</strong>.</p>
+                          <ul className="list-disc pl-5 space-y-1">
+                            <li>Each failed attempt reveals a progressive hint (if available).</li>
+                            <li>The full solution is revealed after 5 failed attempts.</li>
+                            <li>Every attempt is recorded, but only <strong className="text-foreground">correct</strong> submissions earn XP.</li>
+                            <li>Your output must match the expected columns and data exactly.</li>
+                          </ul>
+                        </div>
+                      </div>
+                      {submissions.length > 0 && (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <History className="w-3.5 h-3.5 text-muted-foreground" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground">Submission History ({submissions.length})</span>
+                          </div>
+                          {submissions.map(sub => (
+                            <div key={sub.id} className="p-4 rounded-xl border border-border bg-muted/30 hover:bg-muted/50 transition-colors">
+                              <div className="flex justify-between items-center mb-3">
+                                <Badge className={sub.is_correct ? 'bg-success/10 text-success border-0' : 'bg-destructive/10 text-destructive border-0'}>{sub.is_correct ? 'ACCEPTED' : 'FAILED'}</Badge>
+                                <span className="text-[9px] font-mono text-muted-foreground">{new Date(sub.created_at).toLocaleString()}</span>
+                              </div>
+                              <pre className="text-[11px] font-mono text-foreground/80 bg-muted/50 p-3 rounded-lg border border-border/50 overflow-x-auto whitespace-pre-wrap">{sub.submitted_code}</pre>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {submissions.length === 0 && (
+                        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
+                          <Send className="w-8 h-8 opacity-20" />
+                          <p className="text-[11px] font-medium">No submissions yet for this question.</p>
+                        </div>
+                      )}
+                    </div>}
+                </div>
+              </div>
+  );
+
+  const mcqPane = currentQ ? (
+                    <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 overflow-auto relative">
+                       <div className="max-w-xl w-full space-y-6 md:space-y-8 animate-in slide-in-from-bottom-4 duration-700 pb-12 mt-4 md:mt-12">
+                          <div className="space-y-6">
+                             <div className="flex flex-col items-center text-center space-y-3">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full border border-primary/20"><Sparkles className="w-3 h-3 text-primary animate-pulse" /><span className="text-[9px] font-black uppercase tracking-[0.3em] text-primary">Mission Briefing</span></div>
+                                <h3 className="text-2xl font-black text-foreground leading-tight italic uppercase tracking-tighter">Decision Logic Required</h3>
+                             </div>
+                             <div className="bg-muted/30 p-5 md:p-8 rounded-3xl md:rounded-[32px] border border-border/50 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-4 opacity-5"><BookOpen className="w-20 h-20 -rotate-12" /></div>
+                                <MemoizedMarkdown content={currentQ?.problem_statement || currentQ?.description || ''} />
+                             </div>
+                          </div>
+                          <div className="space-y-4">
+                             <div className="flex items-center gap-4 px-2"><div className="h-px flex-1 bg-border/50" /><span className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Select Solution</span><div className="h-px flex-1 bg-border/50" /></div>
+                             <div className="flex flex-col gap-3">
+{currentQ.options?.map((opt: any, idx: number) => {
+                                   const optionLabel = opt.label || String.fromCharCode(65 + idx);
+                                   return (
+                                   <button key={`${currentQ.id}-${idx}`} onClick={() => setMcqAnswer(optionLabel)} className={`flex items-start gap-4 p-5 rounded-3xl border-2 transition-all duration-300 text-left relative ${mcqAnswer === optionLabel ? 'border-primary bg-primary/5 shadow-xl' : 'border-border/50 bg-card/30 hover:border-primary/30'}`}>
+                                     <div className={`shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm transition-all ${mcqAnswer === optionLabel ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>{optionLabel}</div>
+                                     <div className="pt-2 text-[14px] font-bold text-foreground">{opt.text}</div>
+                                   </button>
+                                   );
+                                 })}
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+  ) : null;
+
+  const editorPane = (
+                         <div className="h-full flex flex-col relative">
+                           <div className="h-8 shrink-0 flex items-center px-4 justify-between bg-muted/50 border-b border-border">
+                             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground"><Layout className="w-3.5 h-3.5 text-primary" />Terminal</div>
+                             <Button size="sm" onClick={handleRun} disabled={!envReady || isExecuting} variant="ghost" className="h-6 px-3 text-[10px] font-black uppercase tracking-widest gap-1.5 text-primary hover:bg-primary/10 rounded-lg">
+                               {envBooting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" fill="currentColor" />}
+                               Run
+                             </Button>
+                           </div>
+                           <div className="flex-1"><Editor height="100%" defaultLanguage="sql" theme=" mission-dark" beforeMount={defineCustomThemes} value={code} onChange={v => setCode(v || '')} options={{ minimap: { enabled: false }, fontSize: 15, padding: { top: 20, bottom: 20 }, wordWrap: 'on' }} /></div>
+                         </div>
+  );
+
+  const outputPane = (
+                         <div className="h-full flex flex-col bg-card">
+                            <div className="h-9 shrink-0 flex items-center justify-between px-4 bg-muted/50 border-b border-border"><div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-primary"><span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />STDOUT</div>{queryResult?.executionTime !== undefined && <span className="text-[9px] font-mono text-muted-foreground">{queryResult.executionTime.toFixed(1)}ms</span>}</div>
+                            <div className="flex-1 overflow-auto p-5 font-mono text-[12px]">
+                               {queryResult?.error ? <div className="bg-destructive/10 text-destructive p-4 rounded-xl border border-destructive/20">{queryResult.error}</div> : (queryResult?.rows.length || 0) > 0 ? (
+                                 <div className="rounded-xl border border-border bg-card overflow-hidden shadow-lg">
+                                    <table className="w-full text-left">
+                                      <thead className="bg-muted/50 border-b border-border"><tr>{queryResult.columns.map(col => <th key={col} className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">{col}</th>)}</tr></thead>
+                                      <tbody>{queryResult.rows.map((row, i) => <tr key={i} className="border-b border-border/50 hover:bg-muted/30">{queryResult.columns.map(col => <td key={col} className="px-4 py-3 text-foreground/80">{String(row[col])}</td>)}</tr>)}</tbody>
+                                    </table>
+                                 </div>
+                               ) : <div className="h-full flex items-center justify-center opacity-20"><span className="font-black uppercase tracking-[0.5em] text-[10px]">Awaiting Instructions</span></div>}
+                            </div>
+                         </div>
+  );
+
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground font-sans overflow-hidden relative">
@@ -333,146 +494,59 @@ const SQLChallenge = () => {
               </Button>
             )}
 
-            <Button size="sm" onClick={handleSubmit} disabled={isSubmitting || (showsEditor && !envReady)} className="bg-primary hover:bg-primary/90 text-primary-foreground h-9 px-4 rounded-xl font-black text-[10px] uppercase gap-2 shadow-lg shadow-primary/20 transition-all active:scale-95 group">
+            {/* An MCQ with nothing picked must not submit: now that every attempt is
+                stored, two idle clicks would persist two failures and trip the
+                struggle trigger. */}
+            <Button size="sm" onClick={handleSubmit} disabled={isSubmitting || (showsEditor && !envReady) || (currentQ?.question_type === 'mcq' && !mcqAnswer)} className="bg-primary hover:bg-primary/90 text-primary-foreground h-9 px-4 rounded-xl font-black text-[10px] uppercase gap-2 shadow-lg shadow-primary/20 transition-all active:scale-95 group">
               <Send className="w-3.5 h-3.5" />
               <span>Submit</span>
             </Button>
           </div>
         </header>
         <div className="flex-1 flex overflow-hidden">
-          <PanelGroup direction={isMobile ? "vertical" : "horizontal"}>
-            <Panel defaultSize={30} minSize={20}>
-              <div className="h-full flex flex-col bg-card border-r border-border">
-                <div className="h-12 shrink-0 border-b flex items-center px-6 gap-8 bg-muted/20 backdrop-blur-md">
-                  {['description', 'schema', 'submission'].map(tab => (
-                    <button 
-                      key={tab} 
-                      onClick={() => setActiveTab(tab as any)} 
-                      className={`h-full text-[10px] font-black uppercase tracking-[0.25em] transition-all relative ${activeTab === tab ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+          {isMobile ? (
+            /* One pane at a time on a phone. Three stacked resizable panes left
+               Monaco about 130px tall — the three-pane split is a desktop shape. */
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 overflow-hidden">
+                {currentQ?.question_type === 'mcq'
+                  ? mcqPane
+                  : mobilePane === 'problem' ? problemPane
+                  : mobilePane === 'code' ? editorPane
+                  : outputPane}
+              </div>
+              {currentQ?.question_type !== 'mcq' && (
+                <div className="h-14 shrink-0 grid grid-cols-3 border-t border-border bg-card">
+                  {(['problem', 'code', 'output'] as const).map(pane => (
+                    <button
+                      key={pane}
+                      onClick={() => setMobilePane(pane)}
+                      className={`h-full text-[10px] font-black uppercase tracking-[0.2em] transition-colors ${mobilePane === pane ? 'text-primary bg-primary/10 border-t-2 border-primary' : 'text-muted-foreground'}`}
                     >
-                      {tab}
-                      {activeTab === tab && (
-                        <motion.div 
-                          layoutId="panel-tab-underline"
-                          className="absolute bottom-[-1px] left-0 w-full h-0.5 bg-primary rounded-t-full shadow-[0_0_10px_rgba(var(--primary),0.3)]" 
-                        />
-                      )}
+                      {pane}
+                      {pane === 'output' && queryResult?.error && <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-destructive align-middle" />}
                     </button>
                   ))}
                 </div>
-                <div className="flex-1 overflow-auto p-6">
-                  {activeTab === 'description' ? <MemoizedMarkdown content={currentQ?.content_md || question?.content_md || ''} /> : 
-activeTab === 'schema' ? <pre className="bg-muted rounded-xl p-5 border border-border font-mono text-[11px] text-muted-foreground overflow-x-auto">{currentQ?.schema_sql || 'Standard environment.'}</pre> :
-                    <div className="space-y-6 p-4">
-                      <div className="bg-muted/40 rounded-2xl border border-border/60 p-6 space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Info className="w-4 h-4 text-primary" />
-                          <span className="text-[10px] font-black uppercase tracking-[0.25em] text-foreground">Submission Policy</span>
-                        </div>
-                        <div className="text-[12px] text-muted-foreground leading-relaxed space-y-2">
-                          <p>Your query will be validated by executing it against our test database and comparing the result set with the expected solution. Both result sets are sorted and stringified before comparison — <strong className="text-foreground">row order does not matter</strong>.</p>
-                          <ul className="list-disc pl-5 space-y-1">
-                            <li>Each failed attempt reveals a progressive hint (if available).</li>
-                            <li>The full solution is revealed after 5 failed attempts.</li>
-                            <li>Only <strong className="text-foreground">correct</strong> submissions are recorded — failed attempts do not count toward your XP.</li>
-                            <li>Your output must match the expected columns and data exactly.</li>
-                          </ul>
-                        </div>
-                      </div>
-                      {submissions.length > 0 && (
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <History className="w-3.5 h-3.5 text-muted-foreground" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground">Submission History ({submissions.length})</span>
-                          </div>
-                          {submissions.map(sub => (
-                            <div key={sub.id} className="p-4 rounded-xl border border-border bg-muted/30 hover:bg-muted/50 transition-colors">
-                              <div className="flex justify-between items-center mb-3">
-                                <Badge className={sub.is_correct ? 'bg-success/10 text-success border-0' : 'bg-destructive/10 text-destructive border-0'}>{sub.is_correct ? 'ACCEPTED' : 'FAILED'}</Badge>
-                                <span className="text-[9px] font-mono text-muted-foreground">{new Date(sub.created_at).toLocaleString()}</span>
-                              </div>
-                              <pre className="text-[11px] font-mono text-foreground/80 bg-muted/50 p-3 rounded-lg border border-border/50 overflow-x-auto whitespace-pre-wrap">{sub.submitted_code}</pre>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {submissions.length === 0 && (
-                        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
-                          <Send className="w-8 h-8 opacity-20" />
-                          <p className="text-[11px] font-medium">No submissions yet for this question.</p>
-                        </div>
-                      )}
-                    </div>}
-                </div>
-              </div>
-            </Panel>
-            <PanelResizeHandle className={isMobile ? "h-1 bg-border/20" : "w-[1px] bg-border hover:bg-primary/40 transition-colors z-50 cursor-col-resize"} />
-            <Panel defaultSize={isMobile ? 40 : 30} minSize={isMobile ? 20 : 20}>
-               <div className="h-full flex flex-col bg-background relative z-10">
-                  {currentQ?.question_type === 'mcq' ? (
-                    <div className="flex-1 flex flex-col items-center justify-center p-8 overflow-auto relative">
-                       <div className="max-w-xl w-full space-y-8 animate-in slide-in-from-bottom-4 duration-700 pb-12 mt-12">
-                          <div className="space-y-6">
-                             <div className="flex flex-col items-center text-center space-y-3">
-                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full border border-primary/20"><Sparkles className="w-3 h-3 text-primary animate-pulse" /><span className="text-[9px] font-black uppercase tracking-[0.3em] text-primary">Mission Briefing</span></div>
-                                <h3 className="text-2xl font-black text-foreground leading-tight italic uppercase tracking-tighter">Decision Logic Required</h3>
-                             </div>
-                             <div className="bg-muted/30 p-8 rounded-[32px] border border-border/50 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 p-4 opacity-5"><BookOpen className="w-20 h-20 -rotate-12" /></div>
-                                <MemoizedMarkdown content={currentQ?.problem_statement || currentQ?.description || ''} />
-                             </div>
-                          </div>
-                          <div className="space-y-4">
-                             <div className="flex items-center gap-4 px-2"><div className="h-px flex-1 bg-border/50" /><span className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Select Solution</span><div className="h-px flex-1 bg-border/50" /></div>
-                             <div className="flex flex-col gap-3">
-{currentQ.options?.map((opt: any, idx: number) => {
-                                   const optionLabel = opt.label || String.fromCharCode(65 + idx);
-                                   return (
-                                   <button key={`${currentQ.id}-${idx}`} onClick={() => setMcqAnswer(optionLabel)} className={`flex items-start gap-4 p-5 rounded-3xl border-2 transition-all duration-300 text-left relative ${mcqAnswer === optionLabel ? 'border-primary bg-primary/5 shadow-xl' : 'border-border/50 bg-card/30 hover:border-primary/30'}`}>
-                                     <div className={`shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm transition-all ${mcqAnswer === optionLabel ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>{optionLabel}</div>
-                                     <div className="pt-2 text-[14px] font-bold text-foreground">{opt.text}</div>
-                                   </button>
-                                   );
-                                 })}
-                             </div>
-                          </div>
-                       </div>
-                    </div>
-                  ) : (
+              )}
+            </div>
+          ) : (
+            <PanelGroup direction="horizontal">
+              <Panel defaultSize={30} minSize={20}>{problemPane}</Panel>
+              <PanelResizeHandle className="w-[1px] bg-border hover:bg-primary/40 transition-colors z-50 cursor-col-resize" />
+              <Panel defaultSize={30} minSize={20}>
+                <div className="h-full flex flex-col bg-background relative z-10">
+                  {currentQ?.question_type === 'mcq' ? mcqPane : (
                     <PanelGroup direction="vertical">
-                      <Panel defaultSize={65} minSize={30}>
-                         <div className="h-full flex flex-col relative">
-                           <div className="h-8 shrink-0 flex items-center px-4 justify-between bg-muted/50 border-b border-border">
-                             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground"><Layout className="w-3.5 h-3.5 text-primary" />Terminal</div>
-                             <Button size="sm" onClick={handleRun} disabled={!envReady || isExecuting} variant="ghost" className="h-6 px-3 text-[10px] font-black uppercase tracking-widest gap-1.5 text-primary hover:bg-primary/10 rounded-lg">
-                               {envBooting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" fill="currentColor" />}
-                               Run
-                             </Button>
-                           </div>
-                           <div className="flex-1"><Editor height="100%" defaultLanguage="sql" theme=" mission-dark" beforeMount={defineCustomThemes} value={code} onChange={v => setCode(v || '')} options={{ minimap: { enabled: false }, fontSize: 15, padding: { top: 20, bottom: 20 }, wordWrap: 'on' }} /></div>
-                         </div>
-                      </Panel>
+                      <Panel defaultSize={65} minSize={30}>{editorPane}</Panel>
                       <PanelResizeHandle className="h-[1px] bg-border hover:bg-primary/40 transition-colors z-50 cursor-row-resize" />
-                      <Panel defaultSize={35} minSize={20}>
-                         <div className="h-full flex flex-col bg-card">
-                            <div className="h-9 shrink-0 flex items-center justify-between px-4 bg-muted/50 border-b border-border"><div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-primary"><span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />STDOUT</div>{queryResult?.executionTime !== undefined && <span className="text-[9px] font-mono text-muted-foreground">{queryResult.executionTime.toFixed(1)}ms</span>}</div>
-                            <div className="flex-1 overflow-auto p-5 font-mono text-[12px]">
-                               {queryResult?.error ? <div className="bg-destructive/10 text-destructive p-4 rounded-xl border border-destructive/20">{queryResult.error}</div> : (queryResult?.rows.length || 0) > 0 ? (
-                                 <div className="rounded-xl border border-border bg-card overflow-hidden shadow-lg">
-                                    <table className="w-full text-left">
-                                      <thead className="bg-muted/50 border-b border-border"><tr>{queryResult.columns.map(col => <th key={col} className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">{col}</th>)}</tr></thead>
-                                      <tbody>{queryResult.rows.map((row, i) => <tr key={i} className="border-b border-border/50 hover:bg-muted/30">{queryResult.columns.map(col => <td key={col} className="px-4 py-3 text-foreground/80">{String(row[col])}</td>)}</tr>)}</tbody>
-                                    </table>
-                                 </div>
-                               ) : <div className="h-full flex items-center justify-center opacity-20"><span className="font-black uppercase tracking-[0.5em] text-[10px]">Awaiting Instructions</span></div>}
-                            </div>
-                         </div>
-                      </Panel>
+                      <Panel defaultSize={35} minSize={20}>{outputPane}</Panel>
                     </PanelGroup>
                   )}
-               </div>
-            </Panel>
-          </PanelGroup>
+                </div>
+              </Panel>
+            </PanelGroup>
+          )}
         </div>
       </div>
       {/* Mission Failed Dialog */}
@@ -486,7 +560,7 @@ activeTab === 'schema' ? <pre className="bg-muted rounded-xl p-5 border border-b
               Mission Failed
             </DialogTitle>
             <DialogDescription className="text-muted-foreground text-sm">
-              Your solution doesn't match the expected output. Review your query and try again — no XP or attempts are recorded for failed submissions.
+              Your solution doesn't match the expected output. Review your query and try again — the attempt is recorded, but no XP is deducted.
             </DialogDescription>
           </DialogHeader>
 

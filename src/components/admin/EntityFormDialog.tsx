@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { EntityConfig } from '@/adapters/entityConfigs';
+import { FormConfig } from '@/adapters/entityConfigs';
 import { useEntityForm, buildDefaultValues, isNullableField } from '@/hooks/useEntityForm';
 import { ImageUploadField } from './ImageUploadField';
 
@@ -18,7 +18,7 @@ import { ImageUploadField } from './ImageUploadField';
 const NONE_VALUE = '__none__';
 
 interface EntityFormDialogProps<T extends Record<string, unknown>> {
-  config: EntityConfig<T>;
+  config: FormConfig<T>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialData?: T | null;
@@ -79,7 +79,10 @@ export function EntityFormDialog<T extends Record<string, unknown>>({
                       const nullable = isNullableField(config, field.name);
                       return (
                         <Select
-                          value={f.value ?? (nullable ? NONE_VALUE : '')}
+                          // The config declares this field a 'select', so its
+                          // value is a string — react-hook-form only knows the
+                          // path, not the widget it feeds.
+                          value={(f.value as string | null | undefined) ?? (nullable ? NONE_VALUE : '')}
                           onValueChange={(v) => f.onChange(v === NONE_VALUE ? null : v)}
                         >
                           <SelectTrigger id={fieldName}>
@@ -103,7 +106,8 @@ export function EntityFormDialog<T extends Record<string, unknown>>({
                     name={field.name as any}
                     render={({ field: f }) => {
                       const opts = dynamicOptions?.[field.name] ?? field.options ?? [];
-                      const selected: string[] = f.value ?? [];
+                      // Likewise: a 'multiselect' field holds string[].
+                      const selected: string[] = (f.value as string[] | undefined) ?? [];
                       return (
                         <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto rounded-md border p-3">
                           {opts.length === 0 ? (

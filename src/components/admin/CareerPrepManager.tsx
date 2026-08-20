@@ -10,6 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { usePagination } from '@/hooks/usePagination';
+import ListPager from './ListPager';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { createRepository } from '@/integrations/supabase/repository';
@@ -19,7 +22,10 @@ import {
   GraduationCap, CircleUser, Code2, ListChecks, BookOpen,
   FolderTree, Clock, Tags, X, ChevronRight, ChevronDown, Sparkles
 } from 'lucide-react';
-import type { CareerPrepQuestion, QuestionType } from '@/hooks/useCareerPrep';
+// The row model, from the Entity Config that is checked against the table —
+// not the hook's hand-written interface for the same rows.
+import type { CareerPrepQuestion } from '@/adapters/entityConfigs';
+import type { QuestionType } from '@/hooks/useCareerPrep';
 
 const careerPrepRepository = createRepository(careerPrepQuestionConfig);
 
@@ -40,6 +46,107 @@ const DIFFICULTY_COLORS: Record<string, string> = {
 };
 
 // ─── component ────────────────────────────────────────────────────────────────
+
+// ── Topic attachment ──────────────────────────────────────────────────────
+// Which Topics explain the theory behind this Question. Attaching, not
+// authoring: Topics are written in the Topics tab, and one explanation is
+// shared by every Question that tests it.
+const TopicAttach = ({ questionId }: { questionId: string }) => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [attachRole, setAttachRole] = React.useState<'practice' | 'checkpoint' | 'case_study'>('practice');
+
+  const { data: topics = [] } = useQuery({
+    queryKey: ['admin-topics-min'],
+    queryFn: async () => {
+      const { data } = await (supabase as any).from('topics').select('id, title, status').order('title');
+      return (data ?? []) as { id: string; title: string; status: string }[];
+    },
+  });
+
+  const { data: attached = [] } = useQuery({
+    queryKey: ['admin-topic-questions', questionId],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from('topic_questions').select('id, topic_id, role').eq('question_id', questionId);
+      return (data ?? []) as { id: string; topic_id: string; role: string }[];
+    },
+  });
+
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin-topic-questions', questionId] });
+  const fail = (e: any) => toast({ title: 'Could not save', description: e.message, variant: 'destructive' });
+
+  // A Question is either practice for a Topic or that Topic's single Checkpoint.
+  // The one-checkpoint rule is a partial unique index, so a second one is
+  // rejected by the database rather than silently shadowing the first.
+  const attach = async (topicId: string, role: 'practice' | 'checkpoint' | 'case_study') => {
+    const { error } = await (supabase as any)
+      .from('topic_questions').insert({ topic_id: topicId, question_id: questionId, role });
+    if (error) return fail(error);
+    refresh();
+  };
+
+  const detach = async (id: string) => {
+    const { error } = await (supabase as any).from('topic_questions').delete().eq('id', id);
+    if (error) return fail(error);
+    refresh();
+  };
+
+  return (
+    <section className="bg-muted/30 p-6 rounded-2xl border border-primary/20 space-y-3">
+      <SectionLabel className="mb-0">Topics explaining this question</SectionLabel>
+
+      <div className="flex gap-2">
+        {(['practice', 'checkpoint', 'case_study'] as const).map((r) => (
+          <button
+            key={r}
+            type="button"
+            onClick={() => setAttachRole(r)}
+            className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest transition-colors ${
+              attachRole === r ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+            }`}
+          >
+            {r.replace('_', ' ')}
+          </button>
+        ))}
+      </div>
+
+      <select
+        className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+        value=""
+        onChange={(e) => e.target.value && attach(e.target.value, attachRole)}
+      >
+        <option value="">— attach a topic —</option>
+        {topics
+          .filter((c) => !attached.some((a) => a.topic_id === c.id))
+          .map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.title}{c.status !== 'published' ? ' (draft)' : ''}
+            </option>
+          ))}
+      </select>
+
+      {attached.map((a) => (
+        <div key={a.id} className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Sparkles className="h-3 w-3 text-primary" />
+          <span className="flex-1 truncate">
+            {topics.find((c) => c.id === a.topic_id)?.title ?? 'Unknown topic'}
+            <span className="ml-1.5 opacity-60">· {a.role}</span>
+          </span>
+          <Button type="button" size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => detach(a.id)}>
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
+      ))}
+      {attached.length === 0 && (
+        <p className="text-[11px] text-muted-foreground">
+          None yet. A Question with no Topic simply shows no theory tab.
+        </p>
+      )}
+    </section>
+  );
+};
+
 const CareerPrepManager = () => {
   const [appUsers, setAppUsers]         = React.useState<any[]>([]);
   const [saving, setSaving]             = React.useState(false);
@@ -47,6 +154,7 @@ const CareerPrepManager = () => {
   const [dialogOpen, setDialogOpen]     = React.useState(false);
   const [expandedRoots, setExpandedRoots] = React.useState<Set<string>>(new Set());
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: questions = [], isLoading: loading } = careerPrepRepository.useFindAll();
   const { mutate: deleteQuestion } = careerPrepRepository.useDelete();
@@ -141,8 +249,8 @@ INSERT INTO orders_demo (product_id, quantity) VALUES (1, 5), (2, 50), (3, 30), 
         // 2. STANDALONE MCQ QUESTION (no parent, choice-based)
         // ═══════════════════════════════════════════════════════════════════
         {
-          title: "SQL JOIN Concepts",
-          slug: `sql-join-concepts-${Date.now()}`,
+          title: "SQL JOIN Topics",
+          slug: `sql-join-topics-${Date.now()}`,
           difficulty: "Easy",
           industry: "SQL",
           category: "Fundamentals",
@@ -213,7 +321,9 @@ INSERT INTO ecom_orders (customer_id, amount, order_date) VALUES (1, 5000, CURRE
       const { error } = await (supabase as any).from('careerprep_questions').insert(samples);
       if (error) throw error;
       toast({ title: '✅ Seeded Successfully', description: `${samples.length} sample questions added (1 standalone code, 1 standalone MCQ, 1 root mission with 2 steps).` });
-      await fetchQuestions();
+      // Bulk insert stays a raw call (the repository creates one row at a time),
+      // so the list query has to be invalidated by hand.
+      await queryClient.invalidateQueries({ queryKey: ['careerprep_questions'] });
     } catch (err: any) {
       toast({ title: 'Seed Failed', description: err.message, variant: 'destructive' });
     } finally {
@@ -231,6 +341,8 @@ INSERT INTO ecom_orders (customer_id, amount, order_date) VALUES (1, 5000, CURRE
     setDialogOpen(true);
   };
 
+  // The list renders repository rows; the edit form fills from them, so take
+  // the row type rather than the hook's stricter CareerPrepQuestion.
   const openEdit = (q: CareerPrepQuestion) => {
     setEditingQ(q);
     
@@ -323,15 +435,21 @@ INSERT INTO ecom_orders (customer_id, amount, order_date) VALUES (1, 5000, CURRE
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!confirm('Delete this question and all its children?')) return;
-    await (supabase as any).from('careerprep_questions').delete().eq('id', id);
-    toast({ title: 'Deleted' });
-    await fetchQuestions();
+    // The mutation invalidates the list query; the raw client call this replaced
+    // left the table on screen stale and then called an undefined fetchQuestions().
+    deleteQuestion(id, {
+      onSuccess: () => toast({ title: 'Deleted' }),
+      onError: (err: any) => toast({ title: 'Delete Failed', description: err.message, variant: 'destructive' }),
+    });
   };
 
   // ── tree helpers ──────────────────────────────────────────────────────────
   const roots    = questions.filter(q => !q.parent_id);
+  // The question bank is the largest list in the panel — several hundred rows —
+  // so it pages like every other admin list rather than rendering all of them.
+  const rootPages = usePagination(roots, 10);
   const children = (parentId: string) => questions.filter(q => q.parent_id === parentId);
   const toggleRoot = (id: string) =>
     setExpandedRoots(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -346,7 +464,7 @@ INSERT INTO ecom_orders (customer_id, amount, order_date) VALUES (1, 5000, CURRE
   const rootOptions = questions.filter(q => q.question_type === 'root');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-6">
         <div>
@@ -366,7 +484,7 @@ INSERT INTO ecom_orders (customer_id, amount, order_date) VALUES (1, 5000, CURRE
         {/* ══ QUESTIONS TAB ══════════════════════════════════════════════════ */}
         <TabsContent value="questions" className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">{questions.length} total · {roots.length} root scenarios</p>
+            <p className="line-clamp-2 text-xs text-muted-foreground">{questions.length} total · {roots.length} root scenarios</p>
             <div className="flex items-center gap-3">
               <Button onClick={seedSamples} variant="outline" size="sm" className="hidden sm:flex border-primary/20 text-primary hover:bg-primary/5 gap-1.5 h-9">
                 <Sparkles className="h-3.5 w-3.5" /> Seed Samples
@@ -379,7 +497,7 @@ INSERT INTO ecom_orders (customer_id, amount, order_date) VALUES (1, 5000, CURRE
 
           {/* Tree View */}
           <div className="space-y-3">
-            {roots.map(root => {
+            {rootPages.pageItems.map(root => {
               const kids = children(root.id);
               const expanded = expandedRoots.has(root.id);
               const meta = Q_TYPE_META[root.question_type] || Q_TYPE_META.default;
@@ -530,6 +648,7 @@ INSERT INTO ecom_orders (customer_id, amount, order_date) VALUES (1, 5000, CURRE
                       ))}
                   </TableBody>
                 </Table>
+            <ListPager pagination={rootPages} label="questions" />
               </div>
             </CardContent>
           </Card>
@@ -595,6 +714,9 @@ INSERT INTO ecom_orders (customer_id, amount, order_date) VALUES (1, 5000, CURRE
                 <Input {...register('slug',{required:true})} placeholder="e.g. top-merchants-volume" className="bg-background/50" />
               </Field>
             </section>
+
+            {/* ── 3.4 Topics ───────────────────────────────────────────── */}
+            {editingQ?.id && <TopicAttach questionId={editingQ.id} />}
 
             {/* ── 3.5 Child Questions (for roots) ────────────────────────── */}
             {isRoot && editingQ && (

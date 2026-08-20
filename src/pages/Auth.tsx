@@ -7,21 +7,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { postSignInTarget } from '@/lib/authRouting';
 import { Lock, Mail } from 'lucide-react';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, isAnonymous, isAdmin, adminChecked } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // `user` alone is not a signal any more: every visitor is signed in, guests
+  // anonymously. Redirecting on it bounced anonymous visitors straight back to
+  // /admin, which sent them here again — a loop where nothing rendered.
   useEffect(() => {
-    if (user) {
-      navigate('/admin');
-    }
-  }, [user, navigate]);
+    const target = postSignInTarget({ hasUser: !!user, isAnonymous, adminChecked, isAdmin });
+    if (target) navigate(target);
+  }, [user, isAnonymous, isAdmin, adminChecked, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();

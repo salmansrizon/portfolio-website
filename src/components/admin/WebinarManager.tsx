@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { createRepository } from "@/integrations/supabase/repository";
 import { webinarConfig, instructorConfig } from "@/adapters/entityConfigs";
+import ListPager from './ListPager';
 import { useEntityManager } from "@/hooks/useEntityManager";
 
 const instructorRepository = createRepository(instructorConfig);
@@ -38,7 +39,7 @@ export default function WebinarManager() {
     const { toast } = useToast();
 
     const { data: instructors = [] } = instructorRepository.useFindAll();
-    const { items: webinars, openCreate, openEdit, remove, dialog } = useEntityManager(webinarConfig);
+    const { items: webinars, pageItems, pagination, openCreate, openEdit, remove, dialog } = useEntityManager(webinarConfig);
 
     // The content-block builder isn't react-hook-form-driven, so it keeps its
     // own local draft state — re-synced from the hook's initialData whenever
@@ -106,7 +107,7 @@ export default function WebinarManager() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             <div className="flex justify-between items-center">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight text-foreground">Webinar Management</h2>
@@ -124,8 +125,8 @@ export default function WebinarManager() {
                 </TabsList>
 
                 <TabsContent value="webinars">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {webinars.map(w => (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                        {pageItems.map(w => (
                             <Card key={w.id} className="overflow-hidden border-border/50 hover:border-primary/30 transition-all bg-card/50 backdrop-blur-sm">
                                 <CardHeader className="pb-3">
                                     <div className="flex justify-between items-start">
@@ -153,7 +154,7 @@ export default function WebinarManager() {
                         ))}
                         {webinars.length === 0 && (
                             <div className="col-span-full py-20 text-center border-2 border-dashed rounded-xl opacity-50">
-                                <Calendar className="h-12 w-12 mx-auto mb-4" />
+                                <Calendar className="h-10 w-10 mx-auto mb-4" />
                                 <p>No webinars created yet.</p>
                             </div>
                         )}
@@ -521,6 +522,7 @@ export default function WebinarManager() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+        <ListPager pagination={pagination} label="webinars" />
         </div>
     );
 }

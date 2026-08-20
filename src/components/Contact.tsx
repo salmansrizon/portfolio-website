@@ -620,7 +620,7 @@ ${formData.message}
                     className={cn(
                       "flex items-center gap-1.5 transition-all duration-500",
                       isBusinessHours 
-                        ? "bg-success-soft text-success-foreground border-success/30"
+                        ? "bg-success-strong text-success-strong-foreground border-success/30"
                         : "bg-warning-soft text-warning-foreground border-warning/30"
                     )}
                   >

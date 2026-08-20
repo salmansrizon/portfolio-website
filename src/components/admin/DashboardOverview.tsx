@@ -441,7 +441,7 @@ export default function DashboardOverview() {
                     </div>
                     {activity.status && (
                       <div className="ml-auto font-medium text-sm">
-                        <span className={`px-2 py-1 rounded-full text-xs ${activity.status === 'pending' ? 'bg-warning-soft text-warning-foreground' : 'bg-success-soft text-success-foreground'}`}>
+                        <span className={`px-2 py-1 rounded-full text-xs ${activity.status === 'pending' ? 'bg-warning-soft text-warning-foreground' : 'bg-success-strong text-success-strong-foreground'}`}>
                           {activity.status}
                         </span>
                       </div>

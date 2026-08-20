@@ -2,8 +2,10 @@ import * as React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, Settings, FileText, Award, Briefcase, MessageSquare, User, FolderKanban, GraduationCap, CalendarCheck, LayoutDashboard, Menu, Image, UserCheck, Users, Star, Database, Calendar, Map, CalendarX, BookOpen } from 'lucide-react';
+import { LogOut, Settings, FileText, Award, Briefcase, MessageSquare, User, FolderKanban, GraduationCap, CalendarCheck, LayoutDashboard, Menu, Image, UserCheck, Users, Star, Database, Calendar, Map, CalendarX, BookOpen, Route, ListChecks, BookDown, TrendingUp, Lightbulb
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { shouldRejectFromAdmin } from '@/lib/authRouting';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -26,6 +28,10 @@ import CourseReviewManager from '@/components/admin/CourseReviewManager';
 import CareerPrepManager from '@/components/admin/CareerPrepManager';
 import WebinarManager from '@/components/admin/WebinarManager';
 import RoadmapManager from '@/components/admin/RoadmapManager';
+import JourneyManager from '@/components/admin/JourneyManager';
+import EbookManager from '@/components/admin/EbookManager';
+import TopicManager from '@/components/admin/TopicManager';
+import FunnelDashboard from '@/components/admin/FunnelDashboard';
 import UnavailableSlotsManager from '@/components/admin/UnavailableSlotsManager';
 import CourseContentManager from '@/components/admin/CourseContentManager';
 
@@ -48,11 +54,15 @@ const navigation = [
   { id: 'brand-logos', label: 'Brand Logos', icon: Image },
   { id: 'career-prep', label: 'Career Prep', icon: Database },
   { id: 'roadmaps', label: 'Roadmaps', icon: Map },
+  { id: 'journeys', label: 'Journeys', icon: Route },
+  { id: 'topics', label: 'Topics', icon: Lightbulb },
+  { id: 'ebooks', label: 'Ebooks', icon: BookDown },
+  { id: 'funnel', label: 'Funnel', icon: TrendingUp },
   { id: 'profile', label: 'Profile', icon: User },
 ];
 
 const Admin = () => {
-  const { user, signOut } = useAuth();
+  const { user, isAdmin, adminChecked, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = React.useState('overview');
@@ -67,13 +77,24 @@ const Admin = () => {
     });
   };
 
+  // Every visitor is signed in — anonymously, if they have no account — so
+  // "is there a user" is no longer a guard. The panel requires the admin role,
+  // checked against the same is_admin() the RLS policies use.
   React.useEffect(() => {
-    if (!user) {
+    if (shouldRejectFromAdmin({ hasUser: !!user, isAnonymous: false, adminChecked, isAdmin })) {
       navigate('/auth');
     }
-  }, [user, navigate]);
+  }, [user, adminChecked, isAdmin, navigate]);
 
-  if (!user) {
+  if (!adminChecked) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-background">
+        <p className="text-sm text-muted-foreground">Checking permissions…</p>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
     return null;
   }
 
@@ -81,6 +102,14 @@ const Admin = () => {
     switch (activeTab) {
       case 'overview':
         return <DashboardOverview />;
+      case 'journeys':
+        return <JourneyManager />;
+      case 'topics':
+        return <TopicManager />;
+      case 'ebooks':
+        return <EbookManager />;
+      case 'funnel':
+        return <FunnelDashboard />;
       case 'webinars':
         return <WebinarManager />;
       case 'sections':

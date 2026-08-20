@@ -12,7 +12,7 @@ const statusPillVariants = cva(
   {
     variants: {
       tone: {
-        success: "bg-success-soft text-success",
+        success: "bg-success-soft text-success-strong",
         warning: "bg-warning-soft text-warning",
         danger: "bg-danger-soft text-danger",
         neutral: "bg-panel-2 text-muted-foreground border border-border",

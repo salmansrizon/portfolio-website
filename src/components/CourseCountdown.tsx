@@ -28,7 +28,7 @@ export function CourseCountdown({ startDate, className = "", showIcon = true }: 
 
   if (countdown.isExpired) {
     return (
-      <Badge variant="secondary" className={`${className} bg-success-soft text-success-foreground`}>
+      <Badge variant="secondary" className={`${className} bg-success-strong text-success-strong-foreground`}>
         {showIcon && <Clock className="w-3 h-3 mr-1" />}
         Started
       </Badge>

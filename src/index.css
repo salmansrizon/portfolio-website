@@ -46,12 +46,22 @@
     --success: 157 100% 36%;            /* #00b871 */
     --success-foreground: 0 0% 100%;
     --success-soft: 148 61% 94%;        /* #e6f9ef */
+    /* Solid green for badges that must read at a glance. Darker than --success
+       on purpose. Measured: white on #00b871 is 2.6:1 (fails AA at badge
+       sizes); white on this is 5.4:1, and this as text on --success-soft is
+       4.9:1 — both clear AA for small text, which is what a badge is. */
+    --success-strong: 157 100% 24%;     /* #007a4b */
+    --success-strong-foreground: 0 0% 100%;
     --warning: 41 100% 39%;             /* #c98a00 */
     --warning-foreground: 41 100% 20%;
     --warning-soft: 43 100% 94%;        /* #fff6e0 */
     --danger: 0 84% 60%;
     --danger-foreground: 0 0% 100%;
     --danger-soft: 0 72% 94%;
+    /* Same reason as --success-strong: white on the light danger fill is
+       unreadable, so badges that must be spotted get a darker solid. */
+    --danger-strong: 0 74% 42%;
+    --danger-strong-foreground: 0 0% 100%;
 
     /* Third-party brand palette — contractual provider colors, not decorative.
        Follows the same shape as the status palette: -foreground is the ink that
@@ -132,12 +142,17 @@
     --success: 150 100% 41%;
     --success-foreground: 150 72% 14%;  /* ink-green #0a3d24 */
     --success-soft: 150 40% 12%;
+    /* On a dark surface the relationship inverts: a bright fill with dark ink. */
+    --success-strong: 150 100% 45%;
+    --success-strong-foreground: 150 72% 10%;
     --warning: 42 100% 65%;             /* #ffc94a */
     --warning-foreground: 41 100% 12%;
     --warning-soft: 43 42% 12%;
     --danger: 0 84% 66%;
     --danger-foreground: 0 40% 12%;
     --danger-soft: 0 40% 14%;
+    --danger-strong: 0 84% 62%;
+    --danger-strong-foreground: 0 40% 10%;
 
     /* Third-party brand palette — provider hues hold across themes; the surfaces
        they sit on darken, so -soft inverts and its ink lightens to match. */
