@@ -17,6 +17,9 @@ dist-ssr
 .env.*
 !.env.example
 
+# Local planning notes — this repo is public
+.scratch/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -27,3 +30,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Database backups — contain PII, never commit
+backups/
+
+# Generated sample assets
+tmp/
